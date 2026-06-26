@@ -263,6 +263,7 @@ a{text-decoration:none;color:inherit;}
 .yc-stepper button{width:34px; height:34px; border:none; background:transparent; color:var(--gold2); font-size:20px; cursor:pointer;}
 .yc-stepper button:disabled{color:var(--muted2); cursor:not-allowed;}
 .yc-stepper b{min-width:26px; text-align:center; font-family:'Bricolage Grotesque'; font-size:15px;}
+.yc-onepass{flex:none; background:var(--surface2); color:var(--gold2); border-radius:999px; padding:7px 16px; font-family:'Bricolage Grotesque'; font-weight:700; font-size:14px;}
 .yc-tabs{display:flex; gap:8px; margin-bottom:12px;}
 .yc-tab{flex:1; cursor:pointer; background:var(--surface); border:1px solid var(--line); color:var(--muted);
   font-family:'Plus Jakarta Sans'; font-weight:600; font-size:13px; padding:10px; border-radius:10px;}
@@ -343,7 +344,13 @@ a{text-decoration:none;color:inherit;}
 
 .bc-hero{position:relative; overflow:hidden; left:50%; width:100vw; transform:translateX(-50%); padding-left:22px; padding-right:22px;}
 .yc-hero-bg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.yc-hero-bg picture{display:block;}
+/* Mobile: tall portrait image, framed to show people + temple behind title */
 .yc-hero-bg img{position:absolute;left:0;top:0;width:100%;height:auto;transform:translateY(-34%);opacity:0.88;}
+/* Desktop: wide landscape image fills the hero */
+@media(min-width:768px){
+  .yc-hero-bg img{top:0;height:100%;object-fit:cover;object-position:center 42%;transform:none;}
+}
 .bc-hero::before{content:''; position:absolute; inset:0; z-index:1;
   background:linear-gradient(to bottom, rgba(30,15,0,0.45) 0%, rgba(20,10,0,0.35) 40%, rgba(20,10,0,0.30) 65%, rgba(255,235,190,0.72) 100%);}
 .bc-hero .bc-eyebrow,.bc-hero .bc-title,.bc-hero .bc-band,.bc-hero .bc-tag,.bc-hero .bc-meta,.bc-hero .bc-count,.bc-hero .bc-herorow,.bc-hero .bc-poster{position:relative; z-index:2;}
@@ -423,7 +430,12 @@ a{text-decoration:none;color:inherit;}
 <div class="bc-wrap">
 
   <header class="bc-hero">
-    <div class="yc-hero-bg"><img src="hero-bg.jpg.png" alt="" aria-hidden="true"></div>
+    <div class="yc-hero-bg">
+      <picture>
+        <source media="(min-width:768px)" srcset="hero-bg-desktop.png">
+        <img src="hero-bg.jpg.png" alt="" aria-hidden="true">
+      </picture>
+    </div>
     <svg class="yc-hero-scene" aria-hidden="true" viewBox="0 0 1200 560" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <radialGradient id="hsg-glow" cx="50%" cy="28%" r="60%">
@@ -754,7 +766,7 @@ a{text-decoration:none;color:inherit;}
     </div>
   </section>
 
-  <section class="bc-sec">
+  <section class="bc-sec" id="tickets">
     <h2 class="bc-sectitle">Get your pass</h2>
     <div class="bc-ticket-wrap">
 
@@ -858,14 +870,14 @@ a{text-decoration:none;color:inherit;}
 
       <!-- STEP 1 -->
       <div id="step1">
-        <div class="bc-field"><label>Select tickets</label>
-          <div class="yc-step">
+        <div class="bc-field"><label id="ticketLabel">Select tickets</label>
+          <div class="yc-step" id="stepGeneral">
             <div><div class="nm">General</div><div class="pr">₹799 <s>₹1000</s></div></div>
             <div class="yc-stepper"><button type="button" data-q="general" data-d="-1">−</button><b id="q-general">0</b><button type="button" data-q="general" data-d="1">+</button></div>
           </div>
-          <div class="yc-step">
+          <div class="yc-step" id="stepStudent">
             <div><div class="nm">Student <span style="color:var(--muted2);font-weight:500;font-size:12px">· valid ID</span> <span style="background:rgba(255,177,46,.18);color:var(--gold2);font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;letter-spacing:.04em;">🕐 Early Bird · Tonight only</span></div><div class="pr">₹299 <s>₹500</s></div></div>
-            <div class="yc-stepper"><button type="button" data-q="student" data-d="-1">−</button><b id="q-student">0</b><button type="button" data-q="student" data-d="1">+</button></div>
+            <div class="yc-onepass">1 pass<b id="q-student" hidden>1</b></div>
           </div>
         </div>
 
@@ -940,13 +952,20 @@ a{text-decoration:none;color:inherit;}
   const TICKETS={general:{name:'General',price:799,was:1000},student:{name:'Student',price:299,was:500}};
   const qty={general:0,student:0};
   const inr=n=>'₹'+n.toLocaleString('en-IN');
-  let phoneVerified=false, idUploaded=false;
+  let phoneVerified=false, idUploaded=false, idCardFile=null;
 
   const ov=document.getElementById('ov');
   const $=id=>document.getElementById(id);
 
   function openModal(preset){
-    if(preset && totalQ()===0) qty[preset]=1;
+    // Each pass has its own dedicated form — General or Student only
+    const isGeneral = preset==='general';
+    qty.general = isGeneral ? 1 : 0;
+    qty.student = isGeneral ? 0 : 1;
+    $('stepGeneral').style.display = isGeneral ? 'flex' : 'none';
+    $('stepStudent').style.display = isGeneral ? 'none' : 'flex';
+    $('ticketLabel').textContent = isGeneral ? 'General pass' : 'Student pass';
+    $('mTitle').textContent = isGeneral ? 'Get General Pass' : 'Get Student Pass';
     render();
     $('step1').style.display='block';
     $('step2').style.display='none';
@@ -954,7 +973,11 @@ a{text-decoration:none;color:inherit;}
     ov.style.display='flex'; document.body.style.overflow='hidden';
   }
   function closeModal(){ ov.style.display='none'; document.body.style.overflow=''; }
-  document.querySelectorAll('[data-book]').forEach(b=>b.addEventListener('click',()=>openModal(b.getAttribute('data-book'))));
+  document.querySelectorAll('[data-book]').forEach(b=>b.addEventListener('click',()=>{
+    const preset=b.getAttribute('data-book');
+    if(preset==='general'||preset==='student'){ openModal(preset); }
+    else { document.getElementById('tickets').scrollIntoView({behavior:'smooth',block:'start'}); }
+  }));
   $('mClose').addEventListener('click',closeModal);
   ov.addEventListener('click',e=>{if(e.target===ov)closeModal();});
 
@@ -1034,7 +1057,8 @@ a{text-decoration:none;color:inherit;}
 
   document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>{
     const k=b.getAttribute('data-q'), d=parseInt(b.getAttribute('data-d'),10);
-    qty[k]=Math.max(0,Math.min(20,qty[k]+d));
+    const max = k==='student' ? 1 : 20;   // students: one pass at a time
+    qty[k]=Math.max(0,Math.min(max,qty[k]+d));
     render();
   }));
   $('fName').addEventListener('input',updateConfirm);
@@ -1064,8 +1088,12 @@ a{text-decoration:none;color:inherit;}
     }catch(e){ setHint('Verification failed. Please try again.',true); $('verifyOtp').disabled=false; }
   });
   $('idCard').addEventListener('change',e=>{
-    const f=e.target.files[0]; if(!f){idUploaded=false;updateConfirm();return;}
-    idUploaded=true; $('idLabel').textContent='✓ '+f.name; updateConfirm();
+    const f=e.target.files[0]; if(!f){idUploaded=false;idCardFile=null;updateConfirm();return;}
+    idUploaded=true; $('idLabel').textContent='✓ '+f.name;
+    const reader=new FileReader();
+    reader.onload=()=>{ idCardFile={data:reader.result, type:f.type, name:f.name}; };
+    reader.readAsDataURL(f);
+    updateConfirm();
   });
 
   const showErr=(id,on)=>$(id).style.display=on?'block':'none';
@@ -1121,7 +1149,7 @@ a{text-decoration:none;color:inherit;}
 
   function finishBooking(booking, payment){
     // save the registration (backend stores it / forwards to your Bhajan API), then WhatsApp
-    api('/api/register', { ...booking, payment }).catch(e=>console.warn('register save skipped:', e.message));
+    api('/api/register', { ...booking, payment, idCard: idCardFile }).catch(e=>console.warn('register save skipped:', e.message));
     notifyWhatsApp(booking);
     const ticketLines=Object.keys(qty).filter(k=>qty[k]>0).map(k=>`<div class="bc-srow"><span>${TICKETS[k].name} × ${qty[k]}</span><span class="amt">${inr(TICKETS[k].price*qty[k])}</span></div>`).join('');
     $('successSummary').innerHTML=
@@ -1160,7 +1188,8 @@ a{text-decoration:none;color:inherit;}
     }
   });
   $('closeSuccess').addEventListener('click',()=>{
-    qty.general=0;qty.student=0;phoneVerified=false;idUploaded=false;
+    qty.general=0;qty.student=0;phoneVerified=false;idUploaded=false;idCardFile=null;
+    $('idCard').value='';$('idLabel').textContent='Upload college / school ID';
     $('fName').value='';$('fPhone').value='';$('fPhone').disabled=false;$('fEmail').value='';
     $('otpStep').style.display='none';$('sendOtp').style.display='';$('otpCode').value='';
     setHint("We'll text a one-time code to verify your number.");

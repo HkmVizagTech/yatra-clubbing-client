@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Yatra Clubbing · Admin</title>
+<style>
+  :root{--bg:#FBF5E9;--surface:#fff;--surface2:#F6EEDD;--line:rgba(90,60,20,.16);
+        --gold:#E07B00;--gold2:#B85C00;--text:#2A1A08;--muted:#6E5C44;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Plus Jakarta Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+       background:var(--bg);color:var(--text);}
+  a{color:var(--gold2)}
+  .wrap{max-width:1200px;margin:0 auto;padding:22px 16px 60px}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+  h1{font-size:22px;margin:0;font-weight:800}
+  .sub{color:var(--muted);font-size:13px}
+  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;border:none;border-radius:999px;
+       padding:10px 18px;font-weight:700;font-size:14px;cursor:pointer}
+  .btn.ghost{background:var(--surface);color:var(--gold2);border:1px solid var(--line)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+  /* login */
+  #login{max-width:380px;margin:12vh auto 0}
+  #login h1{margin-bottom:6px}
+  .field{margin:14px 0}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  .input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:15px;background:#fff}
+  .err{color:#c0392b;font-size:13px;margin-top:8px;display:none}
+  /* stats */
+  .stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .stat{flex:1;min-width:130px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .stat b{display:block;font-size:24px;font-weight:800}
+  .stat span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .toolbar .input{flex:1;min-width:200px}
+  /* table */
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:880px}
+  th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{background:var(--surface2);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);position:sticky;top:0}
+  tr:last-child td{border-bottom:none}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700}
+  .pill.general{background:rgba(110,70,230,.12);color:#6E46E6}
+  .pill.student{background:rgba(255,138,30,.16);color:var(--gold2)}
+  .pay-paid{color:#1a8a3a;font-weight:700}
+  .pay-demo{color:var(--muted)}
+  .pay-pending{color:#c0392b}
+  .muted{color:var(--muted)}
+  .empty{padding:40px;text-align:center;color:var(--muted)}
+  .hide{display:none}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login" class="card">
+  <h1>Admin sign in</h1>
+  <div class="sub">Yatra Clubbing · Registrations</div>
+  <div class="field">
+    <label>Admin password</label>
+    <input class="input" id="pw" type="password" placeholder="Enter password" autocomplete="current-password">
+  </div>
+  <button class="btn" id="loginBtn" style="width:100%">Sign in</button>
+  <div class="err" id="loginErr">Wrong password. Try again.</div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="wrap hide" id="dash">
+  <div class="top">
+    <div>
+      <h1>Registrations</h1>
+      <div class="sub" id="updated"></div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn ghost" id="refreshBtn">↻ Refresh</button>
+      <button class="btn ghost" id="csvBtn">⤓ Export CSV</button>
+      <button class="btn ghost" id="logoutBtn">Sign out</button>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="toolbar">
+    <input class="input" id="search" placeholder="Search name, phone, email, ref…">
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr>
+        <th>Date</th><th>Ref</th><th>Name</th><th>Phone</th><th>Email</th>
+        <th>Pass</th><th>Qty</th><th>Total</th><th>Payment</th><th>Student ID</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty hide" id="empty">No registrations yet.</div>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  let TOKEN = sessionStorage.getItem('yc_admin') || '';
+  let DATA = [];
+
+  function fmtDate(s){ try{ return new Date(s).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}catch(_){return s;} }
+  function inr(n){ return '₹'+Number(n||0).toLocaleString('en-IN'); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  async function load(){
+    const r = await fetch('/api/registrations', { headers: { Authorization: 'Bearer ' + TOKEN } });
+    if (r.status === 401){ signOut(); $('loginErr').style.display='block'; return; }
+    if (!r.ok){ alert('Could not load registrations.'); return; }
+    const d = await r.json();
+    DATA = d.registrations || [];
+    showDash();
+    render();
+    $('updated').textContent = 'Last updated ' + new Date().toLocaleTimeString('en-IN');
+  }
+
+  function render(){
+    const q = $('search').value.trim().toLowerCase();
+    const rows = DATA.filter(x => !q || [x.name,x.phone,x.email,x.ref].some(v => (v||'').toLowerCase().includes(q)));
+
+    // stats (on full set, not filtered)
+    const totGen = DATA.reduce((a,x)=>a+(x.qty_general||0),0);
+    const totStu = DATA.reduce((a,x)=>a+(x.qty_student||0),0);
+    const revenue = DATA.filter(x=>x.payment_status==='paid').reduce((a,x)=>a+(x.total||0),0);
+    $('stats').innerHTML =
+      stat(DATA.length,'Bookings') + stat(totGen,'General') + stat(totStu,'Student') + stat(inr(revenue),'Collected');
+
+    const tb = $('rows');
+    tb.innerHTML = rows.map(x => {
+      const pass = (x.pass_type==='student') ? '<span class="pill student">Student</span>' : '<span class="pill general">General</span>';
+      const qty = [x.qty_general?('G×'+x.qty_general):'', x.qty_student?('S×'+x.qty_student):''].filter(Boolean).join(' ');
+      const ps = x.payment_status||'pending';
+      const pay = `<span class="pay-${ps}">${esc(ps)}</span>` + (x.payment_id?`<br><span class="muted" style="font-size:11px">${esc(x.payment_id)}</span>`:'');
+      const idc = x.id_card_url ? `<a href="${esc(x.id_card_url)}" target="_blank" rel="noopener">View ID ↗</a>`
+                 : (x.id_card_path ? '<span class="muted">uploaded</span>' : '<span class="muted">—</span>');
+      return `<tr>
+        <td class="muted">${fmtDate(x.created_at)}</td>
+        <td><b>${esc(x.ref)}</b></td>
+        <td>${esc(x.name)}</td>
+        <td>${esc(x.phone)}</td>
+        <td>${esc(x.email)||'<span class=muted>—</span>'}</td>
+        <td>${pass}</td>
+        <td>${esc(qty)}</td>
+        <td><b>${inr(x.total)}</b></td>
+        <td>${pay}</td>
+        <td>${idc}</td>
+      </tr>`;
+    }).join('');
+    $('empty').classList.toggle('hide', rows.length>0);
+  }
+
+  function stat(v,l){ return `<div class="stat"><b>${v}</b><span>${l}</span></div>`; }
+
+  function exportCSV(){
+    const cols = ['created_at','ref','name','phone','email','pass_type','qty_general','qty_student','total','payment_status','payment_id','student_status'];
+    const head = cols.join(',');
+    const body = DATA.map(x => cols.map(c => '"'+String(x[c]==null?'':x[c]).replace(/"/g,'""')+'"').join(',')).join('\n');
+    const blob = new Blob([head+'\n'+body], {type:'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'yatra-registrations.csv';
+    a.click();
+  }
+
+  function showDash(){ $('login').classList.add('hide'); $('dash').classList.remove('hide'); }
+  function signOut(){ sessionStorage.removeItem('yc_admin'); TOKEN=''; $('dash').classList.add('hide'); $('login').classList.remove('hide'); }
+
+  $('loginBtn').addEventListener('click', ()=>{
+    TOKEN = $('pw').value.trim();
+    sessionStorage.setItem('yc_admin', TOKEN);
+    $('loginErr').style.display='none';
+    load();
+  });
+  $('pw').addEventListener('keydown', e=>{ if(e.key==='Enter') $('loginBtn').click(); });
+  $('search').addEventListener('input', render);
+  $('refreshBtn').addEventListener('click', load);
+  $('csvBtn').addEventListener('click', exportCSV);
+  $('logoutBtn').addEventListener('click', signOut);
+
+  // auto-load if a token is already stored this session
+  if (TOKEN) load();
+</script>
+</body>
+</html>
