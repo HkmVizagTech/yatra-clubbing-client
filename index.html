@@ -342,14 +342,10 @@ a{text-decoration:none;color:inherit;}
 @keyframes yc-flicker{0%,100%{transform:scale(1) rotate(-1.5deg);opacity:.9;}50%{transform:scale(1.09) rotate(1.5deg);opacity:1;}}
 @keyframes yc-pulse{0%,100%{box-shadow:0 0 40px rgba(255,177,46,.6);}50%{box-shadow:0 0 74px rgba(255,177,46,.98);}}
 
-.bc-hero{position:relative; overflow:hidden; left:50%; width:100vw; transform:translateX(-50%); padding-left:22px; padding-right:22px;}
-.yc-hero-bg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
-.yc-hero-bg picture{display:block;}
-/* Mobile: tall portrait image, framed to show people + temple behind title */
-.yc-hero-bg img{position:absolute;left:0;top:0;width:100%;height:auto;transform:translateY(-34%);opacity:0.88;}
-/* Desktop: wide landscape image fills the hero */
+.bc-hero{position:relative; overflow:hidden; left:50%; width:100vw; transform:translateX(-50%); padding-left:22px; padding-right:22px;
+  background:url('hero-bg.jpg.png') center 30%/cover no-repeat;}
 @media(min-width:768px){
-  .yc-hero-bg img{top:0;height:100%;object-fit:cover;object-position:center 42%;transform:none;}
+  .bc-hero{background-image:url('hero-bg-desktop.png'); background-position:center 42%;}
 }
 .bc-hero::before{content:''; position:absolute; inset:0; z-index:1;
   background:linear-gradient(to bottom, rgba(30,15,0,0.45) 0%, rgba(20,10,0,0.35) 40%, rgba(20,10,0,0.30) 65%, rgba(255,235,190,0.72) 100%);}
@@ -430,12 +426,6 @@ a{text-decoration:none;color:inherit;}
 <div class="bc-wrap">
 
   <header class="bc-hero">
-    <div class="yc-hero-bg">
-      <picture>
-        <source media="(min-width:768px)" srcset="hero-bg-desktop.png">
-        <img src="hero-bg.jpg.png" alt="" aria-hidden="true">
-      </picture>
-    </div>
     <svg class="yc-hero-scene" aria-hidden="true" viewBox="0 0 1200 560" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <radialGradient id="hsg-glow" cx="50%" cy="28%" r="60%">
