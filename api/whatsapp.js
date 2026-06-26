@@ -1,33 +1,47 @@
-// POST /api/whatsapp  { name, phone, ref, tickets, total, ... }
-// Sends a WhatsApp booking confirmation via Flaxxa Wapi. Token stays server-side.
-// Env vars (Vercel → Settings → Environment Variables):
-//   FLAXXA_API_URL   e.g. https://wapi.flaxxa.com/api/send   (use the exact send-message
-//                    endpoint from your Flaxxa Wapi dashboard / docs)
-//   FLAXXA_TOKEN     your Flaxxa Wapi API token / access key
-//   FLAXXA_INSTANCE  (if your account uses an instance / sender id)
+// POST /api/whatsapp  { name, phone, ref, tickets, total, pass_type }
+// Sends a WhatsApp booking confirmation via Flaxxa Wapi.
 //
-// NOTE: Flaxxa Wapi's exact field names vary by account/plan. Adjust the `payload`
-// below to match your dashboard's API reference (text vs template, `to` format, etc.).
+// Env vars (Vercel → Settings → Environment Variables):
+//   FLAXXA_API_URL     The send-message endpoint, e.g. https://app.flaxxa.com/api/v1/message/send
+//   FLAXXA_TOKEN       Your Flaxxa API token (from dashboard → API Access)
+//   FLAXXA_INSTANCE    Your WhatsApp instance / device ID (from Flaxxa dashboard)
+//
+// If any var is missing the endpoint returns 200 { sent: false } — booking still succeeds.
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
-  const url = process.env.FLAXXA_API_URL, token = process.env.FLAXXA_TOKEN;
-  if (!url || !token) return res.status(200).json({ sent: false, reason: 'WhatsApp not configured' });
+  const url = process.env.FLAXXA_API_URL;
+  const token = process.env.FLAXXA_TOKEN;
+  const instance = process.env.FLAXXA_INSTANCE;
 
-  const { name = 'Devotee', phone, ref = '', total = '' } = req.body || {};
+  if (!url || !token || !instance) {
+    return res.status(200).json({ sent: false, reason: 'WhatsApp env vars not set' });
+  }
+
+  const { name = 'Devotee', phone, ref = '', total = '', tickets = {} } = req.body || {};
   if (!phone) return res.status(400).json({ sent: false, error: 'Missing phone' });
 
-  const message =
-    `Hare Krishna ${name}! 🙏\n` +
-    `Your booking for the *Ramayana Circuit Yatra* (Sat, 11 July, 9:00 AM) is confirmed.\n` +
-    (total ? `Amount paid: ₹${total}\n` : '') +
-    (ref ? `Booking ref: ${ref}\n` : '') +
-    `Your QR pass will follow before the yatra.\n— Hare Krishna Vaikuntham`;
+  const mobile = '91' + String(phone).replace(/\D/g, '').slice(-10);
 
-  // Common Flaxxa-style payload — adjust keys to your account's API reference.
+  const passLines = [];
+  if (tickets.general > 0) passLines.push(`• General pass × ${tickets.general}`);
+  if (tickets.student > 0) passLines.push(`• Student pass × ${tickets.student}`);
+
+  const message =
+    `Hare Krishna ${name}! 🙏\n\n` +
+    `Your booking for the *Ramayana Circuit Yatra* is confirmed.\n\n` +
+    `📅 Sat, 11 July 2026 · 7:00 AM\n` +
+    (passLines.length ? passLines.join('\n') + '\n' : '') +
+    (total ? `💰 Paid: ₹${total}\n` : '') +
+    (ref ? `🎟 Ref: *${ref}*\n` : '') +
+    `\nYour pass details will be shared before the yatra.\n` +
+    `— Hare Krishna Vaikuntham 🙏`;
+
+  // Flaxxa Wapi send-message payload
   const payload = {
-    instance_id: process.env.FLAXXA_INSTANCE || undefined,
-    to: '91' + String(phone).replace(/\D/g, '').slice(-10),
+    instance_id: instance,
+    to: mobile,
     type: 'text',
     message,
   };
@@ -35,12 +49,17 @@ export default async function handler(req, res) {
   try {
     const r = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+      },
       body: JSON.stringify(payload),
     });
     const data = await r.json().catch(() => ({}));
-    return res.status(r.ok ? 200 : 502).json({ sent: r.ok, data });
+    if (!r.ok) console.warn('[whatsapp] Flaxxa error', r.status, JSON.stringify(data));
+    return res.status(200).json({ sent: r.ok, status: r.status, data });
   } catch (e) {
-    return res.status(502).json({ sent: false, error: String(e) });
+    console.error('[whatsapp] fetch failed:', e.message);
+    return res.status(200).json({ sent: false, error: String(e) });
   }
 }
