@@ -27,6 +27,7 @@
   color:var(--text); background:var(--bg); min-height:100vh; position:relative;
   -webkit-font-smoothing:antialiased; overflow-x:hidden; padding-bottom:84px;
 }
+html{overflow-x:hidden;}
 *{margin:0;padding:0;}
 .bc-root *{box-sizing:border-box;}
 a{text-decoration:none;color:inherit;}
@@ -42,10 +43,10 @@ a{text-decoration:none;color:inherit;}
 .bc-nav{display:flex; align-items:center; justify-content:space-between; padding:20px 0;}
 .bc-brand{display:flex; align-items:center; gap:11px; font-weight:700; letter-spacing:-.01em;}
 .bc-brand-badge{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;
-  background:linear-gradient(135deg,#FFF8F0,#FFE8C0); color:#241200;}
+  background:linear-gradient(135deg,var(--gold),var(--amber)); color:#fff;}
 .bc-brand small{display:block; font-size:10.5px; font-weight:500; color:var(--muted); letter-spacing:.03em;}
 .bc-navcta{cursor:pointer; border:none; font-family:'Plus Jakarta Sans'; font-weight:700; font-size:14px;
-  color:#241200; background:linear-gradient(135deg,#FFF8F0,#FFE8C0); padding:11px 19px; border-radius:999px;
+  color:#fff; background:linear-gradient(135deg,var(--gold),var(--gold2)); padding:11px 19px; border-radius:999px;
   transition:transform .15s, filter .15s;}
 .bc-navcta:hover{transform:translateY(-1px); filter:brightness(1.05);}
 
@@ -78,8 +79,8 @@ a{text-decoration:none;color:inherit;}
 .bc-cd.live b{color:var(--yellow);}
 .bc-herorow{display:flex; align-items:center; gap:18px; margin-top:28px; flex-wrap:wrap; justify-content:center;}
 .bc-herocta{display:inline-flex; align-items:center; gap:10px; cursor:pointer; border:none;
-  font-family:'Plus Jakarta Sans'; font-weight:700; font-size:16px; color:#241200; padding:17px 32px;
-  border-radius:999px; background:linear-gradient(135deg,#FFF8F0,#FFE8C0);
+  font-family:'Plus Jakarta Sans'; font-weight:700; font-size:16px; color:#fff; padding:17px 32px;
+  border-radius:999px; background:linear-gradient(135deg,var(--gold),var(--gold2));
   box-shadow:0 16px 50px -14px rgba(255,177,46,.75); transition:transform .15s;}
 .bc-herocta:hover{transform:translateY(-2px);}
 .bc-from{font-size:11px; color:var(--muted); text-align:left; text-transform:uppercase; letter-spacing:.16em; line-height:1.2;}
@@ -157,8 +158,8 @@ a{text-decoration:none;color:inherit;}
 .bc-stub-feat svg{flex:none; margin-top:2px; color:var(--gold2);}
 .bc-stubcta{position:relative; width:100%; cursor:pointer; border:none; font-family:'Plus Jakarta Sans';
   font-weight:700; font-size:16px; padding:16px; border-radius:12px; display:flex; align-items:center;
-  justify-content:center; gap:9px; background:linear-gradient(135deg,#FFF8F0,#FFE8C0);
-  color:#241200; transition:transform .15s, filter .15s;}
+  justify-content:center; gap:9px; background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:#fff; transition:transform .15s, filter .15s;}
 .bc-stubcta:hover{transform:translateY(-1px); filter:brightness(1.04);}
 .bc-stub-note{position:relative; margin-top:14px; font-size:12.5px; color:var(--muted2);
   display:flex; gap:7px; align-items:center; justify-content:center;}
@@ -169,7 +170,7 @@ a{text-decoration:none;color:inherit;}
 .bc-bar .lbl{font-size:12px; color:var(--muted);}
 .bc-bar .lbl b{display:block; font-family:'Bricolage Grotesque'; font-size:22px; color:#fff; font-weight:700;}
 .bc-bar button{cursor:pointer; border:none; font-family:'Plus Jakarta Sans'; font-weight:700; font-size:15px;
-  color:#241200; background:linear-gradient(135deg,var(--gold),var(--gold2)); padding:14px 28px;
+  color:#fff; background:linear-gradient(135deg,var(--gold),var(--gold2)); padding:14px 28px;
   border-radius:12px; display:flex; align-items:center; gap:8px;}
 
 .bc-foot{border-top:1px solid var(--line); margin-top:48px; padding:30px 0; display:flex; flex-wrap:wrap;
@@ -217,8 +218,8 @@ a{text-decoration:none;color:inherit;}
 .bc-uploaded .fn{font-size:13.5px; font-weight:600;}
 .bc-uploaded .fs{font-size:12px; color:var(--muted);}
 .bc-btn{width:100%; cursor:pointer; border:none; font-family:'Plus Jakarta Sans'; font-weight:700;
-  font-size:15px; padding:15px; border-radius:12px; color:#241200; display:flex; align-items:center;
-  justify-content:center; gap:8px; background:linear-gradient(135deg,#FFF8F0,#FFE8C0);
+  font-size:15px; padding:15px; border-radius:12px; color:#fff; display:flex; align-items:center;
+  justify-content:center; gap:8px; background:linear-gradient(135deg,var(--gold),var(--gold2));
   transition:transform .15s, filter .15s; text-decoration:none;}
 .bc-btn:hover{transform:translateY(-1px); filter:brightness(1.04);}
 .bc-btn:disabled{opacity:.45; cursor:not-allowed; transform:none;}
@@ -284,7 +285,7 @@ a{text-decoration:none;color:inherit;}
   .bc-nav{padding:15px 0;}
   .bc-brand-badge{width:32px;height:32px;}
   .bc-navcta{padding:9px 14px; font-size:13px;}
-  .bc-hero{padding:32px 0 22px;}
+  .bc-hero{padding:32px 16px 22px;}
   .bc-title{font-size:clamp(46px,14.5vw,70px);}
   .bc-band{font-size:18px;} .bc-band .by{font-size:14px;}
   .bc-count{gap:8px; width:100%;} .bc-cd{min-width:0; flex:1; padding:9px 6px;} .bc-cd b{font-size:22px;}
@@ -340,8 +341,18 @@ a{text-decoration:none;color:inherit;}
 @keyframes yc-flicker{0%,100%{transform:scale(1) rotate(-1.5deg);opacity:.9;}50%{transform:scale(1.09) rotate(1.5deg);opacity:1;}}
 @keyframes yc-pulse{0%,100%{box-shadow:0 0 40px rgba(255,177,46,.6);}50%{box-shadow:0 0 74px rgba(255,177,46,.98);}}
 
-.bc-hero{position:relative;}
-.bc-hero .bc-eyebrow,.bc-hero .bc-title,.bc-hero .bc-band,.bc-hero .bc-tag,.bc-hero .bc-meta,.bc-hero .bc-herorow,.bc-hero .bc-poster{position:relative; z-index:2;}
+.bc-hero{position:relative; overflow:hidden; left:50%; width:100vw; transform:translateX(-50%); padding-left:22px; padding-right:22px;}
+.yc-hero-bg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.yc-hero-bg img{position:absolute;left:0;top:0;width:100%;height:auto;transform:translateY(-34%);opacity:0.88;}
+.bc-hero::before{content:''; position:absolute; inset:0; z-index:1;
+  background:linear-gradient(to bottom, rgba(30,15,0,0.45) 0%, rgba(20,10,0,0.35) 40%, rgba(20,10,0,0.30) 65%, rgba(255,235,190,0.72) 100%);}
+.bc-hero .bc-eyebrow,.bc-hero .bc-title,.bc-hero .bc-band,.bc-hero .bc-tag,.bc-hero .bc-meta,.bc-hero .bc-count,.bc-hero .bc-herorow,.bc-hero .bc-poster{position:relative; z-index:2;}
+.bc-hero .bc-eyebrow{color:#FFE082; text-shadow:0 1px 6px rgba(0,0,0,.6);}
+.bc-hero .bc-title{color:#fff!important; text-shadow:0 2px 24px rgba(0,0,0,.55);}
+.bc-hero .bc-band{color:#fff!important; text-shadow:0 1px 8px rgba(0,0,0,.55);}
+.bc-hero .bc-band .by{color:rgba(255,255,255,.75)!important;}
+.bc-hero .bc-tag{color:#FFE082!important; text-shadow:0 1px 6px rgba(0,0,0,.5);}
+.yc-hero-scene,.yc-sun,.yc-petals,.yc-vimana,.yc-bird{display:none!important;}
 .yc-sun{position:absolute; top:-46px; left:50%; width:560px; height:560px; transform:translateX(-50%);
   pointer-events:none; z-index:0; opacity:.45;
   background:repeating-conic-gradient(from 0deg, rgba(255,177,46,.18) 0deg 3.5deg, transparent 3.5deg 11deg);
@@ -412,6 +423,234 @@ a{text-decoration:none;color:inherit;}
 <div class="bc-wrap">
 
   <header class="bc-hero">
+    <div class="yc-hero-bg"><img src="hero-bg.jpg.png" alt="" aria-hidden="true"></div>
+    <svg class="yc-hero-scene" aria-hidden="true" viewBox="0 0 1200 560" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="hsg-glow" cx="50%" cy="28%" r="60%">
+          <stop offset="0%" stop-color="#FFFCEB" stop-opacity="1"/>
+          <stop offset="30%" stop-color="#FFE88A" stop-opacity="0.85"/>
+          <stop offset="65%" stop-color="#FFCA50" stop-opacity="0.45"/>
+          <stop offset="100%" stop-color="#FF9B20" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="hsg-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#FFF8ED"/>
+          <stop offset="40%" stop-color="#FFE4A0"/>
+          <stop offset="75%" stop-color="#FFB850"/>
+          <stop offset="100%" stop-color="#F0A030"/>
+        </linearGradient>
+        <linearGradient id="hsg-mtn1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#F0C888" stop-opacity="0.45"/>
+          <stop offset="100%" stop-color="#D49850" stop-opacity="0.65"/>
+        </linearGradient>
+        <linearGradient id="hsg-mtn2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#D4906A" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="#C07840" stop-opacity="0.8"/>
+        </linearGradient>
+        <linearGradient id="hsg-mtn3" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#B87040"/>
+          <stop offset="100%" stop-color="#8B5020"/>
+        </linearGradient>
+        <linearGradient id="hsg-temple" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#FFF8E0"/>
+          <stop offset="100%" stop-color="#E8D090"/>
+        </linearGradient>
+        <linearGradient id="hsg-river" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#FFE070" stop-opacity="0.5"/>
+          <stop offset="50%" stop-color="#FFD040" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="#FFE070" stop-opacity="0.5"/>
+        </linearGradient>
+        <linearGradient id="hsg-path" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#D4A870"/>
+          <stop offset="100%" stop-color="#B88040"/>
+        </linearGradient>
+        <linearGradient id="hsg-stairs" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#EED898"/>
+          <stop offset="100%" stop-color="#C8A850"/>
+        </linearGradient>
+        <filter id="hsg-blur-md"><feGaussianBlur stdDeviation="7"/></filter>
+        <filter id="hsg-blur-sm"><feGaussianBlur stdDeviation="3"/></filter>
+      </defs>
+      <!-- Sky -->
+      <rect width="1200" height="560" fill="url(#hsg-sky)"/>
+      <rect width="1200" height="560" fill="url(#hsg-glow)"/>
+      <!-- Far mountains -->
+      <g filter="url(#hsg-blur-md)" opacity="0.5">
+        <path d="M0 255 Q90 195 180 225 Q270 180 370 215 Q460 170 560 200 Q650 172 750 198 Q840 172 940 205 Q1030 178 1130 212 L1200 220 L1200 300 L0 300Z" fill="url(#hsg-mtn1)"/>
+      </g>
+      <!-- Mid mountains -->
+      <g filter="url(#hsg-blur-sm)" opacity="0.68">
+        <path d="M0 305 Q70 258 150 280 Q230 242 320 268 Q410 238 500 262 Q590 235 680 260 Q770 238 860 265 Q950 242 1050 268 Q1130 250 1200 272 L1200 380 L0 380Z" fill="url(#hsg-mtn2)"/>
+      </g>
+      <!-- Near hills left -->
+      <path d="M0 375 Q60 342 140 360 Q210 332 300 354 Q360 338 420 358 L420 480 L0 480Z" fill="url(#hsg-mtn3)" opacity="0.55"/>
+      <!-- Near hills right -->
+      <path d="M780 368 Q860 342 940 365 Q1020 340 1100 360 Q1150 345 1200 358 L1200 480 L780 480Z" fill="url(#hsg-mtn3)" opacity="0.5"/>
+      <!-- River -->
+      <path d="M420 335 Q500 308 590 328 Q660 312 740 332 Q800 318 840 338 L840 378 Q800 362 740 370 Q660 354 590 370 Q500 352 420 378Z" fill="url(#hsg-river)" opacity="0.85"/>
+      <path d="M490 328 Q545 320 600 333" stroke="#FFF5B0" stroke-width="2" fill="none" opacity="0.65"/>
+      <path d="M620 322 Q675 315 720 328" stroke="#FFF5B0" stroke-width="1.5" fill="none" opacity="0.55"/>
+      <!-- LEFT: Trees -->
+      <rect x="-4" y="358" width="20" height="200" rx="5" fill="#6B4818"/>
+      <ellipse cx="8" cy="345" rx="60" ry="72" fill="#4A6820" opacity="0.88"/>
+      <ellipse cx="8" cy="318" rx="44" ry="54" fill="#5A7828" opacity="0.78"/>
+      <rect x="108" y="378" width="14" height="160" rx="4" fill="#7A5020"/>
+      <ellipse cx="115" cy="368" rx="36" ry="48" fill="#4A7025" opacity="0.85"/>
+      <ellipse cx="115" cy="350" rx="26" ry="35" fill="#5A8030" opacity="0.75"/>
+      <rect x="285" y="390" width="11" height="120" rx="3" fill="#8B5A28"/>
+      <ellipse cx="291" cy="382" rx="28" ry="38" fill="#5A7830" opacity="0.82"/>
+      <rect x="358" y="398" width="10" height="100" rx="3" fill="#8B5A28"/>
+      <ellipse cx="363" cy="390" rx="24" ry="32" fill="#4A6820" opacity="0.78"/>
+      <!-- Stone path (perspective, going into center) -->
+      <path d="M0 505 Q90 455 220 428 Q350 408 480 400 L490 414 Q358 422 226 444 Q96 470 0 525Z" fill="url(#hsg-path)" opacity="0.72"/>
+      <ellipse cx="65" cy="495" rx="20" ry="8" fill="#C09060" opacity="0.38"/>
+      <ellipse cx="120" cy="478" rx="17" ry="7" fill="#B88050" opacity="0.33"/>
+      <ellipse cx="175" cy="464" rx="15" ry="6" fill="#C09060" opacity="0.35"/>
+      <ellipse cx="235" cy="450" rx="13" ry="5" fill="#B88050" opacity="0.32"/>
+      <ellipse cx="295" cy="438" rx="12" ry="5" fill="#C09060" opacity="0.28"/>
+      <ellipse cx="360" cy="426" rx="11" ry="4" fill="#B88050" opacity="0.26"/>
+      <!-- Saffron flag pole -->
+      <line x1="238" y1="285" x2="238" y2="435" stroke="#8B5A20" stroke-width="4.5" stroke-linecap="round"/>
+      <path d="M238 290 L314 315 L238 338Z" fill="#FF6610" opacity="0.92"/>
+      <line x1="250" y1="302" x2="300" y2="317" stroke="#FF8820" stroke-width="1.2" opacity="0.55"/>
+      <line x1="250" y1="318" x2="294" y2="330" stroke="#FF8820" stroke-width="1.2" opacity="0.5"/>
+      <!-- Trekking figures (5 people) -->
+      <!-- Lead: flag carrier -->
+      <circle cx="238" cy="372" r="11" fill="#6B3A10"/>
+      <path d="M227 382 Q238 418 249 382 L245 435 L231 435Z" fill="#C05810" opacity="0.92"/>
+      <line x1="238" y1="398" x2="238" y2="435" stroke="#8B3A10" stroke-width="3.5"/>
+      <path d="M231 435 L224 462 M245 435 L248 462" stroke="#6B3A10" stroke-width="3" stroke-linecap="round"/>
+      <!-- Person 2 -->
+      <circle cx="196" cy="388" r="10" fill="#6B3A10"/>
+      <path d="M187 398 Q196 432 205 398 L202 444 L190 444Z" fill="#A04810" opacity="0.88"/>
+      <path d="M190 444 L184 470 M202 444 L206 470" stroke="#6B3A10" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Person 3 -->
+      <circle cx="160" cy="400" r="9" fill="#6B3A10"/>
+      <path d="M152 410 Q160 442 168 410 L165 452 L154 452Z" fill="#B84818" opacity="0.82"/>
+      <path d="M154 452 L149 477 M165 452 L168 477" stroke="#6B3A10" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Person 4 -->
+      <circle cx="122" cy="410" r="9" fill="#5A3010"/>
+      <path d="M114 420 Q122 450 130 420 L127 460 L116 460Z" fill="#8B3818" opacity="0.76"/>
+      <path d="M116 460 L112 484 M127 460 L130 484" stroke="#5A3010" stroke-width="2.2" stroke-linecap="round"/>
+      <!-- Person 5 -->
+      <circle cx="90" cy="418" r="8" fill="#5A3010"/>
+      <path d="M83 427 Q90 455 97 427 L94 462 L85 462Z" fill="#7A3418" opacity="0.7"/>
+      <path d="M85 462 L81 484 M94 462 L97 484" stroke="#5A3010" stroke-width="2" stroke-linecap="round"/>
+      <!-- RIGHT: Temple glow -->
+      <ellipse cx="930" cy="300" rx="240" ry="200" fill="#FFE898" opacity="0.38" filter="url(#hsg-blur-md)"/>
+      <!-- Temple main hall -->
+      <rect x="818" y="342" width="224" height="138" fill="url(#hsg-temple)" rx="3"/>
+      <rect x="818" y="342" width="224" height="7" fill="#D4B060" opacity="0.55"/>
+      <rect x="818" y="462" width="224" height="7" fill="#D4B060" opacity="0.5"/>
+      <rect x="836" y="356" width="11" height="88" fill="#E8C870" opacity="0.45"/>
+      <rect x="868" y="356" width="9" height="88" fill="#E8C870" opacity="0.38"/>
+      <rect x="983" y="356" width="9" height="88" fill="#E8C870" opacity="0.38"/>
+      <rect x="1013" y="356" width="11" height="88" fill="#E8C870" opacity="0.45"/>
+      <!-- Gopuram levels (tapering upward) -->
+      <path d="M838 342 L1022 342 L1010 302 L850 302Z" fill="url(#hsg-temple)"/>
+      <line x1="850" y1="310" x2="1010" y2="310" stroke="#D4A840" stroke-width="1.4" opacity="0.45"/>
+      <path d="M856 302 L1004 302 L994 264 L866 264Z" fill="url(#hsg-temple)"/>
+      <line x1="866" y1="272" x2="994" y2="272" stroke="#D4A840" stroke-width="1.3" opacity="0.45"/>
+      <path d="M872 264 L988 264 L980 228 L880 228Z" fill="url(#hsg-temple)"/>
+      <line x1="880" y1="236" x2="980" y2="236" stroke="#D4A840" stroke-width="1.2" opacity="0.42"/>
+      <path d="M884 228 L976 228 L970 196 L890 196Z" fill="url(#hsg-temple)"/>
+      <path d="M894 196 L966 196 L960 168 L900 168Z" fill="url(#hsg-temple)"/>
+      <path d="M904 168 L956 168 L952 144 L908 144Z" fill="#FFF0C0"/>
+      <path d="M914 144 L946 144 L943 122 L917 122Z" fill="#FFF8D0"/>
+      <ellipse cx="930" cy="116" rx="20" ry="9" fill="#E8C840"/>
+      <ellipse cx="930" cy="108" rx="10" ry="6" fill="#D4A830"/>
+      <ellipse cx="930" cy="101" rx="7" ry="7" fill="#E8C040"/>
+      <ellipse cx="930" cy="95" rx="5" ry="5" fill="#FFD840"/>
+      <!-- Finial flag -->
+      <line x1="930" y1="78" x2="930" y2="95" stroke="#C09020" stroke-width="2.5"/>
+      <path d="M930 78 L950 86 L930 94Z" fill="#FF6610" opacity="0.88"/>
+      <!-- Decorative dots on tower -->
+      <circle cx="878" cy="322" r="3" fill="#D4A840" opacity="0.5"/>
+      <circle cx="900" cy="322" r="3" fill="#D4A840" opacity="0.5"/>
+      <circle cx="924" cy="322" r="3" fill="#D4A840" opacity="0.5"/>
+      <circle cx="948" cy="322" r="3" fill="#D4A840" opacity="0.5"/>
+      <circle cx="972" cy="322" r="3" fill="#D4A840" opacity="0.5"/>
+      <circle cx="994" cy="322" r="3" fill="#D4A840" opacity="0.5"/>
+      <circle cx="886" cy="284" r="2.5" fill="#D4A840" opacity="0.45"/>
+      <circle cx="910" cy="284" r="2.5" fill="#D4A840" opacity="0.45"/>
+      <circle cx="934" cy="284" r="2.5" fill="#D4A840" opacity="0.45"/>
+      <circle cx="958" cy="284" r="2.5" fill="#D4A840" opacity="0.45"/>
+      <circle cx="982" cy="284" r="2.5" fill="#D4A840" opacity="0.45"/>
+      <!-- Arch / gateway -->
+      <path d="M878 448 L878 372 Q930 332 982 372 L982 448Z" fill="#EED880" opacity="0.65"/>
+      <path d="M892 448 L892 378 Q930 348 968 378 L968 448Z" fill="#FFE898" opacity="0.55"/>
+      <path d="M878 448 L878 372 Q930 327 982 372 L982 448" fill="none" stroke="#D4A840" stroke-width="3.5"/>
+      <!-- Flower garlands on arch -->
+      <path d="M882 362 Q930 340 978 362" fill="none" stroke="#FF8020" stroke-width="3.5" stroke-dasharray="5,3" opacity="0.7"/>
+      <path d="M886 374 Q930 354 974 374" fill="none" stroke="#FF6010" stroke-width="2.5" stroke-dasharray="4,4" opacity="0.6"/>
+      <!-- Temple stairs (7 steps) -->
+      <path d="M866 450 L994 450 L1002 462 L858 462Z" fill="url(#hsg-stairs)"/>
+      <path d="M850 462 L1010 462 L1018 474 L842 474Z" fill="url(#hsg-stairs)"/>
+      <path d="M834 474 L1026 474 L1034 486 L826 486Z" fill="#E8C878"/>
+      <path d="M816 486 L1044 486 L1052 498 L808 498Z" fill="#E0C060"/>
+      <path d="M798 498 L1062 498 L1072 512 L788 512Z" fill="#D8B848"/>
+      <path d="M778 512 L1082 512 L1092 526 L768 526Z" fill="#D0B040"/>
+      <path d="M758 526 L1102 526 L1112 542 L748 542Z" fill="#C8A838"/>
+      <!-- Step edge lines -->
+      <line x1="858" y1="462" x2="1002" y2="462" stroke="#C0A040" stroke-width="1" opacity="0.4"/>
+      <line x1="842" y1="474" x2="1018" y2="474" stroke="#C0A040" stroke-width="1" opacity="0.4"/>
+      <line x1="826" y1="486" x2="1034" y2="486" stroke="#C0A040" stroke-width="1" opacity="0.38"/>
+      <!-- Lamp pillars beside stairs -->
+      <rect x="756" y="478" width="11" height="62" fill="#D4A840" rx="2"/>
+      <circle cx="762" cy="476" r="9" fill="#F0C840"/>
+      <ellipse cx="762" cy="469" rx="4.5" ry="8" fill="#FF8000" opacity="0.82"/>
+      <ellipse cx="762" cy="464" rx="3" ry="5.5" fill="#FFE040" opacity="0.9"/>
+      <rect x="1093" y="478" width="11" height="62" fill="#D4A840" rx="2"/>
+      <circle cx="1099" cy="476" r="9" fill="#F0C840"/>
+      <ellipse cx="1099" cy="469" rx="4.5" ry="8" fill="#FF8000" opacity="0.82"/>
+      <ellipse cx="1099" cy="464" rx="3" ry="5.5" fill="#FFE040" opacity="0.9"/>
+      <!-- Devotees on stairs (4 figures ascending) -->
+      <!-- Fig 1: entering arch -->
+      <circle cx="922" cy="418" r="8.5" fill="#5A2808"/>
+      <path d="M914 427 Q922 458 930 427 L927 462 L915 462Z" fill="#C04810" opacity="0.88"/>
+      <path d="M914 427 Q922 420 930 427" fill="none" stroke="#FF8820" stroke-width="2" opacity="0.55"/>
+      <!-- Fig 2: upper stairs -->
+      <circle cx="953" cy="436" r="9.5" fill="#6B3010"/>
+      <path d="M944 446 Q953 480 962 446 L959 484 L947 484Z" fill="#D05820" opacity="0.9"/>
+      <path d="M944 446 Q953 438 962 446" fill="none" stroke="#FF8820" stroke-width="2" opacity="0.5"/>
+      <!-- Fig 3: mid stairs -->
+      <circle cx="884" cy="444" r="9.5" fill="#6B3010"/>
+      <path d="M875 454 Q884 488 893 454 L890 490 L877 490Z" fill="#B84010" opacity="0.84"/>
+      <!-- Fig 4: lower stairs -->
+      <circle cx="918" cy="466" r="10.5" fill="#5A2808"/>
+      <path d="M908 477 Q918 512 928 477 L925 515 L911 515Z" fill="#C04810" opacity="0.85"/>
+      <path d="M908 477 Q918 468 928 477" fill="none" stroke="#FFB040" stroke-width="2" opacity="0.5"/>
+      <!-- Diyas at stair base -->
+      <ellipse cx="798" cy="538" rx="13" ry="5.5" fill="#D4A030"/>
+      <ellipse cx="798" cy="532" rx="4.5" ry="7.5" fill="#FF8000" opacity="0.8"/>
+      <ellipse cx="798" cy="527" rx="3" ry="5.5" fill="#FFE040" opacity="0.9"/>
+      <ellipse cx="834" cy="534" rx="12" ry="5" fill="#D4A030"/>
+      <ellipse cx="834" cy="529" rx="4" ry="6.5" fill="#FF8000" opacity="0.78"/>
+      <ellipse cx="834" cy="524" rx="2.8" ry="5" fill="#FFE040" opacity="0.88"/>
+      <ellipse cx="1026" cy="534" rx="12" ry="5" fill="#D4A030"/>
+      <ellipse cx="1026" cy="529" rx="4" ry="6.5" fill="#FF8000" opacity="0.78"/>
+      <ellipse cx="1026" cy="524" rx="2.8" ry="5" fill="#FFE040" opacity="0.88"/>
+      <ellipse cx="1062" cy="538" rx="13" ry="5.5" fill="#D4A030"/>
+      <ellipse cx="1062" cy="532" rx="4.5" ry="7.5" fill="#FF8000" opacity="0.8"/>
+      <ellipse cx="1062" cy="527" rx="3" ry="5.5" fill="#FFE040" opacity="0.9"/>
+      <!-- Flower petals scattered -->
+      <ellipse cx="778" cy="546" rx="6" ry="2.8" fill="#FF8040" opacity="0.58" transform="rotate(28 778 546)"/>
+      <ellipse cx="812" cy="550" rx="5" ry="2.5" fill="#FFB040" opacity="0.5" transform="rotate(-18 812 550)"/>
+      <ellipse cx="852" cy="548" rx="6" ry="2.8" fill="#FF6820" opacity="0.55" transform="rotate(14 852 548)"/>
+      <ellipse cx="1002" cy="548" rx="5" ry="2.5" fill="#FF8040" opacity="0.5" transform="rotate(-22 1002 548)"/>
+      <ellipse cx="1044" cy="546" rx="6" ry="2.8" fill="#FFB040" opacity="0.55" transform="rotate(10 1044 546)"/>
+      <ellipse cx="1082" cy="550" rx="5" ry="2.5" fill="#FF6820" opacity="0.48" transform="rotate(-14 1082 550)"/>
+      <!-- Foreground ground -->
+      <path d="M0 532 Q200 518 420 526 Q620 516 820 524 Q1020 514 1200 522 L1200 560 L0 560Z" fill="#C89040" opacity="0.48"/>
+      <path d="M0 514 Q110 498 240 506 Q370 494 440 502 L440 560 L0 560Z" fill="#B07830" opacity="0.38"/>
+      <!-- Foreground trees -->
+      <rect x="-6" y="388" width="22" height="175" rx="6" fill="#6B4818"/>
+      <ellipse cx="8" cy="374" rx="62" ry="75" fill="#4A6820" opacity="0.84"/>
+      <ellipse cx="8" cy="345" rx="46" ry="55" fill="#5A7828" opacity="0.74"/>
+      <rect x="1186" y="402" width="18" height="158" rx="5" fill="#6B4818"/>
+      <ellipse cx="1193" cy="390" rx="52" ry="65" fill="#4A6820" opacity="0.78"/>
+      <!-- Centre atmospheric haze -->
+      <ellipse cx="610" cy="330" rx="280" ry="100" fill="#FFE898" opacity="0.18"/>
+    </svg>
     <div class="yc-sun" aria-hidden="true"></div>
     <div class="yc-petals" aria-hidden="true">
       <span class="yc-petal" style="left:5%;animation-duration:9s;animation-delay:0s"></span>
@@ -443,10 +682,10 @@ a{text-decoration:none;color:inherit;}
     <div class="bc-tag">Kirtan · Pastimes · Bliss</div>
 
     <div class="bc-meta">
-      <span class="bc-chip"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>Sat, 11 July · 9:00 AM</span>
+      <span class="bc-chip"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>Sat, 11 July · 7:00 AM</span>
       <span class="bc-chip"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Visakhapatnam</span>
       <span class="bc-chip"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h2a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-3 5v6c0 1.1.9 2 2 2h1Z"/></svg>Lunch feast</span>
-      <span class="bc-chip"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Starts 9:00 AM</span>
+      <span class="bc-chip"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Starts 7:00 AM</span>
     </div>
 
     <div class="bc-count" id="countdown" style="display:none">
@@ -460,7 +699,6 @@ a{text-decoration:none;color:inherit;}
       <button class="bc-herocta" data-book>Book tickets
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       </button>
-      <div class="bc-from">From<b>₹299</b></div>
     </div>
 
     <div class="bc-poster">
@@ -496,7 +734,8 @@ a{text-decoration:none;color:inherit;}
   <section class="bc-sec">
     <h2 class="bc-sectitle">Flow of the day</h2>
     <div class="bc-flow">
-      <div class="bc-flow-item"><div class="bc-flow-time">9:00 AM</div><div class="bc-flow-rail"><div class="bc-flow-dot"></div></div><div><h4>Departure · yatra begins</h4><p>Assemble and set off towards Rama Tirtham with the chanting of the Holy Name.</p></div></div>
+      <div class="bc-flow-item"><div class="bc-flow-time">7:00 AM</div><div class="bc-flow-rail"><div class="bc-flow-dot"></div></div><div><h4>Departure · yatra begins</h4><p>Assemble and set off with the chanting of the Holy Name.</p></div></div>
+      <div class="bc-flow-item"><div class="bc-flow-time">Morning</div><div class="bc-flow-rail"><div class="bc-flow-dot"></div></div><div><h4>Hare Krishna Vaikuntham Temple</h4><p>Visit ISKCON Gambheeram for morning prayers and blessings before the circuit.</p></div></div>
       <div class="bc-flow-item"><div class="bc-flow-time">Morning</div><div class="bc-flow-rail"><div class="bc-flow-dot"></div></div><div><h4>Rama Tirtham darshan</h4><p>Darshan, kirtan and Ramayana pastimes at the first sacred stop — right up to lunch.</p></div></div>
       <div class="bc-flow-item"><div class="bc-flow-time">Midday</div><div class="bc-flow-rail"><div class="bc-flow-dot"></div></div><div><h4>Grand lunch feast</h4><p>Honour a delicious, sanctified prasadam feast together as one family.</p></div></div>
       <div class="bc-flow-item"><div class="bc-flow-time">Afternoon</div><div class="bc-flow-rail"><div class="bc-flow-dot"></div></div><div><h4>Ramanarayanam temple</h4><p>Travel onward for darshan and pastimes at the grand Ramanarayanam temple.</p></div></div>
@@ -508,12 +747,10 @@ a{text-decoration:none;color:inherit;}
   <section class="bc-sec">
     <h2 class="bc-sectitle">Things to know</h2>
     <div class="bc-know">
-      <div class="bc-know-card"><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg></div><div><h4>Date &amp; time</h4><p>Sat, 11 July 2026 · starts 9:00 AM</p></div></div>
+      <div class="bc-know-card"><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg></div><div><h4>Date &amp; time</h4><p>Sat, 11 July 2026 · starts 7:00 AM</p></div></div>
       <div class="bc-know-card"><div class="ic">🛕</div><div><h4>Two temples</h4><p>Rama Tirtham &amp; Ramanarayanam</p></div></div>
       <div class="bc-know-card"><div class="ic">🍛</div><div><h4>Lunch feast</h4><p>Included with every pass</p></div></div>
       <div class="bc-know-card"><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div><h4>Live kirtan</h4><p>Pastimes, dance &amp; chanting all day</p></div></div>
-      <div class="bc-know-card"><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/></svg></div><div><h4>QR pass</h4><p>Sent on WhatsApp before the yatra</p></div></div>
-      <div class="bc-know-card"><div class="ic">🎓</div><div><h4>Students</h4><p>Valid college/school ID required</p></div></div>
     </div>
   </section>
 
@@ -524,6 +761,7 @@ a{text-decoration:none;color:inherit;}
       <div class="bc-stub">
         <div class="bc-stub-glow"></div>
         <span class="bc-stub-tag">Most popular</span>
+        <span class="bc-stub-tag" style="background:rgba(255,177,46,.18);color:var(--gold2);margin-left:6px;">🕐 Early Bird · Till Tonight</span>
         <div class="bc-stub-name">General</div>
         <div class="bc-stub-desc">For all devotees &amp; guests joining the yatra.</div>
         <div class="bc-tear"></div>
@@ -540,14 +778,14 @@ a{text-decoration:none;color:inherit;}
       <div class="bc-stub">
         <div class="bc-stub-glow"></div>
         <span class="bc-stub-tag">Students only</span>
+        <span class="bc-stub-tag" style="background:rgba(255,177,46,.18);color:var(--gold2);margin-left:6px;">🕐 Early Bird · Till Tonight</span>
         <div class="bc-stub-name">Student</div>
         <div class="bc-stub-desc">With a valid college / school ID.</div>
         <div class="bc-tear"></div>
         <div class="bc-price"><span class="cur">₹</span><span class="amt">299</span><span class="was">₹500</span><span class="per">/ student</span></div>
         <ul class="bc-stub-feat">
           <li><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Everything in General</li>
-          <li><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Instant verify if you joined Bhajan Clubbing</li>
-          <li><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Or upload your student ID</li>
+          <li><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Upload your student ID to verify</li>
         </ul>
         <button class="bc-stubcta" data-book="student">Get Student Pass</button>
         <div class="bc-stub-note">🎓 Carry your valid ID on the day</div>
@@ -589,7 +827,7 @@ a{text-decoration:none;color:inherit;}
   <div class="yc-mantra">जय श्री राम</div>
 
   <footer class="bc-foot">
-    <div><span class="org">Hare Krishna Vaikuntham Cultural Centre</span> · HKM &amp; ISKCON Visakhapatnam</div>
+    <div><span class="org">Hare Krishna Vaikuntham Cultural Centre</span></div>
     <div>📧 mukunda@hkmvizag.org · 📍 Visakhapatnam</div>
   </footer>
 
@@ -598,7 +836,7 @@ a{text-decoration:none;color:inherit;}
 <!-- STICKY BAR -->
 <div class="bc-bar">
   <div class="bc-bar-in">
-    <div class="lbl">Ramayana Circuit · from<b>₹299</b></div>
+    <div class="lbl">Ramayana Circuit · Yatra 11 July</div>
     <button data-book>Book now
       <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
     </button>
@@ -626,7 +864,7 @@ a{text-decoration:none;color:inherit;}
             <div class="yc-stepper"><button type="button" data-q="general" data-d="-1">−</button><b id="q-general">0</b><button type="button" data-q="general" data-d="1">+</button></div>
           </div>
           <div class="yc-step">
-            <div><div class="nm">Student <span style="color:var(--muted2);font-weight:500;font-size:12px">· valid ID</span></div><div class="pr">₹299 <s>₹500</s></div></div>
+            <div><div class="nm">Student <span style="color:var(--muted2);font-weight:500;font-size:12px">· valid ID</span> <span style="background:rgba(255,177,46,.18);color:var(--gold2);font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;letter-spacing:.04em;">🕐 Early Bird · Tonight only</span></div><div class="pr">₹299 <s>₹500</s></div></div>
             <div class="yc-stepper"><button type="button" data-q="student" data-d="-1">−</button><b id="q-student">0</b><button type="button" data-q="student" data-d="1">+</button></div>
           </div>
         </div>
@@ -648,9 +886,7 @@ a{text-decoration:none;color:inherit;}
         <!-- STUDENT PROOF — shown only for Student tickets -->
         <div class="yc-verify" id="studentProof" style="display:none">
           <div class="vh">🎓 Student proof</div>
-          <div class="vs" id="proofMsg">Verify your mobile above. If you registered for <b>Bhajan Clubbing</b>, your earlier ID proof is accepted automatically — no need to upload again. Otherwise, upload your student ID.</div>
-          <div class="yc-verified" id="verified">✓ Student verified — your earlier Bhajan Clubbing ID proof is accepted. No re-upload needed.</div>
-          <div id="uploadWrap" style="display:none">
+          <div id="uploadWrap">
             <label class="bc-upload" for="idCard"><span class="uic">📎</span><b id="idLabel">Upload college / school ID</b><span>Image or PDF · for students new to us</span><input type="file" id="idCard" accept="image/*,.pdf" hidden></label>
           </div>
         </div>
@@ -686,7 +922,7 @@ a{text-decoration:none;color:inherit;}
   (function(){const t=document.getElementById('marq');t.innerHTML=t.innerHTML.repeat(6);})();
 
   /* ===== EVENT DATE — live countdown ===== */
-  const EVENT_DATE = new Date('2026-07-11T09:00:00+05:30'); // Sat, 11 July 2026, 9:00 AM IST
+  const EVENT_DATE = null; // countdown hidden
   if(EVENT_DATE){
     const cd=document.getElementById('countdown'); if(cd) cd.style.display='flex';
     const pad=n=>String(n).padStart(2,'0');
@@ -704,7 +940,7 @@ a{text-decoration:none;color:inherit;}
   const TICKETS={general:{name:'General',price:799,was:1000},student:{name:'Student',price:299,was:500}};
   const qty={general:0,student:0};
   const inr=n=>'₹'+n.toLocaleString('en-IN');
-  let phoneVerified=false, studentMatched=false, idUploaded=false;
+  let phoneVerified=false, idUploaded=false;
 
   const ov=document.getElementById('ov');
   const $=id=>document.getElementById(id);
@@ -772,15 +1008,6 @@ a{text-decoration:none;color:inherit;}
   })();
 
   /* Is this mobile an existing Bhajan Clubbing student? (their old ID proof counts) */
-  async function checkBhajanStudent(phone){
-    try{
-      const r = await api('/api/student-lookup', { mobile: phone });
-      if(r && r.configured !== false && typeof r.found === 'boolean') return r.found;
-    }catch(e){ /* fall back to demo below */ }
-    // DEMO fallback (until BHAJAN_API_URL is set): mobiles ending in an even digit = existing student.
-    return /[02468]$/.test(phone);
-  }
-
   function render(){
     $('q-general').textContent=qty.general;
     $('q-student').textContent=qty.student;
@@ -791,26 +1018,15 @@ a{text-decoration:none;color:inherit;}
     updateProof(); updateConfirm();
   }
 
-  /* student-proof block: only for student tickets; choose old-proof vs upload */
+  /* student-proof block: show upload whenever student tickets selected */
   function updateProof(){
     const sp=$('studentProof');
-    if(qty.student>0){
-      sp.style.display='block';
-      if(phoneVerified && studentMatched){
-        $('verified').classList.add('show'); $('uploadWrap').style.display='none'; $('proofMsg').style.display='none';
-      } else if(phoneVerified && !studentMatched){
-        $('verified').classList.remove('show'); $('uploadWrap').style.display='block'; $('proofMsg').style.display='block';
-        $('proofMsg').innerHTML='No earlier <b>Bhajan Clubbing</b> proof found for this mobile — please upload your student ID.';
-      } else {
-        $('verified').classList.remove('show'); $('uploadWrap').style.display='none'; $('proofMsg').style.display='block';
-        $('proofMsg').innerHTML='Verify your mobile above. If you registered for <b>Bhajan Clubbing</b>, your earlier ID proof is accepted automatically — otherwise upload your student ID.';
-      }
-    } else { sp.style.display='none'; }
+    sp.style.display = qty.student>0 ? 'block' : 'none';
   }
 
   function updateConfirm(){
     const nameOk=$('fName').value.trim().length>0;
-    const studentOk = qty.student===0 || studentMatched || idUploaded;
+    const studentOk = qty.student===0 || idUploaded;
     const btn=$('confirm');
     btn.disabled = !(totalQ()>0 && nameOk && phoneVerified && studentOk);
     btn.textContent = totalQ()>0 ? ('Pay '+inr(totalA())) : 'Confirm booking';
@@ -841,7 +1057,7 @@ a{text-decoration:none;color:inherit;}
     try{
       const ok=await OTP.verify(m,c);
       if(!ok){ setHint('Incorrect code. Please try again.',true); $('verifyOtp').disabled=false; return; }
-      phoneVerified=true; studentMatched=await checkBhajanStudent(m);
+      phoneVerified=true;
       $('fPhone').disabled=true; $('otpStep').style.display='none'; $('sendOtp').style.display='none';
       setHint('✓ Mobile verified.');
       updateProof(); updateConfirm();
@@ -925,10 +1141,10 @@ a{text-decoration:none;color:inherit;}
     let ok=true;
     if(!name){showErr('eName',1);ok=false}else showErr('eName',0);
     if(!phoneVerified){ setHint('Please verify your mobile with OTP.',true); ok=false; }
-    if(qty.student>0 && !studentMatched && !idUploaded){ updateProof(); ok=false; }
+    if(qty.student>0 && !idUploaded){ updateProof(); ok=false; }
     if(!ok)return;
 
-    const studentStatus = qty.student>0 ? (studentMatched?'Verified via Bhajan Clubbing (existing proof)':'New ID uploaded — pending verification') : '—';
+    const studentStatus = qty.student>0 ? 'ID uploaded — pending verification' : '—';
     const ref='YC-'+Math.random().toString(36).slice(2,8).toUpperCase();
     const booking={ref,name,phone,email,phoneVerified:true,tickets:{...qty},total:totalA(),studentStatus};
 
@@ -944,7 +1160,7 @@ a{text-decoration:none;color:inherit;}
     }
   });
   $('closeSuccess').addEventListener('click',()=>{
-    qty.general=0;qty.student=0;phoneVerified=false;studentMatched=false;idUploaded=false;
+    qty.general=0;qty.student=0;phoneVerified=false;idUploaded=false;
     $('fName').value='';$('fPhone').value='';$('fPhone').disabled=false;$('fEmail').value='';
     $('otpStep').style.display='none';$('sendOtp').style.display='';$('otpCode').value='';
     setHint("We'll text a one-time code to verify your number.");
