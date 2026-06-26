@@ -19,13 +19,18 @@ npx serve .
 - District-style booking modal: ticket steppers → live order summary → details → **mobile OTP** → confirmation pass.
 - Distinct Student flow: on OTP verify, if the mobile matches a **Bhajan Clubbing** registration the earlier ID proof is accepted automatically; otherwise the student uploads a new ID.
 
-## To take it live (TODO)
+## Payments, OTP & WhatsApp
 
-These are marked `TODO(backend)` in `index.html`:
+The booking flow does: select tickets → details → **mobile OTP** → **pay with Razorpay** → confirmation → **WhatsApp message**. The secure parts run as Vercel serverless functions in [`/api`](./api) (see [api/README.md](./api/README.md)). Everything works in **demo mode** until you add keys.
 
-1. **Firebase Phone Auth (OTP):** create a Firebase project, enable Phone sign-in, add your domain to Authorized domains, and paste your web config into `FIREBASE_CONFIG` in the script. Until then it runs in demo mode (any 6-digit code).
-2. **`checkBhajanStudent(phone)`:** point it at the Bhajan custom API (`/students?mobile=…`) to look up existing student proofs.
-3. **Registration submit:** POST the booking `data` (and uploaded ID, if any) to the same backend the Bhajan site uses.
+To go live:
+
+1. **Razorpay** — sign up, get `key_id` + `key_secret`. Put `key_id` in `index.html` (`RAZORPAY_KEY_ID`) and add `RAZORPAY_KEY_ID` + `RAZORPAY_KEY_SECRET` as Vercel env vars.
+2. **Firebase Phone Auth (OTP)** — create a project, enable Phone sign-in, add your domain to Authorized domains, paste the web config into `FIREBASE_CONFIG` in `index.html`.
+3. **WhatsApp (Flaxxa Wapi)** — add `FLAXXA_API_URL`, `FLAXXA_TOKEN` (+ `FLAXXA_INSTANCE`) env vars; adjust the payload in `api/whatsapp.js` to your account's API.
+4. **Bhajan backend** — set `BHAJAN_API_URL` (+ `BHAJAN_API_KEY`) so student lookup and registration save hit your existing system.
+
+All secrets live in **Vercel → Settings → Environment Variables**, never in the code.
 
 ## Notes
 

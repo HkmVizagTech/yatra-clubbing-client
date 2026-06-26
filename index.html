@@ -443,10 +443,17 @@ a{text-decoration:none;color:inherit;}
     <div class="bc-tag">Kirtan · Pastimes · Bliss</div>
 
     <div class="bc-meta">
-      <span class="bc-chip"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>Date · Announcing soon</span>
+      <span class="bc-chip"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>Sat, 11 July · 9:00 AM</span>
       <span class="bc-chip"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Visakhapatnam</span>
       <span class="bc-chip"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h2a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-3 5v6c0 1.1.9 2 2 2h1Z"/></svg>Lunch feast</span>
       <span class="bc-chip"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Starts 9:00 AM</span>
+    </div>
+
+    <div class="bc-count" id="countdown" style="display:none">
+      <div class="bc-cd"><b id="cd-d">00</b><span>Days</span></div>
+      <div class="bc-cd"><b id="cd-h">00</b><span>Hrs</span></div>
+      <div class="bc-cd"><b id="cd-m">00</b><span>Min</span></div>
+      <div class="bc-cd"><b id="cd-s">00</b><span>Sec</span></div>
     </div>
 
     <div class="bc-herorow">
@@ -501,7 +508,7 @@ a{text-decoration:none;color:inherit;}
   <section class="bc-sec">
     <h2 class="bc-sectitle">Things to know</h2>
     <div class="bc-know">
-      <div class="bc-know-card"><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg></div><div><h4>Date &amp; time</h4><p>Announcing soon · starts 9:00 AM</p></div></div>
+      <div class="bc-know-card"><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg></div><div><h4>Date &amp; time</h4><p>Sat, 11 July 2026 · starts 9:00 AM</p></div></div>
       <div class="bc-know-card"><div class="ic">🛕</div><div><h4>Two temples</h4><p>Rama Tirtham &amp; Ramanarayanam</p></div></div>
       <div class="bc-know-card"><div class="ic">🍛</div><div><h4>Lunch feast</h4><p>Included with every pass</p></div></div>
       <div class="bc-know-card"><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div><h4>Live kirtan</h4><p>Pastimes, dance &amp; chanting all day</p></div></div>
@@ -649,20 +656,20 @@ a{text-decoration:none;color:inherit;}
         </div>
 
         <button class="bc-btn" id="confirm" disabled>Confirm booking</button>
-        <div class="bc-secure">🔒 No payment online · our team confirms your seat &amp; shares payment</div>
+        <div class="bc-secure">🔒 Secure payment via Razorpay · UPI, cards &amp; netbanking</div>
       </div>
 
       <!-- STEP 2 SUCCESS -->
       <div id="step2" style="display:none">
         <div class="bc-success">
           <div class="bc-succ-ic">🪷</div>
-          <h3>Booking received</h3>
-          <p class="bc-succ-sub">Hare Krishna! Your seat request for the <b>Ramayana Circuit Yatra</b> is in.</p>
+          <h3>Booking confirmed</h3>
+          <p class="bc-succ-sub">Hare Krishna! Your seat for the <b>Ramayana Circuit Yatra</b> is booked.</p>
           <div class="bc-summary" id="successSummary" style="text-align:left"></div>
           <div class="bc-timeline">
-            <div class="bc-tl-item done"><div class="bc-tl-dot">✓</div><div><b>Booking received</b><span>We have your details.</span></div></div>
-            <div class="bc-tl-item now"><div class="bc-tl-dot">●</div><div><b>Confirmation &amp; payment</b><span>Our team will call to confirm your seat and share payment.</span></div></div>
-            <div class="bc-tl-item"><div class="bc-tl-dot">3</div><div><b>QR pass on WhatsApp</b><span>Your pass arrives before the yatra.</span></div></div>
+            <div class="bc-tl-item done"><div class="bc-tl-dot">✓</div><div><b>Payment received</b><span>Your seat is paid &amp; reserved.</span></div></div>
+            <div class="bc-tl-item now"><div class="bc-tl-dot">●</div><div><b>Confirmation on WhatsApp</b><span>We'll message your booking details right away.</span></div></div>
+            <div class="bc-tl-item"><div class="bc-tl-dot">3</div><div><b>QR pass before the yatra</b><span>Show it at the gate on Sat, 11 July.</span></div></div>
           </div>
           <div class="bc-ref" id="ref"></div>
           <div class="bc-succ-actions"><button class="bc-btn ghost" id="closeSuccess">Done</button></div>
@@ -673,13 +680,26 @@ a{text-decoration:none;color:inherit;}
   </div>
 </div>
 
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
   // duplicate marquee for seamless scroll
   (function(){const t=document.getElementById('marq');t.innerHTML=t.innerHTML.repeat(6);})();
 
-  /* ===== EVENT DATE (set to show live countdown) =====
-     const EVENT_DATE = new Date('2026-08-15T09:00:00+05:30'); */
-  const EVENT_DATE = null;
+  /* ===== EVENT DATE — live countdown ===== */
+  const EVENT_DATE = new Date('2026-07-11T09:00:00+05:30'); // Sat, 11 July 2026, 9:00 AM IST
+  if(EVENT_DATE){
+    const cd=document.getElementById('countdown'); if(cd) cd.style.display='flex';
+    const pad=n=>String(n).padStart(2,'0');
+    const set=(id,v)=>{const el=document.getElementById(id); if(el) el.textContent=pad(v);};
+    (function tick(){
+      let s=Math.max(0,Math.floor((EVENT_DATE-Date.now())/1000));
+      const d=Math.floor(s/86400); s-=d*86400;
+      const h=Math.floor(s/3600); s-=h*3600;
+      const m=Math.floor(s/60); s-=m*60;
+      set('cd-d',d); set('cd-h',h); set('cd-m',m); set('cd-s',s);
+      setTimeout(tick,1000);
+    })();
+  }
 
   const TICKETS={general:{name:'General',price:799,was:1000},student:{name:'Student',price:299,was:500}};
   const qty={general:0,student:0};
@@ -753,8 +773,11 @@ a{text-decoration:none;color:inherit;}
 
   /* Is this mobile an existing Bhajan Clubbing student? (their old ID proof counts) */
   async function checkBhajanStudent(phone){
-    // TODO(backend): GET https://<your-bhajan-api>/students?mobile=<phone> -> { found: true|false }
-    // DEMO: pretend mobiles ending in an even digit are already-registered students.
+    try{
+      const r = await api('/api/student-lookup', { mobile: phone });
+      if(r && r.configured !== false && typeof r.found === 'boolean') return r.found;
+    }catch(e){ /* fall back to demo below */ }
+    // DEMO fallback (until BHAJAN_API_URL is set): mobiles ending in an even digit = existing student.
     return /[02468]$/.test(phone);
   }
 
@@ -788,7 +811,9 @@ a{text-decoration:none;color:inherit;}
   function updateConfirm(){
     const nameOk=$('fName').value.trim().length>0;
     const studentOk = qty.student===0 || studentMatched || idUploaded;
-    $('confirm').disabled = !(totalQ()>0 && nameOk && phoneVerified && studentOk);
+    const btn=$('confirm');
+    btn.disabled = !(totalQ()>0 && nameOk && phoneVerified && studentOk);
+    btn.textContent = totalQ()>0 ? ('Pay '+inr(totalA())) : 'Confirm booking';
   }
 
   document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>{
@@ -829,7 +854,72 @@ a{text-decoration:none;color:inherit;}
 
   const showErr=(id,on)=>$(id).style.display=on?'block':'none';
 
-  $('confirm').addEventListener('click',()=>{
+  /* ===== PAYMENTS (Razorpay) + WHATSAPP (Flaxxa Wapi via backend) =====
+     checkout.js is loaded in <head>. The Razorpay SECRET key, order creation
+     and signature verification live in the Vercel /api functions (never here).
+     Set RAZORPAY_KEY_ID (public key) to enable live payments; while it's null,
+     DEMO mode skips the gateway so you can test the flow. */
+  const RAZORPAY_KEY_ID = null;   // 'rzp_live_xxx' or 'rzp_test_xxx'
+  const API_BASE = '';            // same-origin Vercel functions (e.g. '/api/...')
+
+  async function api(path, body){
+    const r = await fetch(API_BASE+path, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    if(!r.ok) throw new Error(path+' → '+r.status);
+    return r.json();
+  }
+  async function notifyWhatsApp(booking){
+    try{ await api('/api/whatsapp', booking); }   // backend forwards to Flaxxa Wapi
+    catch(e){ console.warn('WhatsApp notify skipped (configure /api/whatsapp + Flaxxa token):', e.message); }
+  }
+
+  // Opens Razorpay; resolves payment info, or demo info when not yet configured
+  function pay(booking){
+    return new Promise((resolve,reject)=>{
+      if(!RAZORPAY_KEY_ID || typeof Razorpay==='undefined'){
+        console.log('[DEMO PAYMENT] gateway skipped — set RAZORPAY_KEY_ID + /api to go live.');
+        return resolve({demo:true, paymentId:'demo_'+Date.now()});
+      }
+      (async()=>{
+        try{
+          const order = await api('/api/create-order', {amount:booking.total, receipt:booking.ref});
+          const rzp = new Razorpay({
+            key: order.keyId || RAZORPAY_KEY_ID,
+            amount: order.amount, currency: order.currency || 'INR', order_id: order.orderId,
+            name: 'Yatra Clubbing · Ramayana Circuit', description: 'Hare Krishna Vaikuntham',
+            prefill: { name: booking.name, contact: booking.phone, email: booking.email },
+            theme: { color: '#E07B00' },
+            handler: async (resp)=>{
+              try{
+                const v = await api('/api/verify-payment', resp);
+                if(!v.valid) return reject(new Error('Payment could not be verified.'));
+                resolve({ paymentId: resp.razorpay_payment_id, orderId: resp.razorpay_order_id });
+              }catch(e){ reject(e); }
+            },
+            modal: { ondismiss: ()=>reject(new Error('Payment cancelled.')) }
+          });
+          rzp.open();
+        }catch(e){ reject(e); }
+      })();
+    });
+  }
+
+  function finishBooking(booking, payment){
+    // save the registration (backend stores it / forwards to your Bhajan API), then WhatsApp
+    api('/api/register', { ...booking, payment }).catch(e=>console.warn('register save skipped:', e.message));
+    notifyWhatsApp(booking);
+    const ticketLines=Object.keys(qty).filter(k=>qty[k]>0).map(k=>`<div class="bc-srow"><span>${TICKETS[k].name} × ${qty[k]}</span><span class="amt">${inr(TICKETS[k].price*qty[k])}</span></div>`).join('');
+    $('successSummary').innerHTML=
+      `<div class="bc-srow"><span>Name</span><span>${booking.name}</span></div>`+
+      `<div class="bc-srow"><span>Mobile</span><span class="amt">${booking.phone} ✓</span></div>`+
+      ticketLines+
+      (qty.student>0?`<div class="bc-srow"><span>Student</span><span>${booking.studentStatus}</span></div>`:'')+
+      `<div class="bc-srow tot"><span>Paid</span><span class="amt">${inr(booking.total)}</span></div>`;
+    $('ref').textContent='Booking ref · '+booking.ref+(payment&&payment.paymentId?' · '+payment.paymentId:'');
+    $('step1').style.display='none'; $('step2').style.display='block'; $('st2').classList.add('on');
+    document.querySelector('.bc-modal').scrollTop=0;
+  }
+
+  $('confirm').addEventListener('click',async()=>{
     if(totalQ()===0)return;
     const name=$('fName').value.trim(), phone=$('fPhone').value.trim(), email=$('fEmail').value.trim();
     let ok=true;
@@ -840,20 +930,18 @@ a{text-decoration:none;color:inherit;}
 
     const studentStatus = qty.student>0 ? (studentMatched?'Verified via Bhajan Clubbing (existing proof)':'New ID uploaded — pending verification') : '—';
     const ref='YC-'+Math.random().toString(36).slice(2,8).toUpperCase();
-    const data={ref,name,phone,email,phoneVerified:true,tickets:{...qty},total:totalA(),studentStatus};
-    // TODO(backend): POST `data` (plus the uploaded ID file, if any) to your Bhajan registration API.
-    console.log('Booking submitted:',data);
+    const booking={ref,name,phone,email,phoneVerified:true,tickets:{...qty},total:totalA(),studentStatus};
 
-    const ticketLines=Object.keys(qty).filter(k=>qty[k]>0).map(k=>`<div class="bc-srow"><span>${TICKETS[k].name} × ${qty[k]}</span><span class="amt">${inr(TICKETS[k].price*qty[k])}</span></div>`).join('');
-    $('successSummary').innerHTML=
-      `<div class="bc-srow"><span>Name</span><span>${name}</span></div>`+
-      `<div class="bc-srow"><span>Mobile</span><span class="amt">${phone} ✓</span></div>`+
-      ticketLines+
-      (qty.student>0?`<div class="bc-srow"><span>Student</span><span>${studentStatus}</span></div>`:'')+
-      `<div class="bc-srow tot"><span>Total</span><span class="amt">${inr(totalA())}</span></div>`;
-    $('ref').textContent='Booking ref · '+ref;
-    $('step1').style.display='none'; $('step2').style.display='block'; $('st2').classList.add('on');
-    document.querySelector('.bc-modal').scrollTop=0;
+    const btn=$('confirm'), label=btn.textContent;
+    btn.disabled=true; btn.textContent='Opening payment…';
+    try{
+      const payment = await pay(booking);
+      finishBooking(booking, payment);
+    }catch(e){
+      setHint(e.message || 'Payment failed. Please try again.', true);
+    }finally{
+      btn.disabled=false; btn.textContent=label;
+    }
   });
   $('closeSuccess').addEventListener('click',()=>{
     qty.general=0;qty.student=0;phoneVerified=false;studentMatched=false;idUploaded=false;
