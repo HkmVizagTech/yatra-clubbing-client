@@ -342,13 +342,13 @@ a{text-decoration:none;color:inherit;}
 @keyframes yc-flicker{0%,100%{transform:scale(1) rotate(-1.5deg);opacity:.9;}50%{transform:scale(1.09) rotate(1.5deg);opacity:1;}}
 @keyframes yc-pulse{0%,100%{box-shadow:0 0 40px rgba(255,177,46,.6);}50%{box-shadow:0 0 74px rgba(255,177,46,.98);}}
 
-.bc-hero{position:relative; overflow:hidden; left:50%; width:100vw; transform:translateX(-50%); padding-left:22px; padding-right:22px;
-  background:url('hero-bg.jpg.png') center 30%/cover no-repeat;}
+.bc-hero{position:relative; overflow:hidden; left:50%; width:100vw; transform:translateX(-50%); padding-left:22px; padding-right:22px;}
+.bc-hero-img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 68%; z-index:0;}
 @media(min-width:768px){
-  .bc-hero{background-image:url('hero-bg-desktop.png'); background-position:center 42%;}
+  .bc-hero-img{object-position:center 48%;}
 }
 .bc-hero::before{content:''; position:absolute; inset:0; z-index:1;
-  background:linear-gradient(to bottom, rgba(10,5,0,0.18) 0%, rgba(10,5,0,0.12) 50%, rgba(255,235,190,0.65) 100%);}
+  background:linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.6) 100%);}
 .bc-hero .bc-eyebrow,.bc-hero .bc-title,.bc-hero .bc-band,.bc-hero .bc-tag,.bc-hero .bc-meta,.bc-hero .bc-count,.bc-hero .bc-herorow,.bc-hero .bc-poster{position:relative; z-index:2;}
 .bc-hero .bc-eyebrow{color:#FFE082; text-shadow:0 1px 6px rgba(0,0,0,.6);}
 .bc-hero .bc-title{color:#fff!important; text-shadow:0 2px 24px rgba(0,0,0,.55);}
@@ -426,6 +426,10 @@ a{text-decoration:none;color:inherit;}
 <div class="bc-wrap">
 
   <header class="bc-hero">
+    <picture>
+      <source srcset="hero-desktop.jpg" media="(min-width:768px)">
+      <img src="hero-mobile.jpg" alt="" class="bc-hero-img" fetchpriority="high">
+    </picture>
     <svg class="yc-hero-scene" aria-hidden="true" viewBox="0 0 1200 560" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <radialGradient id="hsg-glow" cx="50%" cy="28%" r="60%">
