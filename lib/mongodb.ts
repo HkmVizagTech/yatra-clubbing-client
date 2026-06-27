@@ -1,33 +1,30 @@
 import { MongoClient, Db } from 'mongodb';
 
-const MONGODB_URI = process.env.MONGODB_URI || '';
 const DB_NAME = process.env.MONGODB_DB || 'yatra';
 
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-function makeClientPromise(): Promise<MongoClient> {
-  const client = new MongoClient(MONGODB_URI);
-  return client.connect();
-}
+function getClientPromise(): Promise<MongoClient> {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) throw new Error('MONGODB_URI is not set');
 
-let clientPromise: Promise<MongoClient>;
-
-if (process.env.NODE_ENV === 'development') {
-  if (!global._mongoClientPromise) {
-    global._mongoClientPromise = makeClientPromise();
+  if (process.env.NODE_ENV === 'development') {
+    if (!global._mongoClientPromise) {
+      global._mongoClientPromise = new MongoClient(uri).connect();
+    }
+    return global._mongoClientPromise;
   }
-  clientPromise = global._mongoClientPromise;
-} else {
-  clientPromise = makeClientPromise();
+
+  return new MongoClient(uri).connect();
 }
 
 export async function getDb(): Promise<Db> {
-  const client = await clientPromise;
+  const client = await getClientPromise();
   return client.db(DB_NAME);
 }
 
 export function isMongoConfigured(): boolean {
-  return Boolean(MONGODB_URI);
+  return Boolean(process.env.MONGODB_URI);
 }
