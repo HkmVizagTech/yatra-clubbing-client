@@ -276,9 +276,6 @@ a{text-decoration:none;color:inherit;}
   border:1px solid rgba(70,211,154,.4); color:#7fe0a3; border-radius:11px; padding:12px 14px;
   font-size:13.5px; font-weight:600; margin-bottom:16px;}
 .yc-verified.show{display:flex;}
-.yc-otprow{display:flex; gap:9px; margin-bottom:8px;}
-.yc-otprow .bc-input{flex:1;}
-.yc-otprow .bc-btn{width:auto; padding:13px 18px; font-size:14px;}
 
 @media(max-width:900px){.bc-know{grid-template-columns:1fr 1fr;}}
 @media(max-width:600px){
@@ -849,9 +846,6 @@ a{text-decoration:none;color:inherit;}
   </div>
 </div>
 
-<!-- invisible reCAPTCHA host for Firebase Phone Auth -->
-<div id="recaptcha-container"></div>
-
 <!-- MODAL -->
 <div class="bc-overlay" id="ov" style="display:none">
   <div class="bc-modal">
@@ -880,10 +874,8 @@ a{text-decoration:none;color:inherit;}
         <div class="bc-field"><label>Full name</label><input class="bc-input" id="fName" placeholder="Your name"><div class="bc-hint err" id="eName" style="display:none">Please enter your name.</div></div>
 
         <div class="bc-field">
-          <label>Mobile number · OTP verified</label>
-          <div class="yc-otprow"><input class="bc-input" id="fPhone" maxlength="10" placeholder="10-digit mobile"><button class="bc-btn" id="sendOtp" type="button">Send OTP</button></div>
-          <div class="yc-otprow" id="otpStep" style="display:none"><input class="bc-input" id="otpCode" maxlength="6" placeholder="Enter 6-digit OTP"><button class="bc-btn" id="verifyOtp" type="button">Verify</button></div>
-          <div class="bc-hint" id="otpHint">We'll text a one-time code to verify your number.</div>
+          <label>Mobile number</label>
+          <input class="bc-input" id="fPhone" maxlength="10" placeholder="10-digit mobile">
           <div class="bc-hint err" id="ePhone" style="display:none">Enter a valid 10-digit mobile.</div>
         </div>
 
@@ -898,6 +890,7 @@ a{text-decoration:none;color:inherit;}
         </div>
 
         <button class="bc-btn" id="confirm" disabled>Confirm booking</button>
+        <div class="bc-hint" id="formHint" style="display:none"></div>
         <div class="bc-secure">🔒 Secure payment via Razorpay · UPI, cards &amp; netbanking</div>
       </div>
 
@@ -946,7 +939,7 @@ a{text-decoration:none;color:inherit;}
   const TICKETS={general:{name:'General',price:799,was:1000},student:{name:'Student',price:199,was:500}};
   const qty={general:0,student:0};
   const inr=n=>'₹'+n.toLocaleString('en-IN');
-  let phoneVerified=false, idUploaded=false, idCardFile=null;
+  let idUploaded=false, idCardFile=null;
 
   const ov=document.getElementById('ov');
   const $=id=>document.getElementById(id);
@@ -978,53 +971,6 @@ a{text-decoration:none;color:inherit;}
   const totalQ=()=>qty.general+qty.student;
   const totalA=()=>qty.general*TICKETS.general.price+qty.student*TICKETS.student.price;
 
-  /* ===== OTP — FIREBASE PHONE AUTH =====================================
-     To go LIVE:
-       1) console.firebase.google.com → create project.
-       2) Build → Authentication → Sign-in method → enable "Phone".
-       3) Authentication → Settings → Authorized domains → add your site's domain
-          (and "localhost" for local testing).
-       4) Project settings → Your apps → Web app → copy the config object and
-          paste it into FIREBASE_CONFIG below (replace null).
-     The Firebase SDK is loaded automatically only when a config is present.
-     While FIREBASE_CONFIG is null, DEMO mode runs (enter any 6-digit code). */
-  const FIREBASE_CONFIG = null; /* e.g.
-  {
-    apiKey: "AIza...",
-    authDomain: "your-app.firebaseapp.com",
-    projectId: "your-app",
-    appId: "1:1234567890:web:abcdef"
-  }; */
-  const OTP = (function(){
-    const demo = !FIREBASE_CONFIG;
-    let conf = null, ready = null;
-    const loadScript = src => new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('load '+src));document.head.appendChild(s);});
-    function init(){
-      if(ready) return ready;
-      ready = (async()=>{
-        await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
-        await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js');
-        if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-        window._ycRecaptcha = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size:'invisible' });
-        await window._ycRecaptcha.render();
-      })();
-      return ready;
-    }
-    async function send(phone){
-      if(demo){ console.log('[DEMO OTP] code for +91'+phone+' = 123456'); return true; }
-      await init();
-      conf = await firebase.auth().signInWithPhoneNumber('+91'+phone, window._ycRecaptcha);
-      return true;
-    }
-    async function verify(phone,code){
-      if(demo){ return /^[0-9]{6}$/.test(code); }     // demo accepts any 6-digit (try 123456)
-      const r = await conf.confirm(code);
-      return !!(r && r.user);
-    }
-    return { send, verify, demo };
-  })();
-
-  /* Is this mobile an existing Bhajan Clubbing student? (their old ID proof counts) */
   function render(){
     $('q-general').textContent=qty.general;
     $('q-student').textContent=qty.student;
@@ -1045,7 +991,8 @@ a{text-decoration:none;color:inherit;}
     const nameOk=$('fName').value.trim().length>0;
     const studentOk = qty.student===0 || idUploaded;
     const btn=$('confirm');
-    btn.disabled = !(totalQ()>0 && nameOk && phoneVerified && studentOk);
+    const phoneOk = /^[0-9]{10}$/.test($('fPhone').value.trim());
+    btn.disabled = !(totalQ()>0 && nameOk && phoneOk && studentOk);
     btn.textContent = totalQ()>0 ? ('Pay '+inr(totalA())) : 'Confirm booking';
   }
 
@@ -1057,29 +1004,16 @@ a{text-decoration:none;color:inherit;}
   }));
   $('fName').addEventListener('input',updateConfirm);
 
-  const otpHint=$('otpHint');
-  const setHint=(t,err)=>{otpHint.textContent=t; otpHint.className='bc-hint'+(err?' err':'');};
-  $('sendOtp').addEventListener('click',async()=>{
+  const formHint=$('formHint');
+  const setHint=(t,err)=>{
+    if(!t){ formHint.style.display='none'; return; }
+    formHint.style.display='block'; formHint.textContent=t;
+    formHint.className='bc-hint'+(err?' err':'');
+  };
+  $('fPhone').addEventListener('input',()=>{
     const m=$('fPhone').value.trim();
-    if(!/^[0-9]{10}$/.test(m)){ $('ePhone').style.display='block'; return; }
-    $('ePhone').style.display='none'; $('sendOtp').disabled=true; setHint('Sending OTP…');
-    try{ await OTP.send(m); $('otpStep').style.display='flex';
-         setHint(OTP.demo?'Demo mode — enter any 6-digit code (e.g. 123456).':'Code sent to +91 '+m+'.'); }
-    catch(e){ setHint('Could not send OTP. Please try again.',true); }
-    finally{ $('sendOtp').disabled=false; }
-  });
-  $('verifyOtp').addEventListener('click',async()=>{
-    const m=$('fPhone').value.trim(), c=$('otpCode').value.trim();
-    if(!/^[0-9]{4,6}$/.test(c)){ setHint('Enter the code sent to your mobile.',true); return; }
-    $('verifyOtp').disabled=true; setHint('Verifying…');
-    try{
-      const ok=await OTP.verify(m,c);
-      if(!ok){ setHint('Incorrect code. Please try again.',true); $('verifyOtp').disabled=false; return; }
-      phoneVerified=true;
-      $('fPhone').disabled=true; $('otpStep').style.display='none'; $('sendOtp').style.display='none';
-      setHint('✓ Mobile verified.');
-      updateProof(); updateConfirm();
-    }catch(e){ setHint('Verification failed. Please try again.',true); $('verifyOtp').disabled=false; }
+    $('ePhone').style.display = (m.length>0 && !/^[0-9]{10}$/.test(m)) ? 'block' : 'none';
+    updateConfirm();
   });
   $('idCard').addEventListener('change',e=>{
     const f=e.target.files[0]; if(!f){idUploaded=false;idCardFile=null;updateConfirm();return;}
@@ -1169,13 +1103,13 @@ a{text-decoration:none;color:inherit;}
     const name=$('fName').value.trim(), phone=$('fPhone').value.trim(), email=$('fEmail').value.trim();
     let ok=true;
     if(!name){showErr('eName',1);ok=false}else showErr('eName',0);
-    if(!phoneVerified){ setHint('Please verify your mobile with OTP.',true); ok=false; }
+    if(!/^[0-9]{10}$/.test(phone)){ $('ePhone').style.display='block'; ok=false; }else $('ePhone').style.display='none';
     if(qty.student>0 && !idUploaded){ updateProof(); ok=false; }
     if(!ok)return;
 
     const studentStatus = qty.student>0 ? 'ID uploaded — pending verification' : '—';
     const ref='YC-'+Math.random().toString(36).slice(2,8).toUpperCase();
-    const booking={ref,name,phone,email,phoneVerified:true,tickets:{...qty},total:totalA(),studentStatus};
+    const booking={ref,name,phone,email,tickets:{...qty},total:totalA(),studentStatus};
 
     const btn=$('confirm'), label=btn.textContent;
     btn.disabled=true; btn.textContent='Opening payment…';
@@ -1189,11 +1123,11 @@ a{text-decoration:none;color:inherit;}
     }
   });
   $('closeSuccess').addEventListener('click',()=>{
-    qty.general=0;qty.student=0;phoneVerified=false;idUploaded=false;idCardFile=null;
+    qty.general=0;qty.student=0;idUploaded=false;idCardFile=null;
     $('idCard').value='';$('idLabel').textContent='Upload college / school ID';
-    $('fName').value='';$('fPhone').value='';$('fPhone').disabled=false;$('fEmail').value='';
-    $('otpStep').style.display='none';$('sendOtp').style.display='';$('otpCode').value='';
-    setHint("We'll text a one-time code to verify your number.");
+    $('fName').value='';$('fPhone').value='';$('fEmail').value='';
+    $('ePhone').style.display='none';
+    setHint('');
     render(); closeModal();
   });
 
