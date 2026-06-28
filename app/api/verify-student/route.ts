@@ -2,7 +2,12 @@ import { getDb, isMongoConfigured } from '@/lib/mongodb';
 
 function getToken(request: Request): string {
   const cookie = request.headers.get('cookie') || '';
-  const cookieToken = cookie.match(/yc_admin_token=([^;]+)/)?.[1] || '';
+  const raw = cookie.match(/yc_admin_token=([^;]+)/)?.[1] || '';
+  // Cookie values are URL-encoded when set (e.g. "@" -> "%40"); decode before comparing.
+  let cookieToken = '';
+  if (raw) {
+    try { cookieToken = decodeURIComponent(raw); } catch { cookieToken = raw; }
+  }
   const bearer = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
   return cookieToken || bearer;
 }
