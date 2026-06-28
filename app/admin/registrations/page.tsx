@@ -48,7 +48,7 @@ export default function RegistrationsPage() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return regs.filter(r => {
-      if (q && ![r.name, r.phone, r.email || '', r.ref].some(v => v.toLowerCase().includes(q))) return false;
+      if (q && ![r.name, r.phone, r.email, r.ref].some(v => String(v ?? '').toLowerCase().includes(q))) return false;
       if (filter === 'paid') return r.payment_status === 'paid';
       if (filter === 'pending') return r.payment_status !== 'paid';
       if (filter === 'students') return r.qty_student > 0;
