@@ -20,7 +20,7 @@ export default function DashboardPage() {
     setError(null);
     try {
       const r = await fetch('/api/registrations');
-      if (r.status === 401) { window.location.href = '/admin/login'; return; }
+      if (r.status === 401) { window.location.href = '/login'; return; }
       if (!r.ok) throw new Error(`Server error ${r.status}`);
       const d = await r.json() as { registrations: Registration[] };
       setRegs(d.registrations || []);
