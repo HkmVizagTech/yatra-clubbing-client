@@ -1082,8 +1082,9 @@ a{text-decoration:none;color:inherit;}
   }
 
   function finishBooking(booking, payment){
-    // save the registration (backend stores it / forwards to your Bhajan API), then WhatsApp
-    api('/api/register', { ...booking, payment, idCard: idCardFile }).catch(e=>console.warn('register save skipped:', e.message));
+    // The booking was already saved (status: pending) before payment opened.
+    // Now mark it paid. The ID was uploaded during the pre-save, so don't resend it.
+    api('/api/register', { ...booking, payment: { ...payment, status: 'paid' } }).catch(e=>console.warn('register update skipped:', e.message));
     notifyWhatsApp(booking);
     const ticketLines=Object.keys(qty).filter(k=>qty[k]>0).map(k=>`<div class="bc-srow"><span>${TICKETS[k].name} × ${qty[k]}</span><span class="amt">${inr(TICKETS[k].price*qty[k])}</span></div>`).join('');
     $('successSummary').innerHTML=
@@ -1111,7 +1112,12 @@ a{text-decoration:none;color:inherit;}
     const booking={ref,name,phone,email,tickets:{...qty},total:totalA(),studentStatus};
 
     const btn=$('confirm'), label=btn.textContent;
-    btn.disabled=true; btn.textContent='Opening payment…';
+    btn.disabled=true; btn.textContent='Saving…';
+    // Save the registration up front as "pending" so the booking is captured even
+    // if payment is abandoned. The student ID (if any) is uploaded here, once.
+    try{ await api('/api/register', { ...booking, idCard: idCardFile, payment:{ status:'pending' } }); }
+    catch(e){ console.warn('pre-save failed:', e.message); }
+    btn.textContent='Opening payment…';
     try{
       const payment = await pay(booking);
       finishBooking(booking, payment);

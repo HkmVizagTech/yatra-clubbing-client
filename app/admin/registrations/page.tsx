@@ -22,6 +22,7 @@ export default function RegistrationsPage() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [verifying, setVerifying] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState<Set<string>>(new Set());
   const [rejectModal, setRejectModal] = useState<{ ref: string; name: string } | null>(null);
   const [rejectReason, setRejectReason] = useState(REJECT_REASONS[0]);
   const [customReason, setCustomReason] = useState('');
@@ -77,6 +78,24 @@ export default function RegistrationsPage() {
       alert('Error: ' + String(e));
     } finally {
       setVerifying(prev => { const s = new Set(prev); s.delete(ref); return s; });
+    }
+  }, []);
+
+  const deleteReg = useCallback(async (ref: string, name: string) => {
+    if (!confirm(`Delete the registration for "${name}" (${ref})? This cannot be undone.`)) return;
+    setDeleting(prev => new Set(prev).add(ref));
+    try {
+      const r = await fetch(`/api/registrations?ref=${encodeURIComponent(ref)}`, { method: 'DELETE' });
+      const d = await r.json() as { deleted: boolean };
+      if (d.deleted) {
+        setRegs(prev => prev.filter(x => x.ref !== ref));
+      } else {
+        alert('Could not delete that registration.');
+      }
+    } catch (e) {
+      alert('Error: ' + String(e));
+    } finally {
+      setDeleting(prev => { const s = new Set(prev); s.delete(ref); return s; });
     }
   }, []);
 
@@ -165,6 +184,7 @@ export default function RegistrationsPage() {
                 <th className="text-left px-4 py-3 font-semibold">Payment</th>
                 <th className="text-left px-4 py-3 font-semibold">Student ID</th>
                 <th className="text-left px-4 py-3 font-semibold">Verify</th>
+                <th className="text-left px-4 py-3 font-semibold"></th>
               </tr>
             </thead>
             <tbody>
@@ -242,12 +262,22 @@ export default function RegistrationsPage() {
                       )}
                       {sts === 'none' && <span className="text-bark-light/30 text-xs">—</span>}
                     </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => deleteReg(r.ref, r.name)}
+                        disabled={deleting.has(r.ref)}
+                        title="Delete this registration"
+                        className="px-2 py-1 text-xs font-bold rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-40 transition-colors"
+                      >
+                        {deleting.has(r.ref) ? '…' : '🗑'}
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="px-4 py-14 text-center text-bark-light">
+                  <td colSpan={12} className="px-4 py-14 text-center text-bark-light">
                     {search || filter !== 'all' ? 'No results match your filter.' : 'No registrations yet.'}
                   </td>
                 </tr>

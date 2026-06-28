@@ -37,7 +37,7 @@ export default function DashboardPage() {
   const stats = useMemo(() => {
     const paid = regs.filter(r => r.payment_status === 'paid');
     return {
-      total: regs.length,
+      total: paid.length,
       revenue: paid.reduce((s, r) => s + (r.total || 0), 0),
       general: regs.reduce((s, r) => s + (r.qty_general || 0), 0),
       student: regs.reduce((s, r) => s + (r.qty_student || 0), 0),

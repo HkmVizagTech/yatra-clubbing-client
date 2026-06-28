@@ -51,7 +51,8 @@ export async function POST(request: Request) {
     idCardUrl = await uploadToCloudinary(b64, mime, publicId).catch(() => null);
   }
 
-  const doc = {
+  const now = new Date();
+  const setFields: Record<string, unknown> = {
     ref: b.ref,
     name: b.name,
     phone: b.phone,
@@ -61,18 +62,27 @@ export async function POST(request: Request) {
     qty_student: tickets.student || 0,
     total: b.total || 0,
     student_status: b.studentStatus || null,
-    id_card_url: idCardUrl,
     payment_id: payment.paymentId || null,
     order_id: payment.orderId || null,
     payment_signature: payment.signature || null,
     payment_status: payment.status || (payment.paymentId ? 'paid' : 'pending'),
     raw: { ...b, idCard: undefined },
-    created_at: new Date(),
+    updated_at: now,
   };
+  // Only write the ID URL when a fresh upload succeeded, so the later "paid"
+  // update (sent without the file) never wipes a previously stored ID.
+  if (idCardUrl) setFields.id_card_url = idCardUrl;
 
   try {
     const db = await getDb();
-    await db.collection('registrations').insertOne(doc);
+    // Upsert by ref: the booking is saved once on entry (status: pending) and
+    // updated in place when payment completes — so incomplete bookings are
+    // still captured and completed ones don't create a duplicate row.
+    await db.collection('registrations').updateOne(
+      { ref: b.ref },
+      { $set: setFields, $setOnInsert: { created_at: now } },
+      { upsert: true },
+    );
     return Response.json({ saved: true, idStored: !!idCardUrl });
   } catch (e) {
     return Response.json({ saved: false, error: String(e) }, { status: 502 });

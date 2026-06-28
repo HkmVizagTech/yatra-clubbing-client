@@ -43,3 +43,26 @@ export async function GET(request: Request) {
     return Response.json({ error: String(e) }, { status: 502 });
   }
 }
+
+export async function DELETE(request: Request) {
+  const adminToken = process.env.ADMIN_TOKEN;
+  if (!adminToken) return Response.json({ error: 'Not configured' }, { status: 500 });
+
+  const token = getToken(request);
+  if (!token || token !== adminToken) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const ref = new URL(request.url).searchParams.get('ref');
+  if (!ref) return Response.json({ error: 'ref required' }, { status: 400 });
+
+  if (!isMongoConfigured()) return Response.json({ deleted: false, configured: false });
+
+  try {
+    const db = await getDb();
+    const res = await db.collection('registrations').deleteOne({ ref });
+    return Response.json({ deleted: res.deletedCount > 0 });
+  } catch (e) {
+    return Response.json({ deleted: false, error: String(e) }, { status: 502 });
+  }
+}
