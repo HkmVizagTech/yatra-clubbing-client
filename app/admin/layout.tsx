@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 const NAV = [
   { href: '/admin', label: 'Dashboard', icon: '⬡' },
   { href: '/admin/registrations', label: 'Registrations', icon: '☰' },
+  { href: '/admin/refund', label: 'Refunds', icon: '↩' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
