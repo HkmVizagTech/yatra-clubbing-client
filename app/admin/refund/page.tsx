@@ -5,6 +5,7 @@ import { inr } from '@/lib/utils';
 
 type BookingSummary = { ref: string; name: string; phone: string; total: number; payment_id: string };
 type RefundResult = { ref: string; name: string; phone: string; total: number; ok: boolean; refundId?: string; error?: string };
+type ManualResult = { paymentId: string; ok: boolean; refundId?: string; amount?: number; error?: string };
 
 export default function RefundPage() {
   const [preview, setPreview] = useState<{ pending: number; alreadyRefunded: number; bookings: BookingSummary[] } | null>(null);
@@ -33,6 +34,30 @@ export default function RefundPage() {
       alert('Error: ' + String(e));
     } finally {
       setRunning(false);
+    }
+  }
+
+  // Manual refund state
+  const [manualIds, setManualIds] = useState('');
+  const [manualRunning, setManualRunning] = useState(false);
+  const [manualResults, setManualResults] = useState<ManualResult[] | null>(null);
+
+  async function runManualRefunds() {
+    const ids = manualIds.split(/[\s,\n]+/).map(s => s.trim()).filter(s => s.startsWith('pay_'));
+    if (!ids.length) { alert('No valid payment IDs found. Each ID should start with pay_'); return; }
+    setManualRunning(true);
+    try {
+      const r = await fetch('/api/admin/refund-manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentIds: ids }),
+      });
+      const d = await r.json() as { refunded: number; failed: number; results: ManualResult[] };
+      setManualResults(d.results);
+    } catch (e) {
+      alert('Error: ' + String(e));
+    } finally {
+      setManualRunning(false);
     }
   }
 
@@ -122,6 +147,64 @@ export default function RefundPage() {
           </button>
         </div>
       )}
+
+      {/* Manual refund by payment ID */}
+      <div className="bg-white rounded-2xl border border-black/[0.06] p-5 space-y-4">
+        <div>
+          <h2 className="font-bold text-bark">Manual Refund by Payment ID</h2>
+          <p className="text-sm text-bark-light mt-0.5">
+            For payments not tracked in the system. Paste one or more Razorpay payment IDs (start with <code className="font-mono bg-cream px-1 rounded">pay_</code>).
+          </p>
+        </div>
+        <textarea
+          value={manualIds}
+          onChange={e => setManualIds(e.target.value)}
+          placeholder={'pay_XXXXXXXXXXXXXXXXX\npay_YYYYYYYYYYYYYYYYY\n...'}
+          rows={4}
+          className="w-full px-3 py-2.5 rounded-xl border border-black/10 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gold/30 resize-y"
+        />
+        <button
+          onClick={runManualRefunds}
+          disabled={manualRunning || !manualIds.trim()}
+          className="px-5 py-2.5 rounded-full font-bold text-sm bg-bark text-white hover:bg-bark-light disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+        >
+          {manualRunning ? <><Spin />Processing…</> : 'Issue Manual Refunds'}
+        </button>
+
+        {manualResults && (
+          <div className="overflow-x-auto rounded-xl border border-black/[0.06]">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-cream/80 text-bark-light text-[11px] uppercase tracking-wider border-b border-black/[0.05]">
+                  <th className="text-left px-4 py-3">Payment ID</th>
+                  <th className="text-left px-4 py-3">Amount</th>
+                  <th className="text-left px-4 py-3">Status</th>
+                  <th className="text-left px-4 py-3">Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {manualResults.map(r => (
+                  <tr key={r.paymentId} className="border-b border-black/[0.04]">
+                    <td className="px-4 py-3 font-mono text-xs font-bold">{r.paymentId}</td>
+                    <td className="px-4 py-3 font-bold">{r.amount ? inr(r.amount / 100) : '—'}</td>
+                    <td className="px-4 py-3">
+                      {r.ok
+                        ? <span className="pill bg-green-100 text-green-700">✓ Refunded</span>
+                        : <span className="pill bg-red-100 text-red-700">✗ Failed</span>}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-bark-light font-mono">
+                      {r.refundId === 'already-refunded' ? 'was already refunded' : (r.refundId || r.error || '—')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="px-4 py-3 border-t border-black/[0.05] text-xs text-bark-light">
+              {manualResults.filter(r => r.ok).length} succeeded · {manualResults.filter(r => !r.ok).length} failed
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Results */}
       {results && (
