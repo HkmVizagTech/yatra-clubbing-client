@@ -13,6 +13,7 @@ function getToken(request: Request): string {
 
 type RazorpayPayment = {
   id: string;
+  order_id: string | null;
   amount: number;
   currency: string;
   status: string; // created, authorized, captured, refunded, failed
@@ -25,18 +26,23 @@ type RazorpayPayment = {
   notes?: Record<string, string>;
 };
 
-async function fetchAllPayments(keyId: string, keySecret: string): Promise<RazorpayPayment[]> {
-  const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
-  const all: RazorpayPayment[] = [];
+type RazorpayOrder = { id: string; receipt: string | null };
+
+// Our platform is the only thing that creates Razorpay orders with receipt = booking ref (format "YC-XXXXXX").
+// The same Razorpay account may have unrelated payments from other purposes — this pattern is how we scope to ours.
+const OUR_RECEIPT_PATTERN = /^YC-/i;
+
+async function fetchAllPages<T>(url: string, auth: string): Promise<T[]> {
+  const all: T[] = [];
   let skip = 0;
   const count = 100;
 
   while (true) {
-    const r = await fetch(`https://api.razorpay.com/v1/payments?count=${count}&skip=${skip}`, {
+    const r = await fetch(`${url}?count=${count}&skip=${skip}`, {
       headers: { Authorization: `Basic ${auth}` },
     });
-    if (!r.ok) throw new Error(`Razorpay payments list failed: HTTP ${r.status}`);
-    const data = await r.json() as { items: RazorpayPayment[] };
+    if (!r.ok) throw new Error(`Razorpay request failed: HTTP ${r.status} (${url})`);
+    const data = await r.json() as { items: T[] };
     all.push(...data.items);
     if (data.items.length < count) break;
     skip += count;
@@ -56,15 +62,29 @@ export async function GET(request: Request) {
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
   if (!keyId || !keySecret) return Response.json({ error: 'Razorpay not configured' }, { status: 500 });
 
+  const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+
   let payments: RazorpayPayment[];
+  let orders: RazorpayOrder[];
   try {
-    payments = await fetchAllPayments(keyId, keySecret);
+    [payments, orders] = await Promise.all([
+      fetchAllPages<RazorpayPayment>('https://api.razorpay.com/v1/payments', auth),
+      fetchAllPages<RazorpayOrder>('https://api.razorpay.com/v1/orders', auth),
+    ]);
   } catch (e) {
     return Response.json({ error: String(e) }, { status: 502 });
   }
 
-  // Only payments that were actually captured (money taken) matter for refund purposes
-  const captured = payments.filter(p => p.captured || p.status === 'captured' || p.status === 'refunded');
+  // Scope to only orders our platform created (receipt = booking ref, e.g. "YC-AB12CD")
+  const ourOrderIds = new Set(
+    orders.filter(o => o.receipt && OUR_RECEIPT_PATTERN.test(o.receipt)).map(o => o.id)
+  );
+
+  // Only payments that were actually captured (money taken) AND belong to one of our orders
+  const captured = payments.filter(p =>
+    (p.captured || p.status === 'captured' || p.status === 'refunded') &&
+    p.order_id && ourOrderIds.has(p.order_id)
+  );
 
   // Cross-reference with MongoDB for name/ref where available
   const regByPaymentId = new Map<string, { ref: string; name: string; phone: string }>();

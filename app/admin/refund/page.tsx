@@ -116,7 +116,8 @@ export default function RefundPage() {
           <div>
             <h2 className="font-bold text-bark">Refund Audit (source: Razorpay)</h2>
             <p className="text-sm text-bark-light mt-0.5">
-              Checks every captured payment directly with Razorpay — including ones missing from our database.
+              Checks every captured payment from this platform's bookings directly with Razorpay —
+              scoped to our order receipts only, including ones missing from our database.
             </p>
           </div>
           <button onClick={runAudit} disabled={auditLoading} className="btn-ghost text-sm flex items-center gap-2">
