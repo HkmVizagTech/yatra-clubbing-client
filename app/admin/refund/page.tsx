@@ -6,6 +6,15 @@ import { inr } from '@/lib/utils';
 type BookingSummary = { ref: string; name: string; phone: string; total: number; payment_id: string };
 type RefundResult = { ref: string; name: string; phone: string; total: number; ok: boolean; refundId?: string; error?: string };
 type ManualResult = { paymentId: string; ok: boolean; refundId?: string; amount?: number; error?: string };
+type AuditRow = {
+  paymentId: string; ref: string | null; name: string | null; phone: string | null;
+  amount: number; amountRefunded: number; status: 'refunded' | 'partial' | 'not_refunded';
+  trackedInDb: boolean; createdAt: string;
+};
+type AuditData = {
+  totalCaptured: number; refundedCount: number; notRefundedCount: number;
+  untrackedCount: number; notRefundedAmount: number; rows: AuditRow[];
+};
 
 export default function RefundPage() {
   const [preview, setPreview] = useState<{ pending: number; alreadyRefunded: number; bookings: BookingSummary[] } | null>(null);
@@ -19,6 +28,8 @@ export default function RefundPage() {
       .then(r => r.json())
       .then(d => { setPreview(d); setLoading(false); })
       .catch(() => setLoading(false));
+    runAudit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function runRefunds() {
@@ -61,6 +72,26 @@ export default function RefundPage() {
     }
   }
 
+  // Audit against Razorpay directly (catches untracked / not-in-DB payments too)
+  const [audit, setAudit] = useState<AuditData | null>(null);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState<string | null>(null);
+
+  async function runAudit() {
+    setAuditLoading(true);
+    setAuditError(null);
+    try {
+      const r = await fetch('/api/admin/refund-audit');
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+      setAudit(d);
+    } catch (e) {
+      setAuditError(String(e));
+    } finally {
+      setAuditLoading(false);
+    }
+  }
+
   const totalAmount = preview?.bookings.reduce((s, b) => s + b.total, 0) || 0;
 
   return (
@@ -77,6 +108,81 @@ export default function RefundPage() {
           Refunds once issued cannot be cancelled. Each participant will receive their full payment back
           within 5–7 business days via their original payment method.
         </p>
+      </div>
+
+      {/* Razorpay reconciliation audit — ground truth, catches untracked payments too */}
+      <div className="bg-white rounded-2xl border border-black/[0.06] p-5 space-y-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="font-bold text-bark">Refund Audit (source: Razorpay)</h2>
+            <p className="text-sm text-bark-light mt-0.5">
+              Checks every captured payment directly with Razorpay — including ones missing from our database.
+            </p>
+          </div>
+          <button onClick={runAudit} disabled={auditLoading} className="btn-ghost text-sm flex items-center gap-2">
+            {auditLoading ? <><Spin />Checking…</> : '↻ Run audit'}
+          </button>
+        </div>
+
+        {auditError && <p className="text-sm text-red-600">{auditError}</p>}
+
+        {audit && (
+          <>
+            <div className="flex gap-4 flex-wrap">
+              <StatBox value={audit.totalCaptured} label="Total captured payments" color="amber" />
+              <StatBox value={audit.refundedCount} label="Fully refunded" color="green" />
+              <StatBox value={audit.notRefundedCount} label="NOT refunded" color="red" />
+              <StatBox value={inr(audit.notRefundedAmount / 100)} label="Amount outstanding" color="red" />
+              {audit.untrackedCount > 0 && (
+                <StatBox value={audit.untrackedCount} label="Missing from DB" color="amber" />
+              )}
+            </div>
+
+            {audit.notRefundedCount === 0 ? (
+              <p className="text-green-700 font-medium text-sm">✓ Every captured payment has been fully refunded.</p>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-black/[0.06]">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-cream/80 text-bark-light text-[11px] uppercase tracking-wider border-b border-black/[0.05]">
+                      <th className="text-left px-4 py-3">Payment ID</th>
+                      <th className="text-left px-4 py-3">Ref</th>
+                      <th className="text-left px-4 py-3">Name</th>
+                      <th className="text-left px-4 py-3">Phone</th>
+                      <th className="text-right px-4 py-3">Amount</th>
+                      <th className="text-left px-4 py-3">Status</th>
+                      <th className="text-left px-4 py-3">In DB?</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {audit.rows.filter(r => r.status !== 'refunded').map(r => (
+                      <tr key={r.paymentId} className="border-b border-black/[0.04]">
+                        <td className="px-4 py-3 font-mono text-xs font-bold">{r.paymentId}</td>
+                        <td className="px-4 py-3 font-mono text-xs">{r.ref || '—'}</td>
+                        <td className="px-4 py-3 font-medium">{r.name || '—'}</td>
+                        <td className="px-4 py-3 text-bark-light">{r.phone || '—'}</td>
+                        <td className="px-4 py-3 text-right font-bold">{inr(r.amount / 100)}</td>
+                        <td className="px-4 py-3">
+                          {r.status === 'partial'
+                            ? <span className="pill bg-amber-100 text-amber-700">Partially refunded</span>
+                            : <span className="pill bg-red-100 text-red-700">Not refunded</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          {r.trackedInDb
+                            ? <span className="text-green-700 text-xs">✓ tracked</span>
+                            : <span className="text-amber-700 text-xs font-semibold">⚠ missing</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="px-4 py-3 border-t border-black/[0.05] text-xs text-bark-light">
+                  Tip: paste these payment IDs into &quot;Manual Refund by Payment ID&quot; below to refund them.
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Summary */}
