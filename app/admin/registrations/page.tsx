@@ -3,6 +3,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Registration } from '@/lib/types';
 import { inr, fmtDate, getStudentStatus, getRejectionReason, downloadCSV } from '@/lib/utils';
+import { adminFetch } from '@/lib/api';
+import { useEvents } from '../components/useEvents';
+import EventFilter from '../components/EventFilter';
 
 const REJECT_REASONS = [
   'ID image is unclear or unreadable',
@@ -19,6 +22,8 @@ export default function RegistrationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  const [eventSlug, setEventSlug] = useState<string>('all');
+  const { events, loading: loadingEvents } = useEvents();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [verifying, setVerifying] = useState<Set<string>>(new Set());
@@ -27,12 +32,13 @@ export default function RegistrationsPage() {
   const [rejectReason, setRejectReason] = useState(REJECT_REASONS[0]);
   const [customReason, setCustomReason] = useState('');
 
-  async function load() {
+  async function load(slug?: string) {
     setLoading(true);
     setError(null);
     try {
-      const r = await fetch('/api/registrations');
-      if (r.status === 401) { window.location.href = '/login'; return; }
+      const s = slug !== undefined ? slug : eventSlug;
+      const qs = s && s !== 'all' ? `?event_code=${encodeURIComponent(s)}` : '';
+      const r = await adminFetch(`/api/registrations${qs}`);
       if (!r.ok) throw new Error(`Server error ${r.status}`);
       const d = await r.json() as { registrations: Registration[] };
       setRegs(d.registrations || []);
@@ -44,7 +50,18 @@ export default function RegistrationsPage() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (loadingEvents) return;
+    if (events.length > 0 && eventSlug === 'all') {
+      const active = events.find(e => e.status === 'active');
+      const initial = active ? active.code : 'all';
+      setEventSlug(initial);
+      load(initial);
+    } else {
+      load();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingEvents]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -63,7 +80,7 @@ export default function RegistrationsPage() {
   const doVerify = useCallback(async (ref: string, action: 'approve' | 'reject', reason: string) => {
     setVerifying(prev => new Set(prev).add(ref));
     try {
-      const r = await fetch('/api/verify-student', {
+      const r = await adminFetch('/api/verify-student', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ref, action, reason }),
@@ -85,7 +102,7 @@ export default function RegistrationsPage() {
     if (!confirm(`Delete the registration for "${name}" (${ref})? This cannot be undone.`)) return;
     setDeleting(prev => new Set(prev).add(ref));
     try {
-      const r = await fetch(`/api/registrations?ref=${encodeURIComponent(ref)}`, { method: 'DELETE' });
+      const r = await adminFetch(`/api/registrations?ref=${encodeURIComponent(ref)}`, { method: 'DELETE' });
       const d = await r.json() as { deleted: boolean };
       if (d.deleted) {
         setRegs(prev => prev.filter(x => x.ref !== ref));
@@ -126,9 +143,10 @@ export default function RegistrationsPage() {
             {updatedAt && <> · Updated {updatedAt.toLocaleTimeString('en-IN')}</>}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <EventFilter events={events} value={eventSlug} onChange={(s) => { setEventSlug(s); load(s); }} />
           <button onClick={() => downloadCSV(regs)} className="btn-ghost text-sm">⤓ Export CSV</button>
-          <button onClick={load} className="btn-ghost text-sm">↻ Refresh</button>
+          <button onClick={() => load()} className="btn-ghost text-sm">↻ Refresh</button>
         </div>
       </div>
 

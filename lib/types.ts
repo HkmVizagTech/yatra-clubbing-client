@@ -1,5 +1,7 @@
 export interface Registration {
   _id?: string;
+  event_code: string;
+  event_slug?: string;
   created_at: string;
   ref: string;
   name: string;

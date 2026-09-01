@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { apiFetch, clearAdminToken } from '@/lib/api';
 
 const NAV = [
   { href: '/admin', label: 'Dashboard', icon: '⬡' },
+  { href: '/admin/events', label: 'Events', icon: '🎪' },
   { href: '/admin/registrations', label: 'Registrations', icon: '☰' },
   { href: '/admin/refund', label: 'Refunds', icon: '↩' },
 ];
@@ -14,7 +16,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
 
   async function logout() {
-    await fetch('/api/admin/logout', { method: 'POST' });
+    clearAdminToken();
+    try { await apiFetch('/api/admin/logout', { method: 'POST' }); } catch { /* best-effort */ }
     router.replace('/login');
   }
 

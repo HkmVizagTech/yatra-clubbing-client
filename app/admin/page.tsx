@@ -8,19 +8,24 @@ import {
 } from 'recharts';
 import type { Registration } from '@/lib/types';
 import { inr, fmtDate, getStudentStatus, buildChartData } from '@/lib/utils';
+import { adminFetch } from '@/lib/api';
+import { useEvents } from './components/useEvents';
+import EventFilter from './components/EventFilter';
 
 export default function DashboardPage() {
   const [regs, setRegs] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  const [eventSlug, setEventSlug] = useState<string>('all');
+  const { events, loading: loadingEvents } = useEvents();
 
-  async function load() {
+  async function load(slug?: string) {
     setLoading(true);
     setError(null);
     try {
-      const r = await fetch('/api/registrations');
-      if (r.status === 401) { window.location.href = '/login'; return; }
+      const qs = slug ? `?event_code=${encodeURIComponent(slug)}` : (eventSlug && eventSlug !== 'all' ? `?event_code=${encodeURIComponent(eventSlug)}` : '');
+      const r = await adminFetch(`/api/registrations${qs}`);
       if (!r.ok) throw new Error(`Server error ${r.status}`);
       const d = await r.json() as { registrations: Registration[] };
       setRegs(d.registrations || []);
@@ -32,7 +37,20 @@ export default function DashboardPage() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (loadingEvents) return;
+    if (events.length > 0 && eventSlug === 'all') {
+      const active = events.find(e => e.status === 'active');
+      const initial = active ? active.code : 'all';
+      (initial => {
+        setEventSlug(initial);
+        load(initial);
+      })(initial);
+    } else {
+      load();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingEvents]);
 
   const stats = useMemo(() => {
     const paid = regs.filter(r => r.payment_status === 'paid');
@@ -64,7 +82,10 @@ export default function DashboardPage() {
             </p>
           )}
         </div>
-        <button onClick={load} className="btn-ghost text-sm">↻ Refresh</button>
+        <div className="flex gap-2 items-center">
+          <EventFilter events={events} value={eventSlug} onChange={(s) => { setEventSlug(s); load(s); }} />
+          <button onClick={() => load()} className="btn-ghost text-sm">↻ Refresh</button>
+        </div>
       </div>
 
       {/* Stats */}

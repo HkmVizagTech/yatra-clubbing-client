@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { inr } from '@/lib/utils';
+import { adminFetch } from '@/lib/api';
+import { useEvents } from '../components/useEvents';
+import EventFilter from '../components/EventFilter';
 
 type BookingSummary = { ref: string; name: string; phone: string; total: number; payment_id: string };
 type RefundResult = { ref: string; name: string; phone: string; total: number; ok: boolean; refundId?: string; error?: string };
@@ -22,24 +25,34 @@ export default function RefundPage() {
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<RefundResult[] | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+  const [eventSlug, setEventSlug] = useState<string>('all');
+  const { events, loading: loadingEvents } = useEvents();
 
   useEffect(() => {
-    fetch('/api/admin/refund-all')
+    if (loadingEvents) return;
+    let slug = eventSlug;
+    if (events.length > 0 && eventSlug === 'all') {
+      const active = events.find(e => e.status === 'active');
+      slug = active ? active.code : 'all';
+      setEventSlug(slug);
+    }
+    const qs = slug && slug !== 'all' ? `?event_code=${encodeURIComponent(slug)}` : '';
+    adminFetch(`/api/admin/refund-all${qs}`)
       .then(r => r.json())
       .then(d => { setPreview(d); setLoading(false); })
       .catch(() => setLoading(false));
-    runAudit();
+    runAudit(slug);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadingEvents]);
 
   async function runRefunds() {
     setRunning(true);
     try {
-      const r = await fetch('/api/admin/refund-all', { method: 'POST' });
+      const qs = eventSlug && eventSlug !== 'all' ? `?event_code=${encodeURIComponent(eventSlug)}` : '';
+      const r = await adminFetch(`/api/admin/refund-all${qs}`, { method: 'POST' });
       const d = await r.json() as { refunded: number; failed: number; total: number; results: RefundResult[] };
       setResults(d.results);
-      // Refresh preview counts
-      const p = await fetch('/api/admin/refund-all').then(x => x.json());
+      const p = await adminFetch(`/api/admin/refund-all${qs}`).then(x => x.json());
       setPreview(p);
     } catch (e) {
       alert('Error: ' + String(e));
@@ -58,7 +71,7 @@ export default function RefundPage() {
     if (!ids.length) { alert('No valid payment IDs found. Each ID should start with pay_'); return; }
     setManualRunning(true);
     try {
-      const r = await fetch('/api/admin/refund-manual', {
+      const r = await adminFetch('/api/admin/refund-manual', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ paymentIds: ids }),
@@ -77,11 +90,13 @@ export default function RefundPage() {
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState<string | null>(null);
 
-  async function runAudit() {
+  async function runAudit(slugOverride?: string) {
     setAuditLoading(true);
     setAuditError(null);
     try {
-      const r = await fetch('/api/admin/refund-audit');
+      const s = slugOverride !== undefined ? slugOverride : eventSlug;
+      const qs = s && s !== 'all' ? `?event_code=${encodeURIComponent(s)}` : '';
+      const r = await adminFetch(`/api/admin/refund-audit${qs}`);
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
       setAudit(d);
@@ -96,9 +111,26 @@ export default function RefundPage() {
 
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-screen-lg">
-      <div>
-        <h1 className="text-2xl font-extrabold text-bark tracking-tight">Event Cancellation & Refunds</h1>
-        <p className="text-sm text-bark-light mt-1">Issue full Razorpay refunds to all paid participants.</p>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-extrabold text-bark tracking-tight">Event Cancellation & Refunds</h1>
+          <p className="text-sm text-bark-light mt-1">Issue full Razorpay refunds to all paid participants.</p>
+        </div>
+        <EventFilter
+          events={events}
+          value={eventSlug}
+          onChange={(s) => {
+            setEventSlug(s);
+            setLoading(true);
+            setResults(null);
+            const qs = s && s !== 'all' ? `?event_code=${encodeURIComponent(s)}` : '';
+            adminFetch(`/api/admin/refund-all${qs}`)
+              .then(r => r.json())
+              .then(d => { setPreview(d); setLoading(false); })
+              .catch(() => setLoading(false));
+            runAudit(s);
+          }}
+        />
       </div>
 
       {/* Warning banner */}
@@ -120,7 +152,7 @@ export default function RefundPage() {
               scoped to our order receipts only, including ones missing from our database.
             </p>
           </div>
-          <button onClick={runAudit} disabled={auditLoading} className="btn-ghost text-sm flex items-center gap-2">
+          <button onClick={() => runAudit()} disabled={auditLoading} className="btn-ghost text-sm flex items-center gap-2">
             {auditLoading ? <><Spin />Checking…</> : '↻ Run audit'}
           </button>
         </div>
@@ -241,7 +273,7 @@ export default function RefundPage() {
               className="mt-0.5 w-4 h-4 accent-red-600 flex-shrink-0"
             />
             <span className="text-sm text-bark">
-              I confirm that the <strong>Ramayana Circuit Yatra is cancelled</strong> and I want to issue
+              I understand this is account-level (not refundable per-booking) and I want to issue
               full refunds to all <strong>{preview.pending} paid participants</strong> totalling <strong>{inr(totalAmount)}</strong>.
             </span>
           </label>

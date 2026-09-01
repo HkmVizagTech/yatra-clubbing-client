@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiFetch, setAdminToken } from '@/lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,12 +15,14 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const r = await fetch('/api/admin/login', {
+      const r = await apiFetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: password }),
       });
+      const data = await r.json().catch(() => ({}));
       if (r.ok) {
+        setAdminToken((data && data.token) || password);
         router.replace('/admin');
       } else {
         setError('Wrong password. Try again.');
@@ -39,7 +42,7 @@ export default function LoginPage() {
             🕉
           </div>
           <div className="font-extrabold text-bark text-lg tracking-tight">YATRA CLUBBING</div>
-          <div className="text-bark-light text-sm mt-1">Ramayana Circuit · Admin</div>
+          <div className="text-bark-light text-sm mt-1">Admin Console</div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
