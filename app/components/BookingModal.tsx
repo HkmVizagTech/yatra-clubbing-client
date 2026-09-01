@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { apiFetch } from '@/lib/api';
 import type { PublicEvent } from '@/lib/publicTypes';
 
@@ -27,6 +28,13 @@ interface BookingPayload {
 }
 
 const inr = (n: number) => '₹' + n.toLocaleString('en-IN');
+
+// #yc-modal-root is the last child of .bc-root, so the overlay still inherits
+// the theme custom properties (--bg2, --gold, …) that are declared on .bc-root
+// while sitting outside .bc-wrap's stacking context. <body> is only a fallback.
+function portalTarget(): HTMLElement {
+  return document.getElementById('yc-modal-root') || document.body;
+}
 
 export default function BookingModal({ event }: { event: PublicEvent }) {
   const [open, setOpen] = useState(false);
@@ -101,6 +109,20 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
     return () => window.removeEventListener('yatra:open-booking', handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [event]);
+
+  // While the sheet is open: lock the page behind it and let Escape close it.
+  useEffect(() => {
+    if (!open) return;
+    document.body.classList.add('yc-modal-open');
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.classList.remove('yc-modal-open');
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
 
   async function api(path: string, body: unknown): Promise<Record<string, unknown>> {
     const r = await apiFetch(path, {
@@ -236,13 +258,14 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
     );
   };
 
-  return (
-    <>
-      <button className="bc-navcta" onClick={() => openNow()}>Book now</button>
-
-      {open && (
-        <div className="bc-overlay" onClick={close}>
-          <div className="bc-modal" onClick={e => e.stopPropagation()}>
+  // The nav lives inside .bc-wrap, which sets `position:relative; z-index:1`
+  // and therefore opens a stacking context. A `position:fixed` overlay rendered
+  // in here can never rise above later siblings of .bc-wrap no matter how high
+  // its own z-index is — that is why the sheet used to appear *behind* the hero
+  // and the ticket cards. Portalling it out of .bc-wrap escapes that trap.
+  const overlay = !open ? null : (
+    <div className="bc-overlay" onClick={close} role="dialog" aria-modal="true" aria-label="Get your pass">
+      <div className="bc-modal" onClick={e => e.stopPropagation()}>
             <div className="bc-mhead">
               <div className="tt"><span className="pill">{event.name}</span><h3>Get your pass</h3></div>
               <button className="bc-close" onClick={close}>✕</button>
@@ -332,10 +355,15 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
                 </div>
               )}
 
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <button className="bc-navcta" onClick={() => openNow()}>Book now</button>
+      {overlay ? createPortal(overlay, portalTarget()) : null}
     </>
   );
 }

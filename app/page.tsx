@@ -136,6 +136,9 @@ export default async function HomePage() {
   const heroMobile = event.branding.heroMobile || '/hero-mobile.jpg';
   const theme = event.branding.themeColor || '#E07B00';
   const locations = event.locations || [];
+  // The synthetic poster card only earns its place when there is no real hero
+  // artwork; with a custom hero it just repeats the name over the image.
+  const showPosterCard = !event.branding.heroDesktop && !event.branding.heroMobile;
 
   return (
     <>
@@ -167,7 +170,12 @@ export default async function HomePage() {
             </picture>
             <div className="bc-eyebrow">{event.name}</div>
             <h1 className="bc-title">Yatra<br />Clubbing</h1>
-            {event.tagline && <div className="bc-band">{event.tagline} <span className="by">by {event.org}</span></div>}
+            {event.tagline && (
+              <div className="bc-band">
+                {event.tagline}
+                {event.org && <span className="by"> by {event.org}</span>}
+              </div>
+            )}
             <div className="bc-tag">Kirtan · Pastimes · Bliss</div>
 
             <div className="bc-meta">
@@ -213,15 +221,17 @@ export default async function HomePage() {
               </BookButton>
             </div>
 
-            <div className="bc-poster">
-              <div className="bc-stars"></div>
-              <div className="ring"></div><div className="ring2"></div>
-              <div className="core">
-                <div className="glow">🏹</div>
-                <h3>{event.name}</h3>
-                {event.tagline && <p>{event.tagline.toUpperCase()}</p>}
+            {showPosterCard && (
+              <div className="bc-poster">
+                <div className="bc-stars"></div>
+                <div className="ring"></div><div className="ring2"></div>
+                <div className="core">
+                  <div className="glow">🪔</div>
+                  <h3>{event.name}</h3>
+                  {event.tagline && <p>{event.tagline.toUpperCase()}</p>}
+                </div>
               </div>
-            </div>
+            )}
           </header>
 
           <div className="yc-bowdiv" aria-hidden="true">
@@ -313,6 +323,10 @@ export default async function HomePage() {
             <BookButton>Book now</BookButton>
           </div>
         </div>
+
+        {/* Portal target for the booking sheet — see BookingModal. Must stay a
+            direct child of .bc-root and outside every .bc-wrap. */}
+        <div id="yc-modal-root" />
       </div>
     </>
   );
