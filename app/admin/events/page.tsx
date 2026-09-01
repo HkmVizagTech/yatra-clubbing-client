@@ -9,10 +9,10 @@ import type { Event, EventStatus } from '@/lib/eventTypes';
 type EventRow = Event & { registration_count: number };
 
 const STATUS_META: Record<EventStatus, { label: string; cls: string }> = {
-  active: { label: 'ACTIVE', cls: 'bg-green-100 text-green-700' },
-  draft: { label: 'DRAFT', cls: 'bg-gray-100 text-gray-600' },
-  closed: { label: 'CLOSED', cls: 'bg-amber-100 text-amber-700' },
-  cancelled: { label: 'CANCELLED', cls: 'bg-red-100 text-red-700' },
+  active: { label: 'Active', cls: 'pill-green' },
+  draft: { label: 'Draft', cls: 'pill-gray' },
+  closed: { label: 'Closed', cls: 'pill-amber' },
+  cancelled: { label: 'Cancelled', cls: 'pill-red' },
 };
 
 export default function EventsPage() {
@@ -65,7 +65,7 @@ export default function EventsPage() {
       alert('Cannot delete an event that has registrations. Close or cancel it instead.');
       return;
     }
-    if (!confirm(`Delete draft event "${name}"? This cannot be undone.`)) return;
+    if (!confirm(`Delete event "${name}"? This cannot be undone.`)) return;
     try {
       const r = await adminFetch(`/api/events/${encodeURIComponent(code)}`, { method: 'DELETE' });
       const d = await r.json() as { deleted?: boolean };
@@ -81,14 +81,31 @@ export default function EventsPage() {
 
   const activeCount = events.filter(e => e.status === 'active').length;
 
+  if (events.length === 0) {
+    return (
+      <div className="page">
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Events</h1>
+            <p className="page-subtitle">No events yet.</p>
+          </div>
+          <Link href="/admin/events/new" className="btn-primary text-sm">＋ New Event</Link>
+        </div>
+        <div className="panel py-16 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-stone-100 flex items-center justify-center mx-auto mb-4 text-2xl">🎪</div>
+          <p className="text-stone-500 mb-4">You haven&apos;t created any events yet.</p>
+          <Link href="/admin/events/new" className="btn-primary text-sm">Create your first event</Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6 lg:p-8 space-y-6 max-w-screen-xl">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+    <div className="space-y-6">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl font-extrabold text-bark tracking-tight">Events</h1>
-          <p className="text-sm text-bark-light mt-0.5">
-            {events.length} events · {activeCount} active
-          </p>
+          <h1 className="page-title">Events</h1>
+          <p className="page-subtitle">{events.length} events · {activeCount} active</p>
         </div>
         <div className="flex gap-2">
           <button onClick={load} className="btn-ghost text-sm">↻ Refresh</button>
@@ -98,72 +115,70 @@ export default function EventsPage() {
 
       {activeCount > 1 && (
         <div className="rounded-xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          ⚠️ More than one event is marked active. Only one event shows on the public site — consider keeping only one active.
+          ⚠️ More than one event is marked active. Only one shows on the public site — keep just one active.
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-black/[0.06] overflow-hidden">
+      <div className="table-wrap">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="table">
             <thead>
-              <tr className="bg-cream/80 text-bark-light text-[11px] uppercase tracking-wider border-b border-black/[0.05]">
-                <th className="text-left px-5 py-3 font-semibold">Event</th>
-                <th className="text-left px-5 py-3 font-semibold">Date</th>
-                <th className="text-left px-5 py-3 font-semibold">Venue</th>
-                <th className="text-left px-5 py-3 font-semibold">Bookings</th>
-                <th className="text-left px-5 py-3 font-semibold">Status</th>
-                <th className="text-left px-5 py-3 font-semibold">Actions</th>
-                <th className="text-right px-5 py-3 font-semibold"></th>
+              <tr>
+                <th className="th">Event</th>
+                <th className="th">Date</th>
+                <th className="th">Venue</th>
+                <th className="th">Bookings</th>
+                <th className="th">Status</th>
+                <th className="th">Actions</th>
+                <th className="th text-right"></th>
               </tr>
             </thead>
             <tbody>
-              {events.map((e, i) => {
+              {events.map(e => {
                 const meta = STATUS_META[e.status] || STATUS_META.draft;
+                const active = e.status === 'active';
                 return (
-                  <tr key={e.code} className={`border-b border-black/[0.04] hover:bg-cream/60 transition-colors ${i % 2 === 1 ? 'bg-cream/30' : ''}`}>
-                    <td className="px-5 py-4">
-                      <div className="font-bold text-bark">{e.name}</div>
-                      <div className="text-xs text-bark-light font-mono">/{e.code}</div>
-                      {activeCount === 0 && e.status === 'active' && (
-                        <div className="text-[11px] text-amber-600 mt-0.5">No other active event</div>
-                      )}
+                  <tr key={e.code} className="hover:bg-stone-50/70 transition-colors">
+                    <td className="td">
+                      <div className="font-semibold text-stone-900">{e.name}</div>
+                      <div className="text-xs text-stone-400 font-mono">/{e.code}</div>
                     </td>
-                    <td className="px-5 py-4 text-bark-light whitespace-nowrap">{e.dates.display || '—'}</td>
-                    <td className="px-5 py-4 text-bark-light">{e.venue || '—'}</td>
-                    <td className="px-5 py-4">
-                      <span className="font-extrabold text-bark">{e.registration_count}</span>
-                      <span className="text-bark-light text-xs"> booked</span>
+                    <td className="td text-stone-600 whitespace-nowrap">{e.dates.display || '—'}</td>
+                    <td className="td text-stone-600">{e.venue || '—'}</td>
+                    <td className="td">
+                      <span className="font-bold text-stone-900">{e.registration_count}</span>
+                      <span className="text-stone-400 text-xs"> booked</span>
                     </td>
-                    <td className="px-5 py-4">
-                      <span className={`pill ${meta.cls}`}>{meta.label}</span>
+                    <td className="td">
+                      <span className={meta.cls}>{meta.label}</span>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="td">
                       <div className="flex flex-wrap gap-1.5">
-                        {e.status !== 'active' && (
+                        {!active && (
                           <button
                             onClick={() => setStatus(e.code, 'active')}
                             disabled={busy !== null}
-                            className="px-2.5 py-1 text-xs font-bold rounded-lg bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-40 transition-colors"
+                            className="btn-ghost btn-sm text-emerald-700 hover:bg-emerald-50"
                             title="Show on public site"
                           >
-                            Show
+                            Publish
                           </button>
                         )}
-                        {e.status === 'active' && (
+                        {active && (
                           <button
                             onClick={() => setStatus(e.code, 'closed')}
                             disabled={busy !== null}
-                            className="px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 disabled:opacity-40 transition-colors"
+                            className="btn-ghost btn-sm text-amber-700 hover:bg-amber-50"
                             title="Hide from public site"
                           >
-                            Hide
+                            Unpublish
                           </button>
                         )}
                         {e.status !== 'cancelled' && (
                           <button
                             onClick={() => setStatus(e.code, 'cancelled')}
                             disabled={busy !== null}
-                            className="px-2.5 py-1 text-xs font-bold rounded-lg bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-40 transition-colors"
+                            className="btn-ghost btn-sm text-red-600 hover:bg-red-50"
                           >
                             Cancel
                           </button>
@@ -172,30 +187,22 @@ export default function EventsPage() {
                           <button
                             onClick={() => removeEvent(e.code, e.name, e.registration_count)}
                             disabled={busy !== null}
-                            className="px-2.5 py-1 text-xs font-bold rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-40 transition-colors"
-                            title="Delete draft event"
+                            className="btn-ghost btn-sm text-red-500 hover:bg-red-50"
+                            title="Delete event"
                           >
-                            🗑
+                            Delete
                           </button>
                         )}
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-right whitespace-nowrap">
-                      <Link href={`/admin/events/${e.code}`} className="text-sm font-medium text-gold-dark hover:underline">
-                        Edit →
+                    <td className="td text-right whitespace-nowrap">
+                      <Link href={`/admin/events/${e.code}`} className="inline-flex items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-800 hover:underline">
+                        Edit
                       </Link>
                     </td>
                   </tr>
                 );
               })}
-              {events.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-5 py-14 text-center text-bark-light">
-                    No events yet.{" "}
-                    <Link href="/admin/events/new" className="text-gold-dark font-medium hover:underline">Create your first event</Link>
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
@@ -208,8 +215,8 @@ function Spinner() {
   return (
     <div className="flex items-center justify-center h-96">
       <div className="text-center">
-        <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-bark-light text-sm">Loading events…</p>
+        <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-stone-500 text-sm">Loading events…</p>
       </div>
     </div>
   );

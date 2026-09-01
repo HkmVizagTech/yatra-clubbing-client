@@ -110,11 +110,11 @@ export default function RefundPage() {
   const totalAmount = preview?.bookings.reduce((s, b) => s + b.total, 0) || 0;
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 max-w-screen-lg">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+    <div className="space-y-6 max-w-screen-lg">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl font-extrabold text-bark tracking-tight">Event Cancellation & Refunds</h1>
-          <p className="text-sm text-bark-light mt-1">Issue full Razorpay refunds to all paid participants.</p>
+          <h1 className="page-title">Refunds</h1>
+          <p className="page-subtitle">Issue full Razorpay refunds to all paid participants for a cancelled event.</p>
         </div>
         <EventFilter
           events={events}
@@ -142,14 +142,14 @@ export default function RefundPage() {
         </p>
       </div>
 
-      {/* Razorpay reconciliation audit — ground truth, catches untracked payments too */}
-      <div className="bg-white rounded-2xl border border-black/[0.06] p-5 space-y-4">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+      {/* Razorpay reconciliation audit */}
+      <div className="panel space-y-4">
+        <div className="panel-header">
           <div>
-            <h2 className="font-bold text-bark">Refund Audit (source: Razorpay)</h2>
-            <p className="text-sm text-bark-light mt-0.5">
-              Checks every captured payment from this platform's bookings directly with Razorpay —
-              scoped to our order receipts only, including ones missing from our database.
+            <h2 className="panel-title">Refund audit</h2>
+            <p className="text-sm text-stone-500 mt-0.5">
+              Checks every captured payment directly with Razorpay — scoped to this platform&apos;s receipts,
+              including payments missing from the database.
             </p>
           </div>
           <button onClick={() => runAudit()} disabled={auditLoading} className="btn-ghost text-sm flex items-center gap-2">
@@ -161,56 +161,56 @@ export default function RefundPage() {
 
         {audit && (
           <>
-            <div className="flex gap-4 flex-wrap">
-              <StatBox value={audit.totalCaptured} label="Total captured payments" color="amber" />
+            <div className="flex gap-3 flex-wrap">
+              <StatBox value={audit.totalCaptured} label="Total captured" color="amber" />
               <StatBox value={audit.refundedCount} label="Fully refunded" color="green" />
               <StatBox value={audit.notRefundedCount} label="NOT refunded" color="red" />
-              <StatBox value={inr(audit.notRefundedAmount / 100)} label="Amount outstanding" color="red" />
+              <StatBox value={inr(audit.notRefundedAmount / 100)} label="Outstanding" color="red" />
               {audit.untrackedCount > 0 && (
                 <StatBox value={audit.untrackedCount} label="Missing from DB" color="amber" />
               )}
             </div>
 
             {audit.notRefundedCount === 0 ? (
-              <p className="text-green-700 font-medium text-sm">✓ Every captured payment has been fully refunded.</p>
+              <p className="text-emerald-700 font-medium text-sm">✓ Every captured payment has been fully refunded.</p>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-black/[0.06]">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-cream/80 text-bark-light text-[11px] uppercase tracking-wider border-b border-black/[0.05]">
-                      <th className="text-left px-4 py-3">Payment ID</th>
-                      <th className="text-left px-4 py-3">Ref</th>
-                      <th className="text-left px-4 py-3">Name</th>
-                      <th className="text-left px-4 py-3">Phone</th>
-                      <th className="text-right px-4 py-3">Amount</th>
-                      <th className="text-left px-4 py-3">Status</th>
-                      <th className="text-left px-4 py-3">In DB?</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {audit.rows.filter(r => r.status !== 'refunded').map(r => (
-                      <tr key={r.paymentId} className="border-b border-black/[0.04]">
-                        <td className="px-4 py-3 font-mono text-xs font-bold">{r.paymentId}</td>
-                        <td className="px-4 py-3 font-mono text-xs">{r.ref || '—'}</td>
-                        <td className="px-4 py-3 font-medium">{r.name || '—'}</td>
-                        <td className="px-4 py-3 text-bark-light">{r.phone || '—'}</td>
-                        <td className="px-4 py-3 text-right font-bold">{inr(r.amount / 100)}</td>
-                        <td className="px-4 py-3">
-                          {r.status === 'partial'
-                            ? <span className="pill bg-amber-100 text-amber-700">Partially refunded</span>
-                            : <span className="pill bg-red-100 text-red-700">Not refunded</span>}
-                        </td>
-                        <td className="px-4 py-3">
-                          {r.trackedInDb
-                            ? <span className="text-green-700 text-xs">✓ tracked</span>
-                            : <span className="text-amber-700 text-xs font-semibold">⚠ missing</span>}
-                        </td>
+              <div className="table-wrap overflow-visible">
+                <div className="overflow-x-auto rounded-2xl">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th className="th">Payment ID</th>
+                        <th className="th">Ref</th>
+                        <th className="th">Name</th>
+                        <th className="th text-right">Amount</th>
+                        <th className="th">Status</th>
+                        <th className="th">In DB?</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <div className="px-4 py-3 border-t border-black/[0.05] text-xs text-bark-light">
-                  Tip: paste these payment IDs into &quot;Manual Refund by Payment ID&quot; below to refund them.
+                    </thead>
+                    <tbody>
+                      {audit.rows.filter(r => r.status !== 'refunded').map(r => (
+                        <tr key={r.paymentId} className="border-b border-stone-100">
+                          <td className="td font-mono text-xs font-bold">{r.paymentId}</td>
+                          <td className="td font-mono text-xs">{r.ref || '—'}</td>
+                          <td className="td font-medium">{r.name || '—'}</td>
+                          <td className="td text-right font-bold">{inr(r.amount / 100)}</td>
+                          <td className="td">
+                            {r.status === 'partial'
+                              ? <span className="pill-amber">Partially refunded</span>
+                              : <span className="pill-red">Not refunded</span>}
+                          </td>
+                          <td className="td">
+                            {r.trackedInDb
+                              ? <span className="text-emerald-700 text-xs">✓ tracked</span>
+                              : <span className="text-amber-700 text-xs font-semibold">⚠ missing</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="px-4 py-3 border-t border-stone-100 text-xs text-stone-500">
+                  Tip: paste these payment IDs into &quot;Manual refund by payment ID&quot; below to refund them.
                 </div>
               </div>
             )}
@@ -220,11 +220,11 @@ export default function RefundPage() {
 
       {/* Summary */}
       {loading ? (
-        <div className="flex items-center gap-3 text-bark-light text-sm"><Spin />Loading refund summary…</div>
+        <div className="flex items-center gap-3 text-stone-500 text-sm"><Spin />Loading refund summary…</div>
       ) : preview && (
-        <div className="bg-white rounded-2xl border border-black/[0.06] p-5 space-y-4">
-          <h2 className="font-bold text-bark">Refund Summary</h2>
-          <div className="flex gap-4 flex-wrap">
+        <div className="panel space-y-4">
+          <h2 className="panel-title">Refund summary</h2>
+          <div className="flex gap-3 flex-wrap">
             <StatBox value={preview.pending} label="Pending refunds" color="amber" />
             <StatBox value={inr(totalAmount)} label="Total to refund" color="red" />
             <StatBox value={preview.alreadyRefunded} label="Already refunded" color="green" />
@@ -232,22 +232,22 @@ export default function RefundPage() {
 
           {preview.pending > 0 && (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="table">
                 <thead>
-                  <tr className="text-bark-light text-[11px] uppercase tracking-wider border-b border-black/[0.05]">
-                    <th className="text-left py-2 pr-4">Ref</th>
-                    <th className="text-left py-2 pr-4">Name</th>
-                    <th className="text-left py-2 pr-4">Phone</th>
-                    <th className="text-right py-2">Amount</th>
+                  <tr>
+                    <th className="th py-2">Ref</th>
+                    <th className="th py-2">Name</th>
+                    <th className="th py-2">Phone</th>
+                    <th className="th py-2 text-right">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
                   {preview.bookings.map(b => (
-                    <tr key={b.ref} className="border-b border-black/[0.03]">
-                      <td className="py-2 pr-4 font-mono text-xs font-bold">{b.ref}</td>
-                      <td className="py-2 pr-4 font-medium">{b.name}</td>
-                      <td className="py-2 pr-4 text-bark-light">{b.phone}</td>
-                      <td className="py-2 text-right font-bold">{inr(b.total)}</td>
+                    <tr key={b.ref} className="border-b border-stone-100">
+                      <td className="td py-2 font-mono text-xs font-bold">{b.ref}</td>
+                      <td className="td py-2 font-medium">{b.name}</td>
+                      <td className="td py-2 text-stone-600">{b.phone}</td>
+                      <td className="td py-2 text-right font-bold">{inr(b.total)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -256,43 +256,43 @@ export default function RefundPage() {
           )}
 
           {preview.pending === 0 && (
-            <p className="text-green-700 font-medium text-sm">✓ All refunds have been issued.</p>
+            <p className="text-emerald-700 font-medium text-sm">✓ All refunds have been issued.</p>
           )}
         </div>
       )}
 
       {/* Action */}
       {!results && preview && preview.pending > 0 && (
-        <div className="bg-white rounded-2xl border border-black/[0.06] p-5 space-y-4">
-          <h2 className="font-bold text-bark">Confirm & Issue Refunds</h2>
+        <div className="panel space-y-4">
+          <h2 className="panel-title">Confirm & issue refunds</h2>
           <label className="flex items-start gap-3 cursor-pointer">
             <input
               type="checkbox"
               checked={confirmed}
               onChange={e => setConfirmed(e.target.checked)}
-              className="mt-0.5 w-4 h-4 accent-red-600 flex-shrink-0"
+              className="mt-0.5 w-4 h-4 accent-red-600 shrink-0"
             />
-            <span className="text-sm text-bark">
+            <span className="text-sm text-stone-700">
               I understand this is account-level (not refundable per-booking) and I want to issue
-              full refunds to all <strong>{preview.pending} paid participants</strong> totalling <strong>{inr(totalAmount)}</strong>.
+              full refunds to all <strong className="text-stone-900">{preview.pending} paid participants</strong> totalling <strong className="text-stone-900">{inr(totalAmount)}</strong>.
             </span>
           </label>
           <button
             onClick={runRefunds}
             disabled={!confirmed || running}
-            className="px-6 py-3 rounded-full font-bold text-sm bg-red-600 text-white hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            className="btn-danger text-sm flex items-center gap-2"
           >
-            {running ? <><Spin />Processing refunds…</> : `Issue ${preview.pending} Refunds (${inr(totalAmount)})`}
+            {running ? <><Spin />Processing refunds…</> : `Issue ${preview.pending} refunds (${inr(totalAmount)})`}
           </button>
         </div>
       )}
 
       {/* Manual refund by payment ID */}
-      <div className="bg-white rounded-2xl border border-black/[0.06] p-5 space-y-4">
+      <div className="panel space-y-4">
         <div>
-          <h2 className="font-bold text-bark">Manual Refund by Payment ID</h2>
-          <p className="text-sm text-bark-light mt-0.5">
-            For payments not tracked in the system. Paste one or more Razorpay payment IDs (start with <code className="font-mono bg-cream px-1 rounded">pay_</code>).
+          <h2 className="panel-title">Manual refund by payment ID</h2>
+          <p className="text-sm text-stone-500 mt-0.5">
+            For payments not tracked in the system. Paste one or more Razorpay payment IDs (start with <code className="font-mono bg-stone-100 px-1 rounded">pay_</code>).
           </p>
         </div>
         <textarea
@@ -300,45 +300,47 @@ export default function RefundPage() {
           onChange={e => setManualIds(e.target.value)}
           placeholder={'pay_XXXXXXXXXXXXXXXXX\npay_YYYYYYYYYYYYYYYYY\n...'}
           rows={4}
-          className="w-full px-3 py-2.5 rounded-xl border border-black/10 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gold/30 resize-y"
+          className="input font-mono resize-y"
         />
         <button
           onClick={runManualRefunds}
           disabled={manualRunning || !manualIds.trim()}
-          className="px-5 py-2.5 rounded-full font-bold text-sm bg-bark text-white hover:bg-bark-light disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+          className="btn-primary text-sm flex items-center gap-2"
         >
-          {manualRunning ? <><Spin />Processing…</> : 'Issue Manual Refunds'}
+          {manualRunning ? <><Spin />Processing…</> : 'Issue manual refunds'}
         </button>
 
         {manualResults && (
-          <div className="overflow-x-auto rounded-xl border border-black/[0.06]">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-cream/80 text-bark-light text-[11px] uppercase tracking-wider border-b border-black/[0.05]">
-                  <th className="text-left px-4 py-3">Payment ID</th>
-                  <th className="text-left px-4 py-3">Amount</th>
-                  <th className="text-left px-4 py-3">Status</th>
-                  <th className="text-left px-4 py-3">Details</th>
-                </tr>
-              </thead>
-              <tbody>
-                {manualResults.map(r => (
-                  <tr key={r.paymentId} className="border-b border-black/[0.04]">
-                    <td className="px-4 py-3 font-mono text-xs font-bold">{r.paymentId}</td>
-                    <td className="px-4 py-3 font-bold">{r.amount ? inr(r.amount / 100) : '—'}</td>
-                    <td className="px-4 py-3">
-                      {r.ok
-                        ? <span className="pill bg-green-100 text-green-700">✓ Refunded</span>
-                        : <span className="pill bg-red-100 text-red-700">✗ Failed</span>}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-bark-light font-mono">
-                      {r.refundId === 'already-refunded' ? 'was already refunded' : (r.refundId || r.error || '—')}
-                    </td>
+          <div className="table-wrap overflow-visible">
+            <div className="overflow-x-auto rounded-2xl">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th className="th">Payment ID</th>
+                    <th className="th">Amount</th>
+                    <th className="th">Status</th>
+                    <th className="th">Details</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="px-4 py-3 border-t border-black/[0.05] text-xs text-bark-light">
+                </thead>
+                <tbody>
+                  {manualResults.map(r => (
+                    <tr key={r.paymentId} className="border-b border-stone-100">
+                      <td className="td font-mono text-xs font-bold">{r.paymentId}</td>
+                      <td className="td font-bold">{r.amount ? inr(r.amount / 100) : '—'}</td>
+                      <td className="td">
+                        {r.ok
+                          ? <span className="pill-green">✓ Refunded</span>
+                          : <span className="pill-red">✗ Failed</span>}
+                      </td>
+                      <td className="td text-xs text-stone-500 font-mono">
+                        {r.refundId === 'already-refunded' ? 'was already refunded' : (r.refundId || r.error || '—')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-4 py-3 border-t border-stone-100 text-xs text-stone-500">
               {manualResults.filter(r => r.ok).length} succeeded · {manualResults.filter(r => !r.ok).length} failed
             </div>
           </div>
@@ -347,39 +349,39 @@ export default function RefundPage() {
 
       {/* Results */}
       {results && (
-        <div className="bg-white rounded-2xl border border-black/[0.06] overflow-hidden">
-          <div className="px-5 py-4 border-b border-black/[0.05] flex items-center justify-between">
-            <h2 className="font-bold text-bark">Refund Results</h2>
+        <div className="table-wrap overflow-visible">
+          <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between flex-wrap gap-2">
+            <h2 className="panel-title">Refund results</h2>
             <div className="flex gap-3 text-sm">
-              <span className="text-green-700 font-semibold">{results.filter(r => r.ok).length} succeeded</span>
+              <span className="text-emerald-700 font-semibold">{results.filter(r => r.ok).length} succeeded</span>
               {results.filter(r => !r.ok).length > 0 && (
                 <span className="text-red-600 font-semibold">{results.filter(r => !r.ok).length} failed</span>
               )}
             </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="table">
               <thead>
-                <tr className="bg-cream/80 text-bark-light text-[11px] uppercase tracking-wider border-b border-black/[0.05]">
-                  <th className="text-left px-5 py-3">Ref</th>
-                  <th className="text-left px-5 py-3">Name</th>
-                  <th className="text-left px-5 py-3">Amount</th>
-                  <th className="text-left px-5 py-3">Status</th>
-                  <th className="text-left px-5 py-3">Details</th>
+                <tr>
+                  <th className="th">Ref</th>
+                  <th className="th">Name</th>
+                  <th className="th">Amount</th>
+                  <th className="th">Status</th>
+                  <th className="th">Details</th>
                 </tr>
               </thead>
               <tbody>
                 {results.map(r => (
-                  <tr key={r.ref} className="border-b border-black/[0.04]">
-                    <td className="px-5 py-3 font-mono text-xs font-bold">{r.ref}</td>
-                    <td className="px-5 py-3 font-medium">{r.name}</td>
-                    <td className="px-5 py-3 font-bold">{inr(r.total)}</td>
-                    <td className="px-5 py-3">
+                  <tr key={r.ref} className="border-b border-stone-100">
+                    <td className="td font-mono text-xs font-bold">{r.ref}</td>
+                    <td className="td font-medium">{r.name}</td>
+                    <td className="td font-bold">{inr(r.total)}</td>
+                    <td className="td">
                       {r.ok
-                        ? <span className="pill bg-green-100 text-green-700">✓ Refunded</span>
-                        : <span className="pill bg-red-100 text-red-700">✗ Failed</span>}
+                        ? <span className="pill-green">✓ Refunded</span>
+                        : <span className="pill-red">✗ Failed</span>}
                     </td>
-                    <td className="px-5 py-3 text-xs text-bark-light font-mono">
+                    <td className="td text-xs text-stone-500 font-mono">
                       {r.refundId === 'already-refunded' ? 'was already refunded' : (r.refundId || r.error || '—')}
                     </td>
                   </tr>
@@ -388,7 +390,7 @@ export default function RefundPage() {
             </table>
           </div>
           {results.some(r => !r.ok) && (
-            <div className="px-5 py-4 border-t border-black/[0.05] bg-red-50 text-sm text-red-700">
+            <div className="px-5 py-4 border-t border-stone-100 bg-red-50 text-sm text-red-700">
               Some refunds failed. You can retry — already-refunded bookings will be skipped automatically.
               <button
                 onClick={runRefunds}
@@ -406,12 +408,12 @@ export default function RefundPage() {
 }
 
 function StatBox({ value, label, color }: { value: string | number; label: string; color: 'amber' | 'red' | 'green' }) {
-  const bg = { amber: 'bg-amber-50 border-amber-200', red: 'bg-red-50 border-red-200', green: 'bg-green-50 border-green-200' }[color];
-  const text = { amber: 'text-amber-700', red: 'text-red-700', green: 'text-green-700' }[color];
+  const bg = { amber: 'bg-amber-50 border-amber-200', red: 'bg-red-50 border-red-200', green: 'bg-emerald-50 border-emerald-200' }[color];
+  const text = { amber: 'text-amber-700', red: 'text-red-700', green: 'text-emerald-700' }[color];
   return (
     <div className={`rounded-xl border px-4 py-3 min-w-[130px] ${bg}`}>
       <div className={`text-2xl font-extrabold ${text}`}>{value}</div>
-      <div className="text-xs text-bark-light mt-0.5">{label}</div>
+      <div className="text-xs text-stone-500 mt-0.5">{label}</div>
     </div>
   );
 }

@@ -26,7 +26,7 @@ export default function EditEventPage() {
   }, [slug]);
 
   if (status === 'loading') {
-    return <div className="flex items-center justify-center h-96 text-bark-light text-sm">Loading event…</div>;
+    return <div className="flex items-center justify-center h-96 text-stone-500 text-sm">Loading event…</div>;
   }
   if (status === 'error' || !event) {
     return (

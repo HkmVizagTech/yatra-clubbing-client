@@ -35,36 +35,32 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border border-black/[0.06] shadow-sm w-full max-w-sm p-8">
+    <div className="min-h-screen bg-stone-100 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm w-full max-w-sm p-8">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center mx-auto mb-4 text-2xl">
-            🕉
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center mx-auto mb-4 text-xl font-extrabold text-white">
+            Y
           </div>
-          <div className="font-extrabold text-bark text-lg tracking-tight">YATRA CLUBBING</div>
-          <div className="text-bark-light text-sm mt-1">Admin Console</div>
+          <div className="font-extrabold text-stone-900 text-lg tracking-tight">Yatra Clubbing</div>
+          <div className="text-stone-400 text-sm mt-1">Admin Console</div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-bark mb-1.5">Admin password</label>
+            <label className="label">Admin password</label>
             <input
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="Enter password"
               autoComplete="current-password"
-              className="w-full px-4 py-3 rounded-xl border border-black/10 text-sm bg-cream/50 focus:outline-none focus:ring-2 focus:ring-gold/40"
+              className="input"
               required
               autoFocus
             />
           </div>
           {error && <p className="text-red-600 text-sm font-medium">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full btn-gold py-3 rounded-xl text-base disabled:opacity-60"
-          >
+          <button type="submit" disabled={loading} className="btn-primary w-full py-3 text-base disabled:opacity-60">
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>

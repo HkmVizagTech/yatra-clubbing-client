@@ -71,13 +71,13 @@ export default function DashboardPage() {
   if (error) return <ErrorBox error={error} onRetry={load} />;
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 max-w-screen-xl">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl font-extrabold text-bark tracking-tight">Dashboard</h1>
+          <h1 className="page-title">Dashboard</h1>
           {updatedAt && (
-            <p className="text-sm text-bark-light mt-0.5">
+            <p className="page-subtitle">
               Updated {updatedAt.toLocaleTimeString('en-IN')}
             </p>
           )}
@@ -89,99 +89,103 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="flex gap-3 flex-wrap">
-        <StatCard value={stats.total} label="Bookings" icon="📋" />
+      <div className="flex flex-wrap gap-4">
+        <StatCard value={stats.total} label="Paid bookings" icon="🎟️" />
         <StatCard value={inr(stats.revenue)} label="Revenue" icon="💰" />
-        <StatCard value={stats.general} label="General Seats" icon="🎫" />
-        <StatCard value={stats.student} label="Student Seats" icon="🎓" />
+        <StatCard value={stats.general} label="General seats" icon="🎫" />
+        <StatCard value={stats.student} label="Student seats" icon="🎓" />
         {stats.pending > 0 && (
-          <StatCard value={stats.pending} label="Pending IDs" icon="⚠️" alert />
+          <StatCard value={stats.pending} label="IDs to verify" icon="⚠️" alert />
         )}
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl border border-black/[0.06] p-5">
-          <h2 className="font-semibold text-bark mb-4 text-sm uppercase tracking-wide">Registrations — 30 days</h2>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={chartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="regGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#E07B00" stopOpacity={0.18} />
-                  <stop offset="100%" stopColor="#E07B00" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(90,60,20,.07)" />
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#6E5C44' }} tickLine={false} interval={4} />
-              <YAxis tick={{ fontSize: 10, fill: '#6E5C44' }} tickLine={false} axisLine={false} allowDecimals={false} />
-              <Tooltip
-                contentStyle={{ background: '#fff', border: '1px solid rgba(90,60,20,.14)', borderRadius: 10, fontSize: 12, boxShadow: '0 4px 12px rgba(0,0,0,.08)' }}
-                labelStyle={{ color: '#2A1A08', fontWeight: 600 }}
-              />
-              <Area type="monotone" dataKey="count" stroke="#E07B00" strokeWidth={2} fill="url(#regGrad)" name="Registrations" dot={false} />
-            </AreaChart>
-          </ResponsiveContainer>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="panel">
+          <h2 className="panel-title">Registrations — 30 days</h2>
+          <div className="mt-4">
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={chartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="regGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.18} />
+                    <stop offset="100%" stopColor="#F59E0B" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,.06)" />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#78716C' }} tickLine={false} interval={4} />
+                <YAxis tick={{ fontSize: 10, fill: '#78716C' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{ background: '#fff', border: '1px solid #E7E5E4', borderRadius: 10, fontSize: 12, boxShadow: '0 4px 12px rgba(0,0,0,.08)' }}
+                  labelStyle={{ color: '#1C1917', fontWeight: 600 }}
+                />
+                <Area type="monotone" dataKey="count" stroke="#F59E0B" strokeWidth={2} fill="url(#regGrad)" name="Registrations" dot={false} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-black/[0.06] p-5">
-          <h2 className="font-semibold text-bark mb-4 text-sm uppercase tracking-wide">Revenue — 30 days</h2>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={chartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(90,60,20,.07)" />
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#6E5C44' }} tickLine={false} interval={4} />
-              <YAxis
-                tick={{ fontSize: 10, fill: '#6E5C44' }}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={v => v >= 1000 ? `₹${(v / 1000).toFixed(0)}k` : `₹${v}`}
-              />
-              <Tooltip
-                contentStyle={{ background: '#fff', border: '1px solid rgba(90,60,20,.14)', borderRadius: 10, fontSize: 12, boxShadow: '0 4px 12px rgba(0,0,0,.08)' }}
-                labelStyle={{ color: '#2A1A08', fontWeight: 600 }}
-                formatter={(v: number) => [inr(v), 'Revenue']}
-              />
-              <Bar dataKey="revenue" fill="#B85C00" radius={[4, 4, 0, 0]} name="Revenue" />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="panel">
+          <h2 className="panel-title">Revenue — 30 days</h2>
+          <div className="mt-4">
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={chartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,.06)" />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#78716C' }} tickLine={false} interval={4} />
+                <YAxis
+                  tick={{ fontSize: 10, fill: '#78716C' }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={v => v >= 1000 ? `₹${(v / 1000).toFixed(0)}k` : `₹${v}`}
+                />
+                <Tooltip
+                  contentStyle={{ background: '#fff', border: '1px solid #E7E5E4', borderRadius: 10, fontSize: 12, boxShadow: '0 4px 12px rgba(0,0,0,.08)' }}
+                  labelStyle={{ color: '#1C1917', fontWeight: 600 }}
+                  formatter={(v: number) => [inr(v), 'Revenue']}
+                />
+                <Bar dataKey="revenue" fill="#EA580C" radius={[4, 4, 0, 0]} name="Revenue" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
       {/* Recent Bookings */}
-      <div className="bg-white rounded-2xl border border-black/[0.06] overflow-hidden">
-        <div className="px-5 py-4 border-b border-black/[0.05] flex items-center justify-between">
-          <h2 className="font-bold text-bark">Recent Bookings</h2>
-          <Link href="/admin/registrations" className="text-sm text-gold-dark hover:underline font-medium">
+      <div className="table-wrap">
+        <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
+          <h2 className="panel-title">Recent bookings</h2>
+          <Link href="/admin/registrations" className="text-sm text-amber-700 hover:underline font-medium">
             View all →
           </Link>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="table">
             <thead>
-              <tr className="bg-cream/80 text-bark-light text-[11px] uppercase tracking-wider border-b border-black/[0.05]">
-                <th className="text-left px-5 py-3 font-semibold">Date</th>
-                <th className="text-left px-5 py-3 font-semibold">Ref</th>
-                <th className="text-left px-5 py-3 font-semibold">Name</th>
-                <th className="text-left px-5 py-3 font-semibold">Phone</th>
-                <th className="text-left px-5 py-3 font-semibold">Total</th>
-                <th className="text-left px-5 py-3 font-semibold">Payment</th>
-                <th className="text-left px-5 py-3 font-semibold">ID Verify</th>
+              <tr>
+                <th className="th">Date</th>
+                <th className="th">Ref</th>
+                <th className="th">Name</th>
+                <th className="th">Phone</th>
+                <th className="th">Total</th>
+                <th className="th">Payment</th>
+                <th className="th">ID Verify</th>
               </tr>
             </thead>
             <tbody>
-              {recent.map((r, i) => (
-                <tr key={r.ref} className={`border-b border-black/[0.04] hover:bg-cream/60 transition-colors ${i % 2 === 1 ? 'bg-cream/30' : ''}`}>
-                  <td className="px-5 py-3 text-bark-light whitespace-nowrap">{fmtDate(r.created_at)}</td>
-                  <td className="px-5 py-3 font-mono text-xs font-bold text-bark">{r.ref}</td>
-                  <td className="px-5 py-3 font-medium">{r.name}</td>
-                  <td className="px-5 py-3 text-bark-light">{r.phone}</td>
-                  <td className="px-5 py-3 font-bold">{inr(r.total)}</td>
-                  <td className="px-5 py-3"><PayBadge status={r.payment_status} /></td>
-                  <td className="px-5 py-3"><VerifyBadge status={getStudentStatus(r)} /></td>
+              {recent.map(r => (
+                <tr key={r.ref} className="hover:bg-stone-50/70 transition-colors">
+                  <td className="td text-stone-600 whitespace-nowrap">{fmtDate(r.created_at)}</td>
+                  <td className="td font-mono text-xs font-bold text-stone-900">{r.ref}</td>
+                  <td className="td font-medium">{r.name}</td>
+                  <td className="td text-stone-600">{r.phone}</td>
+                  <td className="td font-bold">{inr(r.total)}</td>
+                  <td className="td"><PayBadge status={r.payment_status} /></td>
+                  <td className="td"><VerifyBadge status={getStudentStatus(r)} /></td>
                 </tr>
               ))}
               {recent.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-14 text-center text-bark-light">No registrations yet.</td>
+                  <td colSpan={7} className="px-5 py-14 text-center text-stone-400">No registrations yet.</td>
                 </tr>
               )}
             </tbody>
@@ -194,13 +198,13 @@ export default function DashboardPage() {
 
 function StatCard({ value, label, icon, alert }: { value: string | number; label: string; icon: string; alert?: boolean }) {
   return (
-    <div className={`stat-card flex gap-4 items-center ${alert ? 'border-gold/30 bg-gold/5' : ''}`}>
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${alert ? 'bg-gold/15' : 'bg-cream'}`}>
+    <div className={`stat-card flex gap-4 items-center ${alert ? 'ring-2 ring-amber-300/60' : ''}`}>
+      <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 ${alert ? 'bg-amber-100' : 'bg-stone-100'}`}>
         {icon}
       </div>
-      <div>
-        <div className={`text-2xl font-extrabold leading-none ${alert ? 'text-gold' : 'text-bark'}`}>{value}</div>
-        <div className="text-xs text-bark-light mt-1 font-medium">{label}</div>
+      <div className="min-w-0">
+        <div className={`text-2xl font-extrabold leading-none truncate ${alert ? 'text-amber-600' : 'text-stone-900'}`}>{value}</div>
+        <div className="text-xs text-stone-500 mt-1 font-medium">{label}</div>
       </div>
     </div>
   );
@@ -208,26 +212,26 @@ function StatCard({ value, label, icon, alert }: { value: string | number; label
 
 function PayBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    paid: 'bg-green-100 text-green-700',
-    failed: 'bg-red-100 text-red-700',
-    pending: 'bg-amber-100 text-amber-700',
+    paid: 'pill-green',
+    failed: 'pill-red',
+    pending: 'pill-amber',
   };
-  return <span className={`pill ${map[status] || 'bg-gray-100 text-gray-600'}`}>{status}</span>;
+  return <span className={map[status] || 'pill-gray'}>{status}</span>;
 }
 
 function VerifyBadge({ status }: { status: string }) {
-  if (status === 'none') return <span className="text-bark-light/50">—</span>;
-  if (status === 'verified') return <span className="pill bg-green-100 text-green-700">✓ Verified</span>;
-  if (status === 'rejected') return <span className="pill bg-red-100 text-red-700">✗ Rejected</span>;
-  return <span className="pill bg-amber-100 text-amber-700">⏳ Pending</span>;
+  if (status === 'none') return <span className="text-stone-300">—</span>;
+  if (status === 'verified') return <span className="pill-green">✓ Verified</span>;
+  if (status === 'rejected') return <span className="pill-red">✗ Rejected</span>;
+  return <span className="pill-amber">⏳ Pending</span>;
 }
 
 function Spinner() {
   return (
     <div className="flex items-center justify-center h-96">
       <div className="text-center">
-        <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-bark-light text-sm">Loading…</p>
+        <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-stone-500 text-sm">Loading…</p>
       </div>
     </div>
   );

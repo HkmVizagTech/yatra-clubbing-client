@@ -133,17 +133,17 @@ export default function RegistrationsPage() {
   if (error) return <ErrorBox error={error} onRetry={load} />;
 
   return (
-    <div className="p-6 lg:p-8 space-y-5">
+    <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl font-extrabold text-bark tracking-tight">Registrations</h1>
-          <p className="text-sm text-bark-light mt-0.5">
+          <h1 className="page-title">Registrations</h1>
+          <p className="page-subtitle">
             {regs.length} total
             {updatedAt && <> · Updated {updatedAt.toLocaleTimeString('en-IN')}</>}
           </p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center flex-wrap">
           <EventFilter events={events} value={eventSlug} onChange={(s) => { setEventSlug(s); load(s); }} />
           <button onClick={() => downloadCSV(regs)} className="btn-ghost text-sm">⤓ Export CSV</button>
           <button onClick={() => load()} className="btn-ghost text-sm">↻ Refresh</button>
@@ -151,32 +151,32 @@ export default function RegistrationsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 flex-wrap items-center">
-        <div className="relative flex-1 min-w-[200px] max-w-xs">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-bark-light text-sm">🔍</span>
+      <div className="flex gap-3 flex-wrap items-center">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">🔍</span>
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search name, phone, email, ref…"
-            className="w-full pl-9 pr-4 py-2 rounded-xl border border-black/10 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gold/30"
+            className="input pl-9"
           />
         </div>
-        <div className="flex gap-1 bg-white border border-black/10 rounded-xl p-1">
+        <div className="flex gap-1 bg-white border border-stone-200 rounded-xl p-1">
           {([
             { key: 'all', label: 'All' },
             { key: 'paid', label: 'Paid' },
             { key: 'pending', label: 'Unpaid' },
             { key: 'students', label: 'Students' },
-            { key: 'verify', label: `Verify (${pendingCount})` },
+            { key: 'verify', label: `To verify (${pendingCount})` },
           ] as { key: Filter; label: string }[]).map(tab => (
             <button
               key={tab.key}
               onClick={() => setFilter(tab.key)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                 filter === tab.key
-                  ? 'bg-bark-sidebar text-white'
-                  : 'text-bark-light hover:text-bark'
+                  ? 'bg-stone-900 text-white'
+                  : 'text-stone-500 hover:text-stone-900'
               }`}
             >
               {tab.label}
@@ -186,27 +186,27 @@ export default function RegistrationsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-black/[0.06] overflow-hidden">
+      <div className="table-wrap">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="table">
             <thead>
-              <tr className="bg-cream/80 text-bark-light text-[11px] uppercase tracking-wider border-b border-black/[0.05]">
-                <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Date</th>
-                <th className="text-left px-4 py-3 font-semibold">Ref</th>
-                <th className="text-left px-4 py-3 font-semibold">Name</th>
-                <th className="text-left px-4 py-3 font-semibold">Phone</th>
-                <th className="text-left px-4 py-3 font-semibold">Email</th>
-                <th className="text-left px-4 py-3 font-semibold">Pass</th>
-                <th className="text-left px-4 py-3 font-semibold">Qty</th>
-                <th className="text-left px-4 py-3 font-semibold">Total</th>
-                <th className="text-left px-4 py-3 font-semibold">Payment</th>
-                <th className="text-left px-4 py-3 font-semibold">Student ID</th>
-                <th className="text-left px-4 py-3 font-semibold">Verify</th>
-                <th className="text-left px-4 py-3 font-semibold"></th>
+              <tr>
+                <th className="th whitespace-nowrap">Date</th>
+                <th className="th">Ref</th>
+                <th className="th">Name</th>
+                <th className="th">Phone</th>
+                <th className="th">Email</th>
+                <th className="th">Pass</th>
+                <th className="th">Qty</th>
+                <th className="th">Total</th>
+                <th className="th">Payment</th>
+                <th className="th">Student ID</th>
+                <th className="th">Verify</th>
+                <th className="th"></th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r, i) => {
+              {filtered.map((r) => {
                 const sts = getStudentStatus(r);
                 const busy = verifying.has(r.ref);
                 const qty = [
@@ -214,49 +214,49 @@ export default function RegistrationsPage() {
                   r.qty_student > 0 ? `S×${r.qty_student}` : '',
                 ].filter(Boolean).join(' ');
                 return (
-                  <tr key={r.ref} className={`border-b border-black/[0.04] hover:bg-cream/60 transition-colors ${i % 2 === 1 ? 'bg-cream/20' : ''}`}>
-                    <td className="px-4 py-3 text-bark-light whitespace-nowrap text-xs">{fmtDate(r.created_at)}</td>
-                    <td className="px-4 py-3 font-mono text-xs font-bold">{r.ref}</td>
-                    <td className="px-4 py-3 font-medium whitespace-nowrap">{r.name}</td>
-                    <td className="px-4 py-3 text-bark-light whitespace-nowrap">{r.phone}</td>
-                    <td className="px-4 py-3 text-bark-light">
+                  <tr key={r.ref} className="hover:bg-stone-50/70 transition-colors">
+                    <td className="td text-stone-500 whitespace-nowrap text-xs">{fmtDate(r.created_at)}</td>
+                    <td className="td font-mono text-xs font-bold">{r.ref}</td>
+                    <td className="td font-medium whitespace-nowrap">{r.name}</td>
+                    <td className="td text-stone-600 whitespace-nowrap">{r.phone}</td>
+                    <td className="td text-stone-600">
                       {r.email ? (
-                        <a href={`mailto:${r.email}`} className="hover:underline text-gold-dark">{r.email}</a>
+                        <a href={`mailto:${r.email}`} className="hover:underline text-amber-700">{r.email}</a>
                       ) : <span className="opacity-30">—</span>}
                     </td>
-                    <td className="px-4 py-3">
-                      <span className={`pill ${r.pass_type === 'student' ? 'bg-amber-100 text-amber-700' : 'bg-violet-100 text-violet-700'}`}>
+                    <td className="td">
+                      <span className={r.pass_type === 'student' ? 'pill-amber' : 'pill-violet'}>
                         {r.pass_type}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-bark-light font-mono text-xs">{qty}</td>
-                    <td className="px-4 py-3 font-extrabold">{inr(r.total)}</td>
-                    <td className="px-4 py-3">
+                    <td className="td text-stone-600 font-mono text-xs">{qty}</td>
+                    <td className="td font-bold">{inr(r.total)}</td>
+                    <td className="td">
                       <PayBadge status={r.payment_status} />
                       {r.payment_id && (
-                        <div className="text-[10px] text-bark-light font-mono mt-0.5 max-w-[80px] truncate" title={r.payment_id}>
+                        <div className="text-[10px] text-stone-400 font-mono mt-0.5 max-w-[80px] truncate" title={r.payment_id}>
                           {r.payment_id}
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="td">
                       {r.id_card_url ? (
                         <a
                           href={r.id_card_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs font-medium text-gold-dark hover:underline"
+                          className="text-xs font-medium text-amber-700 hover:underline"
                         >
                           View ID ↗
                         </a>
                       ) : (
-                        <span className="text-bark-light/40 text-xs">—</span>
+                        <span className="text-stone-300 text-xs">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
-                      {sts === 'verified' && <span className="pill bg-green-100 text-green-700">✓ Verified</span>}
+                    <td className="td">
+                      {sts === 'verified' && <span className="pill-green">✓ Verified</span>}
                       {sts === 'rejected' && (
-                        <span className="pill bg-red-100 text-red-700 cursor-default" title={getRejectionReason(r)}>
+                        <span className="pill-red cursor-default" title={getRejectionReason(r)}>
                           ✗ Rejected
                         </span>
                       )}
@@ -265,27 +265,27 @@ export default function RegistrationsPage() {
                           <button
                             onClick={() => doVerify(r.ref, 'approve', '')}
                             disabled={busy}
-                            className="px-2.5 py-1 text-xs font-bold rounded-lg bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-40 transition-colors"
+                            className="btn-sm font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg disabled:opacity-40 transition-colors"
                           >
                             {busy ? '…' : '✓'}
                           </button>
                           <button
                             onClick={() => openRejectModal(r.ref, r.name)}
                             disabled={busy}
-                            className="px-2.5 py-1 text-xs font-bold rounded-lg bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-40 transition-colors"
+                            className="btn-sm font-bold bg-red-50 text-red-700 hover:bg-red-100 rounded-lg disabled:opacity-40 transition-colors"
                           >
                             ✗
                           </button>
                         </div>
                       )}
-                      {sts === 'none' && <span className="text-bark-light/30 text-xs">—</span>}
+                      {sts === 'none' && <span className="text-stone-300 text-xs">—</span>}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="td">
                       <button
                         onClick={() => deleteReg(r.ref, r.name)}
                         disabled={deleting.has(r.ref)}
                         title="Delete this registration"
-                        className="px-2 py-1 text-xs font-bold rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-40 transition-colors"
+                        className="icon-btn text-red-500 hover:bg-red-50"
                       >
                         {deleting.has(r.ref) ? '…' : '🗑'}
                       </button>
@@ -295,7 +295,7 @@ export default function RegistrationsPage() {
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="px-4 py-14 text-center text-bark-light">
+                  <td colSpan={12} className="px-4 py-14 text-center text-stone-400">
                     {search || filter !== 'all' ? 'No results match your filter.' : 'No registrations yet.'}
                   </td>
                 </tr>
@@ -304,7 +304,7 @@ export default function RegistrationsPage() {
           </table>
         </div>
         {filtered.length > 0 && (
-          <div className="px-4 py-3 border-t border-black/[0.05] text-xs text-bark-light">
+          <div className="px-4 py-3 border-t border-stone-100 text-xs text-stone-400">
             Showing {filtered.length} of {regs.length} registrations
           </div>
         )}
@@ -314,17 +314,17 @@ export default function RegistrationsPage() {
       {rejectModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={() => setRejectModal(null)}>
           <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-extrabold text-bark mb-1">Reject Student ID</h2>
-            <p className="text-sm text-bark-light mb-4">
-              Rejecting for <strong>{rejectModal.name}</strong> ({rejectModal.ref}).
+            <h2 className="text-lg font-extrabold text-stone-900 mb-1">Reject Student ID</h2>
+            <p className="text-sm text-stone-500 mb-4">
+              Rejecting for <strong className="text-stone-900">{rejectModal.name}</strong> ({rejectModal.ref}).
               A WhatsApp message will be sent.
             </p>
 
-            <label className="block text-sm font-medium text-bark mb-1.5">Reason</label>
+            <label className="label">Reason</label>
             <select
               value={rejectReason}
               onChange={e => setRejectReason(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-black/12 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-gold/30 bg-cream/50"
+              className="select mb-3"
             >
               {REJECT_REASONS.map(r => <option key={r}>{r}</option>)}
             </select>
@@ -335,18 +335,13 @@ export default function RegistrationsPage() {
                 value={customReason}
                 onChange={e => setCustomReason(e.target.value)}
                 placeholder="Describe the issue…"
-                className="w-full px-3 py-2.5 rounded-xl border border-black/12 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-gold/30"
+                className="input mb-3"
               />
             )}
 
             <div className="flex gap-2 justify-end mt-2">
               <button onClick={() => setRejectModal(null)} className="btn-ghost text-sm">Cancel</button>
-              <button
-                onClick={confirmReject}
-                className="px-5 py-2 rounded-full text-sm font-bold bg-red-600 text-white hover:bg-red-700 transition-colors"
-              >
-                Reject
-              </button>
+              <button onClick={confirmReject} className="btn-danger text-sm">Reject</button>
             </div>
           </div>
         </div>
@@ -357,19 +352,19 @@ export default function RegistrationsPage() {
 
 function PayBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    paid: 'bg-green-100 text-green-700',
-    failed: 'bg-red-100 text-red-700',
-    pending: 'bg-amber-100 text-amber-700',
+    paid: 'pill-green',
+    failed: 'pill-red',
+    pending: 'pill-amber',
   };
-  return <span className={`pill ${map[status] || 'bg-gray-100 text-gray-500'}`}>{status}</span>;
+  return <span className={map[status] || 'pill-gray'}>{status}</span>;
 }
 
 function Spinner() {
   return (
     <div className="flex items-center justify-center h-96">
       <div className="text-center">
-        <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-bark-light text-sm">Loading registrations…</p>
+        <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-stone-500 text-sm">Loading registrations…</p>
       </div>
     </div>
   );
