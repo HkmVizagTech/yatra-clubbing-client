@@ -10,6 +10,8 @@ type FormState = {
   name: string;
   tagline: string;
   org: string;
+  ageLimit: string;
+  locations: string[];
   description: string;
   venue: string;
   dates: { display: string; start?: string; end?: string };
@@ -35,6 +37,8 @@ function fromEvent(e?: Event): FormState {
       name: '',
       tagline: '',
       org: '',
+      ageLimit: '16–30',
+      locations: [],
       description: '',
       venue: '',
       dates: { display: '', start: undefined, end: undefined },
@@ -57,6 +61,8 @@ function fromEvent(e?: Event): FormState {
     name: e.name,
     tagline: e.tagline,
     org: e.org,
+    ageLimit: e.ageLimit || '16–30',
+    locations: Array.isArray(e.locations) ? [...e.locations] : [],
     description: e.description,
     venue: e.venue,
     dates: { display: e.dates.display, start: e.dates.start, end: e.dates.end },
@@ -210,12 +216,55 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Tagline">
-                <input className="input" value={form.tagline} onChange={e => update({ tagline: e.target.value })} placeholder="Rama Tirtham × Ramanarayanam" />
+                <input className="input" value={form.tagline} onChange={e => update({ tagline: e.target.value })} placeholder="Andhra's Biggest Kitchen · Temple trails" />
               </Field>
-              <Field label="Venue">
-                <input className="input" value={form.venue} onChange={e => update({ venue: e.target.value })} placeholder="Visakhapatnam" />
+              <Field label="Venue / start point">
+                <input className="input" value={form.venue} onChange={e => update({ venue: e.target.value })} placeholder="Hare Krishna Vaikuntham, Visakhapatnam" />
               </Field>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Field label="Age limit">
+                <input className="input" value={form.ageLimit} onChange={e => update({ ageLimit: e.target.value })} placeholder="16–30" />
+              </Field>
+            </div>
+
+            <div className="panel-header mt-2 mb-2">
+              <h3 className="panel-title">Locations on the route</h3>
+              <button
+                type="button"
+                onClick={() => update({ locations: [...form.locations, ''] })}
+                className="text-xs font-bold text-amber-700 hover:underline btn-sm"
+              >
+                ＋ Add location
+              </button>
+            </div>
+            <div className="space-y-2">
+              {form.locations.map((loc, i) => (
+                <div key={i} className="grid grid-cols-[1fr_auto] gap-2 items-center">
+                  <input
+                    className="input"
+                    value={loc}
+                    onChange={e => {
+                      const list = [...form.locations];
+                      list[i] = e.target.value;
+                      update({ locations: list });
+                    }}
+                    placeholder="Hare Krishna Vaikuntham"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => update({ locations: form.locations.filter((_, j) => j !== i) })}
+                    className="icon-btn"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {form.locations.length === 0 && (
+                <p className="text-xs text-stone-400">No locations yet — add the stops on the route.</p>
+              )}
+            </div>
+
             <Field label="Description (HTML allowed)">
               <textarea
                 className="input min-h-[120px] font-mono text-xs"

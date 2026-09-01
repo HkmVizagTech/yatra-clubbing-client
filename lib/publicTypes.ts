@@ -16,6 +16,8 @@ export interface PublicEvent {
   name: string;
   tagline: string;
   org: string;
+  ageLimit?: string;
+  locations?: string[];
   description: string;
   venue: string;
   dates: { display: string; start?: string; end?: string };

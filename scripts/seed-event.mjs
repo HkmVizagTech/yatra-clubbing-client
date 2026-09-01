@@ -28,6 +28,8 @@ const event = {
   description:
     '<p>Experience the divine journey of Lord Rama with a special Yatra Clubbing program. Join us for an unforgettable day of kirtan, pastimes, and feast.</p>',
   venue: 'Visakhapatnam',
+  ageLimit: '16–30',
+  locations: ['Hare Krishna Vaikuntham', 'Gudilova Padma Nabha Swamy Temple'],
   dates: { display: 'Sat, 11 July · 7:00 AM', start: '2025-07-11T07:00:00', end: '2025-07-11T16:00:00' },
   timeline: [
     { time: '7:00 AM', title: 'Welcome arati & kirtan', description: 'Begin the yatra with congregational chanting.' },
