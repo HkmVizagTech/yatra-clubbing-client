@@ -143,7 +143,7 @@ export default function EventsPage() {
                       <div className="font-semibold text-stone-900">{e.name}</div>
                       <div className="text-xs text-stone-400 font-mono">/{e.code}</div>
                     </td>
-                    <td className="td text-stone-600 whitespace-nowrap">{e.dates.display || '—'}</td>
+                    <td className="td text-stone-600 whitespace-nowrap">{e.dates?.display || '—'}</td>
                     <td className="td text-stone-600">{e.venue || '—'}</td>
                     <td className="td">
                       <span className="font-bold text-stone-900">{e.registration_count}</span>

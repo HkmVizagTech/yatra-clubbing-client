@@ -1,21 +1,32 @@
 import './public.css';
 import Script from 'next/script';
 import BookingModal from './components/BookingModal';
+import BookButton from './components/BookButton';
 import { API_BASE } from '@/lib/api';
 import type { PublicEvent } from '@/lib/publicTypes';
 
+// Never cache the active event — the admin can publish/unpublish at any time.
+export const dynamic = 'force-dynamic';
+
 function toPublic(e: PublicEvent): PublicEvent {
+  const branding = e.branding || {};
   return {
     code: e.code,
     slug: e.slug,
-    name: e.name,
-    tagline: e.tagline,
-    org: e.org,
-    description: e.description,
-    venue: e.venue,
-    dates: e.dates,
-    timeline: e.timeline,
-    tickets: e.tickets.map(t => ({
+    name: e.name || 'Yatra Clubbing',
+    tagline: e.tagline || '',
+    org: e.org || '',
+    ageLimit: e.ageLimit || '',
+    locations: Array.isArray(e.locations) ? e.locations.filter(Boolean) : [],
+    description: e.description || '',
+    venue: e.venue || '',
+    dates: {
+      display: e.dates?.display || '',
+      start: e.dates?.start,
+      end: e.dates?.end,
+    },
+    timeline: Array.isArray(e.timeline) ? e.timeline : [],
+    tickets: (Array.isArray(e.tickets) ? e.tickets : []).map(t => ({
       key: t.key,
       name: t.name,
       price: t.price,
@@ -27,23 +38,36 @@ function toPublic(e: PublicEvent): PublicEvent {
       features: t.features || [],
     })),
     branding: {
-      heroDesktop: e.branding.heroDesktop,
-      heroMobile: e.branding.heroMobile,
-      themeColor: e.branding.themeColor,
-      showCountdown: e.branding.showCountdown,
-      mantra: e.branding.mantra,
+      heroDesktop: branding.heroDesktop,
+      heroMobile: branding.heroMobile,
+      themeColor: branding.themeColor,
+      showCountdown: branding.showCountdown,
+      mantra: branding.mantra,
     },
     status: e.status,
   };
 }
 
 async function getActiveEventPublic(): Promise<PublicEvent | null> {
+  const url = `${API_BASE}/api/public/event`;
   try {
-    const r = await fetch(`${API_BASE}/api/public/event`, { cache: 'no-store' });
+    const r = await fetch(url, { cache: 'no-store' });
+    if (!r.ok) {
+      console.error(`[home] ${url} responded ${r.status}`);
+      return null;
+    }
     const data = await r.json();
     const event = data?.event as PublicEvent | null;
-    return event ? toPublic(event) : null;
-  } catch {
+    if (!event) {
+      console.warn('[home] API returned no active event');
+      return null;
+    }
+    return toPublic(event);
+  } catch (err) {
+    // Most common cause in production: NEXT_PUBLIC_API_URL is not set, so
+    // API_BASE falls back to http://localhost:3000 which does not exist on the
+    // serverless host.
+    console.error(`[home] failed to fetch ${url}:`, err);
     return null;
   }
 }
@@ -111,6 +135,7 @@ export default async function HomePage() {
   const heroDesktop = event.branding.heroDesktop || '/hero-desktop.jpg';
   const heroMobile = event.branding.heroMobile || '/hero-mobile.jpg';
   const theme = event.branding.themeColor || '#E07B00';
+  const locations = event.locations || [];
 
   return (
     <>
@@ -146,14 +171,18 @@ export default async function HomePage() {
             <div className="bc-tag">Kirtan · Pastimes · Bliss</div>
 
             <div className="bc-meta">
-              <span className="bc-chip">
-                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
-                {event.dates.display}
-              </span>
-              <span className="bc-chip">
-                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                {event.venue}
-              </span>
+              {event.dates.display && (
+                <span className="bc-chip">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+                  {event.dates.display}
+                </span>
+              )}
+              {event.venue && (
+                <span className="bc-chip">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                  {event.venue}
+                </span>
+              )}
               {event.ageLimit && (
                 <span className="bc-chip">
                   <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -166,9 +195,9 @@ export default async function HomePage() {
               </span>
             </div>
 
-            {(event.locations || []).length > 0 && (
+            {locations.length > 0 && (
               <div className="bc-meta">
-                {(event.locations || []).map((loc, i) => (
+                {locations.map((loc, i) => (
                   <span className="bc-chip" key={i}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
                     {loc}
@@ -178,13 +207,10 @@ export default async function HomePage() {
             )}
 
             <div className="bc-herorow">
-              <button
-                className="bc-herocta"
-                onClick={() => window.dispatchEvent(new CustomEvent('yatra:open-booking', { detail: {} }))}
-              >
+              <BookButton className="bc-herocta">
                 Book tickets
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-              </button>
+              </BookButton>
             </div>
 
             <div className="bc-poster">
@@ -212,10 +238,12 @@ export default async function HomePage() {
             </svg>
           </div>
 
-          <section className="bc-sec">
-            <h2 className="bc-sectitle">About the yatra</h2>
-            <p className="bc-about" dangerouslySetInnerHTML={{ __html: event.description }} />
-          </section>
+          {event.description && (
+            <section className="bc-sec">
+              <h2 className="bc-sectitle">About the yatra</h2>
+              <p className="bc-about" dangerouslySetInnerHTML={{ __html: event.description }} />
+            </section>
+          )}
 
           {event.timeline.length > 0 && (
             <section className="bc-sec">
@@ -233,43 +261,42 @@ export default async function HomePage() {
             </section>
           )}
 
-          <section className="bc-sec" id="tickets">
-            <h2 className="bc-sectitle">Get your pass</h2>
-            <div className="bc-ticket-wrap">
-              {event.tickets.map(t => (
-                <div className="bc-stub" key={t.key}>
-                  <div className="bc-stub-glow"></div>
-                  {t.tag && <span className="bc-stub-tag">{t.tag}</span>}
-                  <div className="bc-stub-name">{t.name}</div>
-                  {t.description && <div className="bc-stub-desc">{t.description}</div>}
-                  <div className="bc-tear"></div>
-                  <div className="bc-price">
-                    <span className="cur">₹</span>
-                    <span className="amt">{t.price}</span>
-                    {t.was != null && <span className="was">₹{t.was}</span>}
-                    <span className="per">/ person</span>
+          {event.tickets.length > 0 && (
+            <section className="bc-sec" id="tickets">
+              <h2 className="bc-sectitle">Get your pass</h2>
+              <div className="bc-ticket-wrap">
+                {event.tickets.map(t => (
+                  <div className="bc-stub" key={t.key}>
+                    <div className="bc-stub-glow"></div>
+                    {t.tag && <span className="bc-stub-tag">{t.tag}</span>}
+                    <div className="bc-stub-name">{t.name}</div>
+                    {t.description && <div className="bc-stub-desc">{t.description}</div>}
+                    <div className="bc-tear"></div>
+                    <div className="bc-price">
+                      <span className="cur">₹</span>
+                      <span className="amt">{t.price}</span>
+                      {t.was != null && <span className="was">₹{t.was}</span>}
+                      <span className="per">/ person</span>
+                    </div>
+                    {(t.features?.length || 0) > 0 && (
+                      <ul className="bc-stub-feat">
+                        {t.features.map((f, i) => (
+                          <li key={i}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                            {f}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <BookButton className="bc-stubcta" preset={t.key}>
+                      Get {t.name} Pass
+                    </BookButton>
+                    <div className="bc-stub-note">🔒 No payment online · team confirms your seat</div>
                   </div>
-                  {(t.features?.length || 0) > 0 && (
-                    <ul className="bc-stub-feat">
-                      {t.features.map((f, i) => (
-                        <li key={i}>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <button
-                    className="bc-stubcta"
-                    onClick={() => window.dispatchEvent(new CustomEvent('yatra:open-booking', { detail: { preset: t.key } }))}
-                  >
-                    {t.requiresStudentId ? `Get ${t.name} Pass` : `Get ${t.name} Pass`}
-                  </button>
-                  <div className="bc-stub-note">🔒 No payment online · team confirms your seat</div>
-                </div>
-              ))}
-            </div>
-          </section>
+                ))}
+              </div>
+            </section>
+          )}
 
           <div className="yc-diyas" aria-hidden="true"><span>🪔</span><span>🪔</span><span>🪔</span><span>🪔</span><span>🪔</span></div>
           <div className="yc-mantra">{event.branding.mantra || 'जय श्री राम'}</div>
@@ -282,8 +309,8 @@ export default async function HomePage() {
 
         <div className="bc-bar">
           <div className="bc-bar-in">
-            <div className="lbl">{event.name} · {event.dates.display}</div>
-            <button onClick={() => window.dispatchEvent(new CustomEvent('yatra:open-booking', { detail: {} }))}>Book now</button>
+            <div className="lbl">{event.name}{event.dates.display ? ` · ${event.dates.display}` : ''}</div>
+            <BookButton>Book now</BookButton>
           </div>
         </div>
       </div>
