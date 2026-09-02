@@ -134,7 +134,9 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
   }
 
   function makeBooking(): BookingPayload {
-    const ref = 'YC-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+    // Refs carry the event's own prefix (YJ-…) from its advanced settings, so a
+    // booking is identifiable by its ref alone when two yatras are running.
+    const ref = (event.receiptPrefix || 'YC-') + Math.random().toString(36).slice(2, 8).toUpperCase();
     return {
       event_code: event.code,
       ref,

@@ -114,8 +114,9 @@ export default function EventsPage() {
       </div>
 
       {activeCount > 1 && (
-        <div className="rounded-xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          ⚠️ More than one event is marked active. Only one shows on the public site — keep just one active.
+        <div className="rounded-xl border border-emerald-300/60 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          {activeCount} events are active. The home page lists all of them for people to choose from, and
+          each one is also reachable directly at its own code.
         </div>
       )}
 
@@ -141,7 +142,15 @@ export default function EventsPage() {
                   <tr key={e.code} className="hover:bg-stone-50/70 transition-colors">
                     <td className="td">
                       <div className="font-semibold text-stone-900">{e.name}</div>
-                      <div className="text-xs text-stone-400 font-mono">/{e.code}</div>
+                      <a
+                        href={`/${e.code}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        title="Open the public page for this event"
+                        className="text-xs text-stone-400 font-mono hover:text-amber-700 hover:underline"
+                      >
+                        /{e.code} ↗
+                      </a>
                     </td>
                     <td className="td text-stone-600 whitespace-nowrap">{e.dates?.display || '—'}</td>
                     <td className="td text-stone-600">{e.venue || '—'}</td>
@@ -183,6 +192,13 @@ export default function EventsPage() {
                             Cancel
                           </button>
                         )}
+                        <Link
+                          href={`/admin/events/new?from=${encodeURIComponent(e.code)}`}
+                          className="btn-ghost btn-sm text-stone-600"
+                          title="Start a new event copied from this one"
+                        >
+                          Duplicate
+                        </Link>
                         {e.registration_count === 0 && (
                           <button
                             onClick={() => removeEvent(e.code, e.name, e.registration_count)}

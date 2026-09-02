@@ -30,5 +30,27 @@ export interface PublicEvent {
     showCountdown?: boolean;
     mantra?: string;
   };
+  /** Booking ref prefix for this event, e.g. "YJ-". */
+  receiptPrefix?: string;
+  status: string;
+}
+
+/** Slimmer shape returned by /api/public/events for the home page chooser. */
+export interface PublicEventCard {
+  code: string;
+  name: string;
+  tagline: string;
+  org: string;
+  venue: string;
+  ageLimit?: string;
+  locations?: string[];
+  dates: { display: string; start?: string; end?: string };
+  priceFrom: number | null;
+  ticketCount: number;
+  branding: {
+    heroDesktop?: string;
+    heroMobile?: string;
+    themeColor?: string;
+  };
   status: string;
 }
