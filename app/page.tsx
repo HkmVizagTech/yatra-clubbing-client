@@ -45,17 +45,17 @@ function EventCard({ card }: { card: PublicEventCard }) {
       >
         {!hero && <span aria-hidden="true">🪔</span>}
         {soon && <div className="ych-tag">{soon}</div>}
-        {card.dates?.display && (
-          <div className="ych-when"><CalendarIcon />{card.dates.display}</div>
-        )}
       </div>
 
       <div className="ych-cardbody">
         <div className="ych-cardname">{card.name}</div>
+        {card.dates?.display && (
+          <div className="ych-when"><CalendarIcon />{card.dates.display}</div>
+        )}
         {card.tagline && <p className="ych-cardtag">{card.tagline}</p>}
 
         <div className="ych-chips">
-          {card.venue && <span className="ych-chip"><PinIcon />{card.venue}</span>}
+          {card.venue && <span className="ych-chip is-venue"><PinIcon /><span>{card.venue}</span></span>}
           {card.ageLimit && <span className="ych-chip"><ClockIcon />Age {card.ageLimit}</span>}
         </div>
 
@@ -83,13 +83,6 @@ function Shell({ children, note }: { children: React.ReactNode; note?: string })
           </div>
           {note && <div className="ych-navnote">{note}</div>}
         </nav>
-      </div>
-
-      <div className="ych-marquee" aria-hidden="true">
-        <div className="ych-marquee-track">
-          <span>KIRTAN · YATRA · PASTIMES · FEAST · BLISS · HARE KRISHNA ·&nbsp;</span>
-          <span>KIRTAN · YATRA · PASTIMES · FEAST · BLISS · HARE KRISHNA ·&nbsp;</span>
-        </div>
       </div>
 
       <div className="ych-wrap">{children}</div>
@@ -137,7 +130,7 @@ export default async function HomePage() {
 
       <footer className="ych-foot">
         <div><span className="org">Hare Krishna Vaikuntham</span> · Visakhapatnam</div>
-        <div>🪔 Hare Krishna</div>
+        <div>Hare Krishna</div>
       </footer>
     </Shell>
   );
