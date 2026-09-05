@@ -18,6 +18,13 @@ export interface EventTicketTier {
   features?: string[];
 }
 
+/** One photo highlight from the poster: an image, a title and a short caption. */
+export interface EventHighlight {
+  image: string;
+  title: string;
+  caption: string;
+}
+
 export interface EventBranding {
   heroDesktop?: string;
   heroMobile?: string;
@@ -54,6 +61,13 @@ export interface Event {
   locations?: string[];
   description: string;
   venue: string;
+  /** Free text such as "Early morning · 7 AM to 12 PM". */
+  timing?: string;
+  /** Free text such as "Transportation facility is available". */
+  transport?: string;
+  highlights?: EventHighlight[];
+  /** "Why join" lines — spiritual learning, new friendships, … */
+  benefits?: string[];
   dates: EventDates;
   timeline: EventTimelineItem[];
   tickets: EventTicketTier[];

@@ -15,6 +15,16 @@ export function toPublic(e: PublicEvent): PublicEvent {
     locations: Array.isArray(e.locations) ? e.locations.filter(Boolean) : [],
     description: e.description || '',
     venue: e.venue || '',
+    timing: e.timing || '',
+    transport: e.transport || '',
+    highlights: (Array.isArray(e.highlights) ? e.highlights : [])
+      .map(h => ({
+        image: h.image || '',
+        title: h.title || '',
+        caption: h.caption || '',
+      }))
+      .filter(h => h.title || h.image),
+    benefits: (Array.isArray(e.benefits) ? e.benefits : []).filter(Boolean),
     dates: {
       display: e.dates?.display || '',
       start: e.dates?.start,

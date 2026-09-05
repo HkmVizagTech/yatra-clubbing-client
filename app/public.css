@@ -1,42 +1,54 @@
 /* ============================================================================
    Yatra Clubbing — public event landing
    ----------------------------------------------------------------------------
-   One light, warm palette. Two typefaces. One shadow. One accent, driven by the
-   event's themeColor from the admin. No decorative animation.
+   Palette taken from the printed poster: deep warm brown ground, gold and
+   light-gold accents, cream text, with maroon reserved for the price. Two
+   typefaces, one shadow, no decorative animation.
 
-   The poster artwork is the only saturated thing on the page; everything else
-   stays quiet so it reads as the focal point.
+   The poster artwork sits on the page whole, and because the page shares its
+   ground it reads as part of the layout rather than a pasted-in rectangle.
    ========================================================================== */
 
 .bc-root{
-  /* Surfaces & text */
-  --paper:#FAF8F5;
-  --card:#FFFFFF;
-  --ink:#1C1917;
-  --ink-2:#57534E;
-  --ink-3:#8A827A;
-  --line:#E9E4DC;
-  --line-2:#F3EFE9;
+  /* Ground & surfaces */
+  --ground:#180E08;
+  --ground-2:#211208;
+  --card:#2A1810;
+  --card-2:#33201410;
+  --panel:#20120A;
+
+  /* Ink */
+  --ink:#F8F1E5;
+  --ink-2:#CDB89C;
+  --ink-3:#9C8770;
+
+  --line:rgba(245,184,65,.16);
+  --line-2:rgba(245,184,65,.09);
 
   /* Accent. --accent is overridden inline with the event's themeColor.
-     --accent-solid is that colour darkened enough to carry white text at body
-     size (>= 4.5:1); --accent-ink is used for accent-coloured text. */
+     On this dark ground a gold fill with dark-brown text is what the poster
+     does, so the button background is the theme colour lightened toward gold
+     and --accent-ink is lightened further for accent-coloured text. */
   --accent:#E07B00;
-  --accent-solid:#A85A00;
-  --accent-ink:#8F4700;
-  --accent-soft:#FFF6EC;
-  --accent-line:#F0DCC2;
+  --accent-btn:#E79625;
+  --accent-btn-ink:#241309;
+  --accent-ink:#F1B665;
+  --accent-soft:rgba(231,150,37,.12);
+  --accent-line:rgba(231,150,37,.34);
+
+  --maroon:#7E1A1A;
+  --maroon-line:rgba(255,180,180,.18);
 
   --poster-w:540px;
   --radius:14px;
   --radius-sm:10px;
-  --shadow:0 1px 2px rgba(28,25,23,.04), 0 10px 30px -18px rgba(28,25,23,.20);
+  --shadow:0 2px 4px rgba(0,0,0,.28), 0 18px 44px -22px rgba(0,0,0,.7);
 
   font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
   font-size:15.5px;
   line-height:1.65;
   color:var(--ink);
-  background:var(--paper);
+  background:var(--ground);
   min-height:100vh;
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
@@ -44,33 +56,33 @@
 
 @supports (color:color-mix(in srgb, red 50%, black)){
   .bc-root{
-    --accent-solid:color-mix(in srgb, var(--accent) 74%, #1C1917);
-    --accent-ink:color-mix(in srgb, var(--accent) 68%, #1C1917);
-    --accent-soft:color-mix(in srgb, var(--accent) 8%, #FFFFFF);
-    --accent-line:color-mix(in srgb, var(--accent) 26%, #FFFFFF);
+    --accent-btn:color-mix(in srgb, var(--accent) 70%, #FFD37A);
+    --accent-ink:color-mix(in srgb, var(--accent) 45%, #FFE7B8);
+    --accent-soft:color-mix(in srgb, var(--accent) 14%, transparent);
+    --accent-line:color-mix(in srgb, var(--accent) 36%, transparent);
   }
 }
 
 .bc-root *{box-sizing:border-box; margin:0; padding:0;}
 .bc-root a{color:inherit; text-decoration:none;}
 .bc-root img{display:block; max-width:100%;}
-.bc-root :focus-visible{outline:2px solid var(--accent-solid); outline-offset:2px; border-radius:4px;}
+.bc-root :focus-visible{outline:2px solid var(--accent-ink); outline-offset:2px; border-radius:4px;}
+.bc-root ::selection{background:var(--accent-line); color:var(--ink);}
 
 .bc-wrap{max-width:880px; margin:0 auto; padding:0 20px;}
 
 /* --- Top bar ------------------------------------------------------------- */
 
+.bc-navline{border-bottom:1px solid var(--line); background:var(--ground-2);}
 .bc-nav{
   display:flex; align-items:center; justify-content:space-between; gap:16px;
   max-width:880px; margin:0 auto; padding:14px 20px;
 }
-/* Hairline sits edge-to-edge, so it reads as a bar rather than a floating row. */
-.bc-navline{border-bottom:1px solid var(--line);}
 .bc-brand{display:inline-flex; align-items:center; gap:10px; min-width:0;}
 .bc-brand-badge{
   width:32px; height:32px; border-radius:9px; flex:none;
   display:grid; place-items:center;
-  background:var(--accent-solid); color:#fff;
+  background:var(--accent-btn); color:var(--accent-btn-ink);
 }
 .bc-brand > span{
   font-weight:600; font-size:14.5px; letter-spacing:-.01em; line-height:1.25;
@@ -84,15 +96,19 @@
 /* --- Buttons ------------------------------------------------------------- */
 
 .bc-navcta,.bc-herocta,.bc-stubcta,.bc-btn,.bc-bar button{
-  font:inherit; font-weight:600; cursor:pointer;
+  font:inherit; font-weight:700; cursor:pointer;
   display:inline-flex; align-items:center; justify-content:center; gap:8px;
   border:1px solid transparent; border-radius:var(--radius-sm);
-  background:var(--accent-solid); color:#fff;
+  background:var(--accent-btn); color:var(--accent-btn-ink);
   padding:10px 18px; white-space:nowrap;
   transition:filter .15s ease;
 }
-.bc-navcta:hover,.bc-herocta:hover,.bc-stubcta:hover,.bc-btn:hover,.bc-bar button:hover{filter:brightness(1.08);}
-.bc-navcta:disabled,.bc-btn:disabled{opacity:.5; cursor:not-allowed; filter:none;}
+.bc-navcta:hover,.bc-herocta:hover,.bc-stubcta:hover,.bc-btn:hover,.bc-bar button:hover{filter:brightness(1.1);}
+.bc-navcta:disabled,.bc-btn:disabled{
+  /* Fading gold leaves dark text on a muddy ground — go neutral instead. */
+  background:var(--card); color:var(--ink-3); border-color:var(--line);
+  cursor:not-allowed; filter:none;
+}
 
 .bc-navcta{padding:9px 16px; font-size:14px;}
 .bc-herocta{padding:13px 26px; font-size:15.5px;}
@@ -101,7 +117,7 @@
 .bc-btn.ghost{
   background:transparent; color:var(--ink); border-color:var(--line);
 }
-.bc-btn.ghost:hover{background:var(--line-2); filter:none;}
+.bc-btn.ghost:hover{background:var(--accent-soft); filter:none;}
 
 /* --- Hero ---------------------------------------------------------------- */
 
@@ -111,14 +127,14 @@
   display:flex; flex-direction:column; align-items:center;
 }
 .bc-eyebrow{
-  font-size:11.5px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+  font-size:11.5px; font-weight:700; letter-spacing:.18em; text-transform:uppercase;
   color:var(--accent-ink);
 }
 .bc-title{
   font-family:'Bricolage Grotesque',sans-serif;
   font-weight:700; letter-spacing:-.025em; line-height:1.08;
   font-size:clamp(30px,5.4vw,46px);
-  margin-top:12px;
+  margin-top:12px; color:var(--ink);
   text-wrap:balance;
 }
 .bc-lede{
@@ -131,31 +147,45 @@
 .bc-posterframe{
   margin-top:30px; width:100%; max-width:var(--poster-w);
   border-radius:var(--radius); overflow:hidden;
-  border:1px solid var(--line); background:var(--card);
+  border:1px solid var(--line); background:var(--ground-2);
   box-shadow:var(--shadow);
 }
 .bc-posterimg{width:100%; height:auto;}
 
-/* Facts: labelled values rather than a wall of pills. */
-.bc-facts{
-  margin-top:26px; width:100%; max-width:var(--poster-w);
-  display:grid; gap:1px; text-align:left;
-  grid-template-columns:1fr 1fr;
-  background:var(--line); border:1px solid var(--line);
-  border-radius:var(--radius); overflow:hidden;
+/* Info strip — the dark band from the poster: date, timing, age, transport. */
+.bc-strip{
+  margin-top:26px; width:100%;
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--radius);
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  overflow:hidden;
 }
-.bc-fact{background:var(--card); padding:14px 16px;}
-.bc-fact .k{
-  display:block; font-size:10.5px; font-weight:600; letter-spacing:.12em;
-  text-transform:uppercase; color:var(--ink-3);
+.bc-stripitem{
+  padding:18px 16px; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  border-left:1px solid var(--line-2);
 }
-.bc-fact .v{
-  display:block; margin-top:4px; font-size:14.5px; font-weight:600;
-  color:var(--ink); line-height:1.45;
+.bc-stripitem:first-child{border-left:none;}
+.bc-stripitem svg{color:var(--accent-ink);}
+.bc-stripitem .k{
+  font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-3);
+}
+.bc-stripitem .v{
+  font-size:14px; font-weight:700; color:var(--ink); line-height:1.4;
+  text-wrap:balance;
 }
 
-.bc-fact.wide{grid-column:1 / -1;}
-.bc-fact.wide .v{font-weight:500; color:var(--ink-2); font-size:14px;}
+/* Venue and route — quieter than the strip, so they don't compete with it. */
+.bc-metalines{
+  margin-top:16px; max-width:640px;
+  display:grid; gap:6px;
+  font-size:13.5px; color:var(--ink-2); line-height:1.6;
+}
+.bc-metalines .k{
+  font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-3); margin-right:8px;
+}
 
 .bc-herorow{margin-top:28px;}
 
@@ -164,12 +194,12 @@
 .bc-sec{
   padding-top:40px;
   margin-top:40px;
-  border-top:1px solid var(--line);
+  border-top:1px solid var(--line-2);
 }
 .bc-sectitle{
   font-family:'Bricolage Grotesque',sans-serif;
   font-weight:700; font-size:21px; letter-spacing:-.015em;
-  margin-bottom:18px;
+  margin-bottom:18px; color:var(--ink);
 }
 .bc-about{color:var(--ink-2); max-width:62ch;}
 .bc-about p{margin-bottom:12px;}
@@ -178,6 +208,48 @@
 .bc-about a{color:var(--accent-ink); text-decoration:underline; text-underline-offset:2px;}
 .bc-about ul,.bc-about ol{margin:0 0 12px 1.2em;}
 .bc-about li{margin-bottom:4px;}
+
+/* --- Highlights (photo cards from the poster) ---------------------------- */
+
+.bc-highlights{
+  display:grid; gap:16px;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+}
+.bc-hl{
+  background:var(--card); border:1px solid var(--line);
+  border-radius:var(--radius); overflow:hidden;
+  display:flex; flex-direction:column;
+  box-shadow:var(--shadow);
+}
+.bc-hl-img{
+  aspect-ratio:4/3; width:100%; object-fit:cover;
+  background:var(--ground-2);
+  border-bottom:1px solid var(--line);
+}
+.bc-hl-body{padding:14px 16px 16px;}
+.bc-hl-title{
+  font-size:12.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--accent-ink); line-height:1.4;
+}
+.bc-hl-caption{margin-top:6px; font-size:13.5px; color:var(--ink-2); line-height:1.55;}
+
+/* --- Why join ------------------------------------------------------------ */
+
+.bc-benefits{
+  list-style:none; display:grid; gap:12px;
+  grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+}
+.bc-benefits li{
+  display:grid; grid-template-columns:22px 1fr; gap:11px; align-items:center;
+  font-size:15px; color:var(--ink);
+}
+.bc-benefits .ic{
+  width:22px; height:22px; border-radius:50%;
+  display:grid; place-items:center;
+  background:var(--accent-soft); border:1px solid var(--accent-line);
+  color:var(--accent-ink);
+}
+.bc-benefits .ic svg{width:11px; height:11px;}
 
 /* --- Flow of the day ----------------------------------------------------- */
 
@@ -188,7 +260,7 @@
 }
 .bc-flow-item:last-child{padding-bottom:0;}
 .bc-flow-time{
-  font-size:13px; font-weight:600; color:var(--ink-3);
+  font-size:13px; font-weight:700; color:var(--accent-ink);
   font-variant-numeric:tabular-nums; padding-top:1px;
 }
 .bc-flow-rail{position:relative;}
@@ -199,9 +271,9 @@
 .bc-flow-item:last-child .bc-flow-rail::before{display:none;}
 .bc-flow-dot{
   position:relative; width:7px; height:7px; border-radius:50%;
-  margin:6px auto 0; background:var(--accent-solid);
+  margin:6px auto 0; background:var(--accent-btn);
 }
-.bc-flow-item h4{font-size:15px; font-weight:600; line-height:1.45;}
+.bc-flow-item h4{font-size:15px; font-weight:600; line-height:1.45; color:var(--ink);}
 .bc-flow-item p{font-size:14px; color:var(--ink-2); margin-top:2px;}
 .bc-flow-note{
   margin-top:6px; font-size:12.5px; color:var(--ink-3);
@@ -226,19 +298,19 @@
   /* .bc-stub is a flex column, so opt out of the default stretch. */
   align-self:flex-start;
   display:inline-block; margin-bottom:10px;
-  font-size:10.5px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
-  color:var(--accent-ink); background:var(--accent-soft);
-  border:1px solid var(--accent-line);
+  font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--accent-btn-ink); background:var(--accent-btn);
   padding:4px 9px; border-radius:999px;
 }
-.bc-stub-name{font-size:18px; font-weight:600; letter-spacing:-.01em;}
+.bc-stub-name{font-size:18px; font-weight:700; letter-spacing:-.01em; color:var(--ink);}
 .bc-stub-desc{margin-top:4px; font-size:14px; color:var(--ink-2); line-height:1.55;}
 .bc-tear{border-top:1px solid var(--line-2); margin:16px 0;}
 .bc-price{display:flex; align-items:baseline; gap:6px; flex-wrap:wrap;}
-.bc-price .cur{font-size:17px; font-weight:600; color:var(--ink-2);}
+.bc-price .cur{font-size:17px; font-weight:600; color:var(--accent-ink);}
 .bc-price .amt{
   font-family:'Bricolage Grotesque',sans-serif;
   font-size:32px; font-weight:700; letter-spacing:-.02em; line-height:1;
+  color:var(--accent-ink);
 }
 .bc-price .was{font-size:14px; color:var(--ink-3); text-decoration:line-through;}
 .bc-price .per{font-size:13px; color:var(--ink-3);}
@@ -247,7 +319,7 @@
   display:grid; grid-template-columns:16px 1fr; gap:9px; align-items:start;
   font-size:14px; color:var(--ink-2); line-height:1.5;
 }
-.bc-stub-feat svg{width:15px; height:15px; margin-top:3px; color:var(--accent-solid);}
+.bc-stub-feat svg{width:15px; height:15px; margin-top:3px; color:var(--accent-ink);}
 .bc-stub-note{margin-top:11px; font-size:12px; color:var(--ink-3); text-align:center;}
 
 /* --- Closing note & footer ----------------------------------------------- */
@@ -259,7 +331,7 @@
 }
 .bc-foot{
   margin-top:36px; padding:22px 0 34px;
-  border-top:1px solid var(--line);
+  border-top:1px solid var(--line-2);
   text-align:center; font-size:13px; color:var(--ink-3);
 }
 .bc-foot .org{color:var(--ink-2); font-weight:600;}
@@ -272,7 +344,7 @@
   .bc-root{padding-bottom:72px;}
   .bc-bar{
     display:block; position:fixed; left:0; right:0; bottom:0; z-index:40;
-    background:rgba(255,255,255,.94);
+    background:rgba(24,14,8,.94);
     -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
     border-top:1px solid var(--line);
     padding:10px 20px calc(10px + env(safe-area-inset-bottom));
@@ -300,17 +372,17 @@ body.yc-modal-open{overflow:hidden;}
 
 .bc-overlay{
   position:fixed; inset:0; z-index:1000;
-  background:rgba(28,25,23,.42);
-  -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+  background:rgba(9,5,2,.72);
+  -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
   display:flex; align-items:flex-start; justify-content:center;
   padding:28px 16px; overflow-y:auto;
   overscroll-behavior:contain;
 }
 .bc-modal{
   width:100%; max-width:460px; margin:auto;
-  background:var(--card); border:1px solid var(--line);
+  background:var(--ground-2); border:1px solid var(--line);
   border-radius:16px; overflow:hidden;
-  box-shadow:0 24px 70px -20px rgba(28,25,23,.35);
+  box-shadow:0 30px 80px -20px rgba(0,0,0,.85);
 }
 
 .bc-mhead{
@@ -320,28 +392,29 @@ body.yc-modal-open{overflow:hidden;}
 .bc-mhead .tt{min-width:0;}
 .bc-mhead .pill{
   display:inline-block; margin-bottom:7px;
-  font-size:10.5px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
+  font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
   color:var(--accent-ink); background:var(--accent-soft);
   border:1px solid var(--accent-line); padding:3px 8px; border-radius:999px;
 }
 .bc-mhead h3{
   font-family:'Bricolage Grotesque',sans-serif;
   font-size:19px; font-weight:700; letter-spacing:-.015em; line-height:1.25;
+  color:var(--ink);
 }
 .bc-close{
   flex:none; width:32px; height:32px; border-radius:8px; cursor:pointer;
-  border:1px solid var(--line); background:var(--card);
+  border:1px solid var(--line); background:transparent;
   color:var(--ink-2); font-size:14px; line-height:1;
   display:grid; place-items:center; font-family:inherit;
-  transition:background .15s ease;
+  transition:background .15s ease, color .15s ease;
 }
-.bc-close:hover{background:var(--line-2);}
+.bc-close:hover{background:var(--accent-soft); color:var(--ink);}
 
 .bc-steps{display:flex; gap:5px; padding:0 20px 16px;}
 .bc-steps .s{height:3px; flex:1; border-radius:999px; background:var(--line);}
-.bc-steps .s.on{background:var(--accent-solid);}
+.bc-steps .s.on{background:var(--accent-btn);}
 
-.bc-mbody{padding:0 20px 22px; border-top:1px solid var(--line-2); padding-top:20px;}
+.bc-mbody{padding:20px 20px 22px; border-top:1px solid var(--line-2);}
 
 .bc-field{margin-bottom:16px;}
 .bc-field > label{
@@ -350,12 +423,12 @@ body.yc-modal-open{overflow:hidden;}
 }
 .bc-input{
   width:100%; font:inherit; font-size:15px; color:var(--ink);
-  background:var(--card); border:1px solid var(--line);
+  background:var(--ground); border:1px solid var(--line);
   border-radius:var(--radius-sm); padding:11px 13px;
   transition:border-color .15s ease;
 }
 .bc-input::placeholder{color:var(--ink-3);}
-.bc-input:focus{border-color:var(--accent-solid); outline:none;}
+.bc-input:focus{border-color:var(--accent-line); outline:none;}
 
 /* Ticket quantity rows */
 .yc-step{
@@ -365,9 +438,9 @@ body.yc-modal-open{overflow:hidden;}
   background:var(--card);
 }
 .yc-step:last-child{margin-bottom:0;}
-.yc-step .nm{font-size:14.5px; font-weight:600;}
-.yc-step .pr{font-size:13px; color:var(--ink-2); margin-top:1px;}
-.yc-step .pr s{color:var(--ink-3); margin-left:5px;}
+.yc-step .nm{font-size:14.5px; font-weight:600; color:var(--ink);}
+.yc-step .pr{font-size:13px; color:var(--accent-ink); margin-top:1px; font-weight:600;}
+.yc-step .pr s{color:var(--ink-3); margin-left:5px; font-weight:400;}
 .yc-onepass{
   font-size:12px; font-weight:600; color:var(--ink-3);
   border:1px solid var(--line); border-radius:999px; padding:5px 11px; flex:none;
@@ -375,7 +448,7 @@ body.yc-modal-open{overflow:hidden;}
 .yc-stepper{
   display:flex; align-items:center; flex:none;
   border:1px solid var(--line); border-radius:999px; overflow:hidden;
-  background:var(--card);
+  background:var(--ground);
 }
 .yc-stepper button{
   width:34px; height:34px; cursor:pointer; font:inherit; font-size:16px;
@@ -383,43 +456,44 @@ body.yc-modal-open{overflow:hidden;}
   display:grid; place-items:center;
   transition:background .15s ease;
 }
-.yc-stepper button:hover{background:var(--line-2);}
+.yc-stepper button:hover{background:var(--accent-soft);}
 .yc-stepper b{
-  min-width:30px; text-align:center; font-size:14.5px; font-weight:600;
-  font-variant-numeric:tabular-nums;
+  min-width:30px; text-align:center; font-size:14.5px; font-weight:700;
+  font-variant-numeric:tabular-nums; color:var(--ink);
 }
 
-/* Order summary */
+/* Order summary — maroon, the poster's colour for the price. */
 .bc-summary{
-  background:var(--accent-soft); border:1px solid var(--accent-line);
+  background:var(--maroon); border:1px solid var(--maroon-line);
   border-radius:var(--radius-sm); padding:14px 16px; margin-bottom:16px;
+  color:#FDEDED;
 }
 .bc-srow{
   display:flex; align-items:baseline; justify-content:space-between; gap:14px;
-  font-size:14px; color:var(--ink-2); padding:3px 0;
+  font-size:14px; padding:3px 0;
 }
-.bc-srow .amt{font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums;}
+.bc-srow .amt{font-weight:700; font-variant-numeric:tabular-nums; color:#fff;}
 .bc-srow.tot{
-  margin-top:8px; padding-top:10px; border-top:1px solid var(--accent-line);
-  font-size:15px; font-weight:600; color:var(--ink);
+  margin-top:8px; padding-top:10px; border-top:1px solid var(--maroon-line);
+  font-size:15px; font-weight:700; color:#fff;
 }
 .bc-srow.tot .amt{font-size:18px;}
 
 /* Student ID upload */
 .yc-verify{
   border:1px solid var(--line); border-radius:var(--radius-sm);
-  padding:14px 16px; margin-bottom:16px; background:var(--paper);
+  padding:14px 16px; margin-bottom:16px; background:var(--ground);
 }
-.yc-verify .vh{font-size:13px; font-weight:600; margin-bottom:10px;}
+.yc-verify .vh{font-size:13px; font-weight:700; margin-bottom:10px; color:var(--ink);}
 .bc-upload{
   display:block; text-align:center; padding:18px 14px;
   border:1px dashed var(--line); border-radius:var(--radius-sm);
   background:var(--card);
   transition:border-color .15s ease;
 }
-.bc-upload:hover{border-color:var(--accent-solid);}
+.bc-upload:hover{border-color:var(--accent-line);}
 .bc-upload .uic{display:block; font-size:20px; margin-bottom:6px;}
-.bc-upload b{display:block; font-size:14px; font-weight:600;}
+.bc-upload b{display:block; font-size:14px; font-weight:600; color:var(--ink);}
 .bc-upload span{display:block; font-size:12.5px; color:var(--ink-3); margin-top:3px;}
 .bc-uploaded{
   display:flex; align-items:center; gap:11px;
@@ -429,13 +503,13 @@ body.yc-modal-open{overflow:hidden;}
 .bc-uploaded .ok{
   width:24px; height:24px; border-radius:50%; flex:none;
   display:grid; place-items:center; font-size:12px;
-  background:var(--accent-solid); color:#fff;
+  background:var(--accent-btn); color:var(--accent-btn-ink);
 }
-.bc-uploaded .fn{font-size:14px; font-weight:600; word-break:break-all;}
+.bc-uploaded .fn{font-size:14px; font-weight:600; word-break:break-all; color:var(--ink);}
 .bc-uploaded .fs{font-size:12.5px; color:var(--ink-3);}
 
 .bc-hint{font-size:13px; color:var(--ink-2); margin-top:10px;}
-.bc-hint.err{color:#B42318;}
+.bc-hint.err{color:#FF9B93;}
 .bc-secure{
   margin-top:12px; text-align:center;
   font-size:12px; color:var(--ink-3); line-height:1.5;
@@ -446,7 +520,7 @@ body.yc-modal-open{overflow:hidden;}
 .bc-succ-ic{font-size:38px; line-height:1; margin-bottom:12px;}
 .bc-success h3{
   font-family:'Bricolage Grotesque',sans-serif;
-  font-size:21px; font-weight:700; letter-spacing:-.015em;
+  font-size:21px; font-weight:700; letter-spacing:-.015em; color:var(--ink);
 }
 .bc-succ-sub{margin:8px auto 18px; max-width:34ch; font-size:14.5px; color:var(--ink-2);}
 .bc-succ-sub b{color:var(--ink); font-weight:600;}
@@ -462,15 +536,15 @@ body.yc-modal-open{overflow:hidden;}
   position:relative; z-index:1; flex:none;
   width:23px; height:23px; border-radius:50%;
   display:grid; place-items:center; font-size:10px;
-  background:var(--card); border:1px solid var(--line); color:var(--ink-3);
+  background:var(--ground); border:1px solid var(--line); color:var(--ink-3);
 }
-.bc-tl-item.done .bc-tl-dot{background:var(--accent-solid); border-color:var(--accent-solid); color:#fff;}
-.bc-tl-item.now .bc-tl-dot{border-color:var(--accent-solid); color:var(--accent-ink);}
-.bc-tl-item b{display:block; font-size:14px; font-weight:600;}
+.bc-tl-item.done .bc-tl-dot{background:var(--accent-btn); border-color:var(--accent-btn); color:var(--accent-btn-ink);}
+.bc-tl-item.now .bc-tl-dot{border-color:var(--accent-line); color:var(--accent-ink);}
+.bc-tl-item b{display:block; font-size:14px; font-weight:600; color:var(--ink);}
 .bc-tl-item span{display:block; font-size:13px; color:var(--ink-2); margin-top:1px;}
 .bc-ref{
   margin:16px 0; padding:10px 12px;
-  background:var(--paper); border:1px solid var(--line); border-radius:var(--radius-sm);
+  background:var(--ground); border:1px solid var(--line); border-radius:var(--radius-sm);
   font-size:12px; color:var(--ink-3); word-break:break-all;
 }
 .bc-succ-actions{margin-top:4px;}
@@ -482,6 +556,9 @@ body.yc-modal-open{overflow:hidden;}
   .bc-hero{padding-top:28px;}
   .bc-sec{padding-top:32px; margin-top:32px;}
   .bc-stub{padding:20px;}
+  .bc-strip{grid-template-columns:1fr 1fr;}
+  .bc-stripitem:nth-child(odd){border-left:none;}
+  .bc-stripitem:nth-child(n+3){border-top:1px solid var(--line-2);}
   .bc-overlay{padding:0;}
   .bc-modal{
     max-width:none; min-height:100%; margin:0;
@@ -489,7 +566,9 @@ body.yc-modal-open{overflow:hidden;}
   }
 }
 @media (max-width:430px){
-  .bc-facts{grid-template-columns:1fr;}
+  .bc-strip{grid-template-columns:1fr;}
+  .bc-stripitem{border-left:none;}
+  .bc-stripitem:not(:first-child){border-top:1px solid var(--line-2);}
 }
 
 @media (prefers-reduced-motion:reduce){

@@ -16,6 +16,9 @@ const PinIcon = () => (
 const ClockIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
 );
+const UsersIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+);
 const ArrowIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
 );
@@ -55,8 +58,8 @@ function EventCard({ card }: { card: PublicEventCard }) {
         {card.tagline && <p className="ych-cardtag">{card.tagline}</p>}
 
         <div className="ych-chips">
+          {card.ageLimit && <span className="ych-chip"><UsersIcon />Age {card.ageLimit}</span>}
           {card.venue && <span className="ych-chip is-venue"><PinIcon /><span>{card.venue}</span></span>}
-          {card.ageLimit && <span className="ych-chip"><ClockIcon />Age {card.ageLimit}</span>}
         </div>
 
         <div className="ych-cardfoot">

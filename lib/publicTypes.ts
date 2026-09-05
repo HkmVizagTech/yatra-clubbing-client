@@ -10,6 +10,12 @@ export interface PublicTicketTier {
   features: string[];
 }
 
+export interface PublicHighlight {
+  image: string;
+  title: string;
+  caption: string;
+}
+
 export interface PublicEvent {
   code: string;
   slug?: string;
@@ -20,6 +26,10 @@ export interface PublicEvent {
   locations?: string[];
   description: string;
   venue: string;
+  timing?: string;
+  transport?: string;
+  highlights?: PublicHighlight[];
+  benefits?: string[];
   dates: { display: string; start?: string; end?: string };
   timeline: { time: string; title: string; description: string }[];
   tickets: PublicTicketTier[];

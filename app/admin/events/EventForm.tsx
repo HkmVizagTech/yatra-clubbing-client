@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminFetch } from '@/lib/api';
-import type { Event, EventStatus, EventTicketTier, EventTimelineItem } from '@/lib/eventTypes';
+import type { Event, EventHighlight, EventStatus, EventTicketTier, EventTimelineItem } from '@/lib/eventTypes';
 
 type FormState = {
   code: string;
@@ -14,6 +14,10 @@ type FormState = {
   locations: string[];
   description: string;
   venue: string;
+  timing: string;
+  transport: string;
+  highlights: EventHighlight[];
+  benefits: string[];
   dates: { display: string; start?: string; end?: string };
   timeline: EventTimelineItem[];
   tickets: EventTicketTier[];
@@ -147,6 +151,10 @@ function fromEvent(e?: Event): FormState {
       locations: [],
       description: '',
       venue: '',
+      timing: '',
+      transport: '',
+      highlights: [],
+      benefits: [],
       dates: { display: '', start: undefined, end: undefined },
       timeline: [],
       tickets: [],
@@ -171,6 +179,10 @@ function fromEvent(e?: Event): FormState {
     locations: Array.isArray(e.locations) ? [...e.locations] : [],
     description: e.description,
     venue: e.venue,
+    timing: e.timing || '',
+    transport: e.transport || '',
+    highlights: (e.highlights || []).map(h => ({ ...h })),
+    benefits: [...(e.benefits || [])],
     dates: { display: e.dates.display, start: e.dates.start, end: e.dates.end },
     timeline: e.timeline.map(t => ({ ...t })),
     tickets: e.tickets.map(t => ({ ...t, features: [...(t.features || [])] })),
@@ -372,6 +384,42 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
       return { ...prev, timeline };
     });
   }
+  // ── Highlights (the poster's photo cards) ────────────────────────────────
+  function patchHighlight(i: number, patch: Partial<EventHighlight>) {
+    setForm(prev => {
+      const list = [...prev.highlights];
+      list[i] = { ...list[i], ...patch };
+      return { ...prev, highlights: list };
+    });
+  }
+  function addHighlight() {
+    setForm(prev => ({
+      ...prev,
+      highlights: [...prev.highlights, { image: '', title: '', caption: '' }],
+    }));
+  }
+  function removeHighlight(i: number) {
+    setForm(prev => ({ ...prev, highlights: prev.highlights.filter((_, j) => j !== i) }));
+  }
+  function moveHighlight(i: number, dir: -1 | 1) {
+    setForm(prev => {
+      const j = i + dir;
+      if (j < 0 || j >= prev.highlights.length) return prev;
+      const list = [...prev.highlights];
+      [list[i], list[j]] = [list[j], list[i]];
+      return { ...prev, highlights: list };
+    });
+  }
+
+  // ── Why-join lines ───────────────────────────────────────────────────────
+  function patchBenefit(i: number, val: string) {
+    setForm(prev => {
+      const list = [...prev.benefits];
+      list[i] = val;
+      return { ...prev, benefits: list };
+    });
+  }
+
   function addTimeline() {
     setForm(prev => ({ ...prev, timeline: [...prev.timeline, { time: '', title: '', description: '' }] }));
   }
@@ -666,6 +714,28 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
               </p>
             </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+              <Field
+                label="Timing line"
+                hint="Shown in the info strip on the public page."
+              >
+                <input
+                  className="input"
+                  value={form.timing}
+                  onChange={e => update({ timing: e.target.value })}
+                  placeholder="Early morning · 7 AM to 12 PM"
+                />
+              </Field>
+              <Field label="Transport" hint="Leave blank to hide the transport cell.">
+                <input
+                  className="input"
+                  value={form.transport}
+                  onChange={e => update({ transport: e.target.value })}
+                  placeholder="Transportation facility is available"
+                />
+              </Field>
+            </div>
+
             <div className="panel-header mt-2 mb-2">
               <h3 className="panel-title">Flow of the day</h3>
               <button type="button" onClick={addTimeline} className="text-xs font-bold text-amber-700 hover:underline btn-sm">＋ Add item</button>
@@ -694,6 +764,95 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
                 );
               })}
               {form.timeline.length === 0 && <p className="text-xs text-stone-400">No timeline items yet.</p>}
+            </div>
+          </Card>
+
+          {/* ── Poster content ─────────────────────────────────────────── */}
+          <Card title="What the day covers">
+            <div className="panel-header mb-2">
+              <h3 className="panel-title">Highlights</h3>
+              <button type="button" onClick={addHighlight} className="text-xs font-bold text-amber-700 hover:underline btn-sm">
+                ＋ Add highlight
+              </button>
+            </div>
+            <p className="text-xs text-stone-500 leading-relaxed mb-3">
+              One card per stop, with a photo, a short title and a one-line caption — the
+              three blocks from the printed poster. Three or six read best on the page.
+            </p>
+
+            <div className="space-y-4">
+              {form.highlights.map((h, i) => (
+                <div key={i} className="rounded-xl border border-stone-200 bg-stone-50/60 p-4">
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="text-xs font-bold text-stone-500 uppercase tracking-wide">
+                      Highlight {i + 1}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button type="button" onClick={() => moveHighlight(i, -1)} disabled={i === 0}
+                        className="icon-btn disabled:opacity-30" aria-label="Move up">↑</button>
+                      <button type="button" onClick={() => moveHighlight(i, 1)} disabled={i === form.highlights.length - 1}
+                        className="icon-btn disabled:opacity-30" aria-label="Move down">↓</button>
+                      <button type="button" onClick={() => removeHighlight(i)}
+                        className="icon-btn text-red-500 hover:text-red-700" aria-label="Remove highlight">✕</button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-start">
+                    <ImageField
+                      label="Photo"
+                      slot={`highlight-${i}`}
+                      value={h.image}
+                      onChange={url => patchHighlight(i, { image: url })}
+                      hint="Landscape, around 800×600."
+                    />
+                    <div className="space-y-3">
+                      <Field label="Title" classNameWrap="!mb-0">
+                        <input className="input" value={h.title}
+                          onChange={e => patchHighlight(i, { title: e.target.value })}
+                          placeholder="Andhra's biggest kitchen visit" />
+                      </Field>
+                      <Field label="Caption" classNameWrap="!mb-0">
+                        <input className="input" value={h.caption}
+                          onChange={e => patchHighlight(i, { caption: e.target.value })}
+                          placeholder="Experience seva at Andhra's biggest kitchen" />
+                      </Field>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {form.highlights.length === 0 && (
+                <p className="text-xs text-stone-400">
+                  No highlights yet — the section stays hidden on the public page.
+                </p>
+              )}
+            </div>
+
+            <div className="panel-header mt-4 mb-2">
+              <h3 className="panel-title">Why join</h3>
+              <button
+                type="button"
+                onClick={() => update({ benefits: [...form.benefits, ''] })}
+                className="text-xs font-bold text-amber-700 hover:underline btn-sm"
+              >
+                ＋ Add line
+              </button>
+            </div>
+            <div className="space-y-2">
+              {form.benefits.map((b, i) => (
+                <div key={i} className="grid grid-cols-[1fr_auto] gap-2 items-center">
+                  <input className="input" value={b}
+                    onChange={e => patchBenefit(i, e.target.value)}
+                    placeholder="Spiritual learning" />
+                  <button type="button" className="icon-btn"
+                    onClick={() => update({ benefits: form.benefits.filter((_, j) => j !== i) })}
+                    aria-label="Remove line">✕</button>
+                </div>
+              ))}
+              {form.benefits.length === 0 && (
+                <p className="text-xs text-stone-400">
+                  No lines yet — the “Why join” section stays hidden.
+                </p>
+              )}
             </div>
           </Card>
 

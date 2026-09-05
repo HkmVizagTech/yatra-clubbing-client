@@ -10,6 +10,21 @@ const ArrowIcon = () => (
 const CheckIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
 );
+const CalendarIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+);
+const ClockIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+);
+const UsersIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+);
+const BusIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/></svg>
+);
+const SparkIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.4L21 10.6l-5.4 4 .6 6.9-4.2-3.6-4.2 3.6.6-6.9L3 10.6l6.8-2.2z"/></svg>
+);
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
@@ -72,26 +87,36 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
 
   const theme = event.branding.themeColor || '#E07B00';
   const locations = (event.locations || []).filter(Boolean);
+  const highlights = (event.highlights || []).filter(h => h.title || h.image);
+  const benefits = (event.benefits || []).filter(Boolean);
   // Shown whole, so only a real uploaded poster is used — no stretched default.
   const posterDesktop = event.branding.heroDesktop || '';
   const posterMobile = event.branding.heroMobile || posterDesktop;
   const poster = posterMobile || posterDesktop;
+
+  // The strip mirrors the poster's dark band. Each cell appears only when the
+  // event actually has that detail, so it never shows an empty column.
+  const strip: { icon: React.ReactNode; k: string; v: string }[] = [];
+  if (event.dates.display) strip.push({ icon: <CalendarIcon />, k: 'Date', v: event.dates.display });
+  if (event.timing) strip.push({ icon: <ClockIcon />, k: 'Timing', v: event.timing });
+  if (event.ageLimit) strip.push({ icon: <UsersIcon />, k: 'Age limit', v: event.ageLimit });
+  if (event.transport) strip.push({ icon: <BusIcon />, k: 'Transport', v: event.transport });
 
   return (
     <>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="beforeInteractive" />
       <div className="bc-root" style={{ ['--accent' as string]: theme }}>
         <div className="bc-navline">
-        <nav className="bc-nav">
-          {/* Back to the chooser — the home page lists every open yatra. */}
-          <a href="/" className="bc-brand" title="See all yatras">
-            <span className="bc-brand-badge">
-              <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="18" r="4" /><path d="M12 18V2l7 4" /></svg>
-            </span>
-            <span>Yatra Clubbing<small>{event.org || 'Hare Krishna Vaikuntham'}</small></span>
-          </a>
-          <BookingModal event={event} />
-        </nav>
+          <nav className="bc-nav">
+            {/* Back to the chooser — the home page lists every open yatra. */}
+            <a href="/" className="bc-brand" title="See all yatras">
+              <span className="bc-brand-badge">
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="18" r="4" /><path d="M12 18V2l7 4" /></svg>
+              </span>
+              <span>Yatra Clubbing<small>{event.org || 'Hare Krishna Vaikuntham'}</small></span>
+            </a>
+            <BookingModal event={event} />
+          </nav>
         </div>
 
         <div className="bc-wrap">
@@ -111,24 +136,24 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
               </figure>
             )}
 
-            <dl className="bc-facts">
-              {event.dates.display && (
-                <div className="bc-fact"><dt className="k">When</dt><dd className="v">{event.dates.display}</dd></div>
-              )}
-              {event.venue && (
-                <div className="bc-fact"><dt className="k">Starts from</dt><dd className="v">{event.venue}</dd></div>
-              )}
-              {event.ageLimit && (
-                <div className="bc-fact"><dt className="k">Age</dt><dd className="v">{event.ageLimit}</dd></div>
-              )}
-              <div className="bc-fact"><dt className="k">Includes</dt><dd className="v">Lunch feast</dd></div>
-              {locations.length > 0 && (
-                <div className="bc-fact wide">
-                  <dt className="k">Route</dt>
-                  <dd className="v">{locations.join(' · ')}</dd>
-                </div>
-              )}
-            </dl>
+            {strip.length > 0 && (
+              <div className="bc-strip">
+                {strip.map(s => (
+                  <div className="bc-stripitem" key={s.k}>
+                    {s.icon}
+                    <span className="k">{s.k}</span>
+                    <span className="v">{s.v}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {(event.venue || locations.length > 0) && (
+              <div className="bc-metalines">
+                {event.venue && <p><span className="k">Starts from</span>{event.venue}</p>}
+                {locations.length > 0 && <p><span className="k">Route</span>{locations.join(' · ')}</p>}
+              </div>
+            )}
 
             <div className="bc-herorow">
               <BookButton className="bc-herocta">
@@ -137,6 +162,23 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
               </BookButton>
             </div>
           </header>
+
+          {highlights.length > 0 && (
+            <section className="bc-sec">
+              <h2 className="bc-sectitle">What the day covers</h2>
+              <div className="bc-highlights">
+                {highlights.map((h, i) => (
+                  <article className="bc-hl" key={i}>
+                    {h.image && <img src={h.image} alt="" className="bc-hl-img" loading="lazy" />}
+                    <div className="bc-hl-body">
+                      {h.title && <h3 className="bc-hl-title">{h.title}</h3>}
+                      {h.caption && <p className="bc-hl-caption">{h.caption}</p>}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
 
           {event.description && (
             <section className="bc-sec">
@@ -161,6 +203,20 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
                 ))}
               </div>
               <div className="bc-flow-note">Timings are indicative · the final schedule is shared on your confirmation</div>
+            </section>
+          )}
+
+          {benefits.length > 0 && (
+            <section className="bc-sec">
+              <h2 className="bc-sectitle">Why join</h2>
+              <ul className="bc-benefits">
+                {benefits.map((b, i) => (
+                  <li key={i}>
+                    <span className="ic" aria-hidden="true"><SparkIcon /></span>
+                    {b}
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
 
