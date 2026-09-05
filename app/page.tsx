@@ -72,9 +72,15 @@ function EventCard({ card }: { card: PublicEventCard }) {
 
         <div className="ych-cardfoot">
           <div className="ych-price">
-            {card.priceFrom != null ? <>From<b>₹{card.priceFrom}</b></> : <b style={{ marginTop: 0 }}>Free</b>}
+            {card.priceFrom != null ? (
+              <>From<b>₹{card.priceFrom}</b>
+                {card.wasFrom != null && card.wasFrom > card.priceFrom && (
+                  <s className="ych-was">₹{card.wasFrom}</s>
+                )}
+              </>
+            ) : <b style={{ marginTop: 0 }}>Free</b>}
           </div>
-          <span className="ych-go">Book now <ArrowIcon /></span>
+          <span className="ych-go">Register <ArrowIcon /></span>
         </div>
       </div>
     </Link>
@@ -128,10 +134,10 @@ export default async function HomePage() {
     <Shell note={`${events.length} yatras open`}>
       <header className="ych-head">
         <div className="ych-eyebrow">Choose your yatra</div>
-        <h1 className="ych-title">Yatra<br />Clubbing</h1>
+        <h1 className="ych-title">Yatra<br /><span className="dim">Clubbing</span></h1>
         <p className="ych-sub">
           {events.length} yatras are open for booking. Pick the one you want to join —
-          each has its own dates, route and passes.
+          each has its own dates, route and student pass.
         </p>
       </header>
 

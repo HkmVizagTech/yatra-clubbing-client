@@ -177,7 +177,7 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
 
             <div className="bc-herorow">
               <BookButton className="bc-herocta">
-                Book tickets
+                Register now
                 <ArrowIcon />
               </BookButton>
             </div>
@@ -255,6 +255,7 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
           {event.tickets.length > 0 && (
             <section className="bc-sec" id="tickets">
               <h2 className="bc-sectitle">Get your pass</h2>
+              <p className="bc-ticket-note">One pass per seat — events are open to students with a valid college / school ID.</p>
               <div className="bc-ticket-wrap">
                 {event.tickets.map(t => (
                   <div className={`bc-stub${t.tag ? ' is-featured' : ''}`} key={t.key}>
@@ -276,7 +277,7 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
                       </ul>
                     )}
                     <BookButton className="bc-stubcta" preset={t.key}>
-                      Get {t.name} pass
+                      Register for {t.name}
                     </BookButton>
                     {t.requiresStudentId && (
                       <div className="bc-stub-note">College or school ID required</div>
@@ -298,7 +299,7 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
         <div className="bc-bar">
           <div className="bc-bar-in">
             <div className="lbl">{event.name}{event.dates.display ? ` · ${event.dates.display}` : ''}</div>
-            <BookButton>Book now</BookButton>
+            <BookButton>Register now</BookButton>
           </div>
         </div>
 

@@ -56,6 +56,8 @@ export interface PublicEventCard {
   locations?: string[];
   dates: { display: string; start?: string; end?: string };
   priceFrom: number | null;
+  /** Cheapest original (pre-discount) price, when a discounted pass exists. */
+  wasFrom?: number | null;
   ticketCount: number;
   branding: {
     heroDesktop?: string;

@@ -7,6 +7,11 @@ export interface Registration {
   name: string;
   phone: string;
   email: string | null;
+  age?: number | null;
+  college?: string | null;
+  course?: string | null;
+  year_of_study?: string | null;
+  gender?: string | null;
   pass_type: 'student' | 'general';
   qty_general: number;
   qty_student: number;

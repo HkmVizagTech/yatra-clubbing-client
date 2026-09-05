@@ -66,7 +66,7 @@ export default function RegistrationsPage() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return regs.filter(r => {
-      if (q && ![r.name, r.phone, r.email, r.ref].some(v => String(v ?? '').toLowerCase().includes(q))) return false;
+      if (q && ![r.name, r.phone, r.email, r.ref, r.college, r.course, r.year_of_study].some(v => String(v ?? '').toLowerCase().includes(q))) return false;
       if (filter === 'paid') return r.payment_status === 'paid';
       if (filter === 'pending') return r.payment_status !== 'paid';
       if (filter === 'students') return r.qty_student > 0;
@@ -196,6 +196,9 @@ export default function RegistrationsPage() {
                 <th className="th">Name</th>
                 <th className="th">Phone</th>
                 <th className="th">Email</th>
+                <th className="th">College</th>
+                <th className="th">Course · Year</th>
+                <th className="th">Age</th>
                 <th className="th">Pass</th>
                 <th className="th">Qty</th>
                 <th className="th">Total</th>
@@ -224,6 +227,13 @@ export default function RegistrationsPage() {
                         <a href={`mailto:${r.email}`} className="hover:underline text-amber-700">{r.email}</a>
                       ) : <span className="opacity-30">—</span>}
                     </td>
+                    <td className="td text-stone-600 whitespace-nowrap max-w-[220px] truncate" title={r.college || ''}>
+                      {r.college || <span className="opacity-30">—</span>}
+                    </td>
+                    <td className="td text-stone-600 whitespace-nowrap">
+                      {[r.course, r.year_of_study].filter(Boolean).join(' · ') || <span className="opacity-30">—</span>}
+                    </td>
+                    <td className="td text-stone-600 font-mono text-xs">{r.age ?? '—'}</td>
                     <td className="td">
                       <span className={r.pass_type === 'student' ? 'pill-amber' : 'pill-violet'}>
                         {r.pass_type}
@@ -295,7 +305,7 @@ export default function RegistrationsPage() {
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="px-4 py-14 text-center text-stone-400">
+                  <td colSpan={15} className="px-4 py-14 text-center text-stone-400">
                     {search || filter !== 'all' ? 'No results match your filter.' : 'No registrations yet.'}
                   </td>
                 </tr>

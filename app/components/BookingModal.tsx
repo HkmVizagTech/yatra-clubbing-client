@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { apiFetch } from '@/lib/api';
-import type { PublicEvent } from '@/lib/publicTypes';
+import type { PublicEvent, PublicTicketTier } from '@/lib/publicTypes';
 
 type QtyMap = Record<string, number>;
 
@@ -18,8 +18,12 @@ interface BookingPayload {
   event_code: string;
   ref: string;
   name: string;
+  age: number;
   phone: string;
   email: string | null;
+  college: string;
+  course: string | null;
+  year_of_study: string | null;
   tickets: QtyMap;
   total: number;
   studentStatus?: string | null;
@@ -28,6 +32,11 @@ interface BookingPayload {
 }
 
 const inr = (n: number) => '₹' + n.toLocaleString('en-IN');
+
+const YEAR_OPTIONS = [
+  '1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year',
+  'Post Graduate', 'Other',
+];
 
 // #yc-modal-root is the last child of .bc-root, so the overlay still inherits
 // the theme custom properties (--bg2, --gold, …) that are declared on .bc-root
@@ -38,61 +47,46 @@ function portalTarget(): HTMLElement {
 
 export default function BookingModal({ event }: { event: PublicEvent }) {
   const [open, setOpen] = useState(false);
-  const [qty, setQty] = useState<QtyMap>({});
+  const [tierKey, setTierKey] = useState<string | undefined>(
+    () => event.tickets.find(t => t.requiresStudentId)?.key || event.tickets[0]?.key
+  );
   const [name, setName] = useState('');
+  const [age, setAge] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [college, setCollege] = useState('');
+  const [course, setCourse] = useState('');
+  const [yearOfStudy, setYearOfStudy] = useState('');
   const [idCard, setIdCard] = useState<{ data: string; type: string; name: string } | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [result, setResult] = useState<{ ref: string; name: string; phone: string; total: number; paymentId: string; studentStatus: string } | null>(null);
 
-  const total = useMemo(() => {
-    let sum = 0;
-    for (const pubt of event.tickets) {
-      const n = qty[pubt.key] || 0;
-      sum += n * pubt.price;
-    }
-    return sum;
-  }, [qty, event.tickets]);
+  const tier: PublicTicketTier | undefined = event.tickets.find(t => t.key === tierKey) || event.tickets[0];
+  const discounted = Boolean(tier && tier.was != null && (tier.was || 0) > (tier.price || 0));
+  const total = tier?.price || 0;
 
-  const totalQty = useMemo(() => Object.values(qty).reduce((s, n) => s + n, 0), [qty]);
-  const studentQty = useMemo(() => {
-    const st = event.tickets.find(t => t.requiresStudentId);
-    return st ? (qty[st.key] || 0) : 0;
-  }, [qty, event.tickets]);
-  const studentTicket = event.tickets.find(t => t.requiresStudentId);
+  const ageNum = Number(age);
+  const ageOk = Number.isInteger(ageNum) && ageNum >= 10 && ageNum <= 100;
 
   const canConfirm = useCallback(() => {
     const nameOk = name.trim().length > 0;
     const phoneOk = /^[0-9]{10}$/.test(phone.trim());
-    const idOk = studentQty <= 0 || Boolean(idCard);
-    return totalQty > 0 && nameOk && phoneOk && idOk;
-  }, [name, phone, idCard, studentQty, totalQty]);
+    const collegeOk = college.trim().length > 0;
+    return Boolean(tier) && nameOk && ageOk && phoneOk && collegeOk && Boolean(idCard);
+  }, [name, ageOk, phone, college, tier, idCard]);
 
-  function inc(key: string, d: number) {
-    const pubt = event.tickets.find(t => t.key === key);
-    if (!pubt) return;
-    const max = pubt.maxQty || 1;
-    setQty(prev => {
-      const cur = prev[key] || 0;
-      const next = Math.min(max, Math.max(0, cur + d));
-      return { ...prev, [key]: next };
-    });
-    setError('');
-  }
-
-  function openNow(preset?: string) {
-    const init: QtyMap = {};
-    if (preset) {
-      const pubt = event.tickets.find(t => t.key === preset);
-      if (pubt) init[pubt.key] = 1;
-    }
-    setQty(init);
+  function openNow() {
+    // Yatra Clubbing is a single-pass, student-only booking — reselect nothing,
+    // just reset the attendee fields.
     setName('');
+    setAge('');
     setPhone('');
     setEmail('');
+    setCollege('');
+    setCourse('');
+    setYearOfStudy('');
     setIdCard(null);
     setError('');
     setStep(1);
@@ -101,9 +95,8 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
   }
 
   useEffect(() => {
-    function handler(e: Event) {
-      const custom = e as CustomEvent<{ preset?: string }>;
-      openNow(custom.detail?.preset);
+    function handler() {
+      openNow();
     }
     window.addEventListener('yatra:open-booking', handler);
     return () => window.removeEventListener('yatra:open-booking', handler);
@@ -141,11 +134,15 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
       event_code: event.code,
       ref,
       name: name.trim(),
+      age: ageNum,
       phone: phone.trim(),
       email: email.trim() || null,
-      tickets: qty,
+      college: college.trim(),
+      course: course.trim() || null,
+      year_of_study: yearOfStudy || null,
+      tickets: tier ? { [tier.key]: 1 } : {},
       total,
-      studentStatus: studentQty > 0 ? 'ID uploaded — pending verification' : null,
+      studentStatus: 'ID uploaded — pending verification',
       idCard,
       payment: { status: 'pending' },
     };
@@ -218,7 +215,7 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
   async function submit() {
     setError('');
     if (!canConfirm()) {
-      setError('Please fill in all required details.');
+      setError('Please fill in all required details and upload your college / school ID.');
       return;
     }
     setBusy(true);
@@ -239,37 +236,61 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
     setOpen(false);
   }
 
-  const tierStep = (pub: (typeof event.tickets)[number]) => {
-    const n = qty[pub.key] || 0;
-    return (
-      <div className="yc-step" key={pub.key}>
-        <div>
-          <div className="nm">{pub.name}</div>
-          <div className="pr">₹{pub.price} {pub.was != null && <s>₹{pub.was}</s>}</div>
-        </div>
-        {pub.requiresStudentId ? (
-          <div className="yc-onepass">1 pass</div>
-        ) : (
-          <div className="yc-stepper">
-            <button type="button" onClick={() => inc(pub.key, -1)}>−</button>
-            <b>{n}</b>
-            <button type="button" onClick={() => inc(pub.key, 1)}>+</button>
+  const passPicker = () => {
+    if (event.tickets.length <= 1 && tier) {
+      return (
+        <div className="yc-pass">
+          <div className="yc-pass-head">
+            <div>
+              <div className="nm">{tier.name || 'Student pass'}</div>
+              {tier.requiresStudentId && <div className="req">🎓 College / school ID required</div>}
+            </div>
+            <div className="yc-pass-price">
+              <b>{inr(tier.price || 0)}</b>
+              {discounted && <s>{inr(tier.was as number)}</s>}
+              {discounted && <span className="yc-save">Save {inr((tier.was as number) - (tier.price || 0))}</span>}
+            </div>
           </div>
+          {(tier.features?.length || 0) > 0 && (
+            <div className="yc-pass-feat">{tier.features.join(' · ')}</div>
+          )}
+          {tier.description && <div className="yc-pass-desc">{tier.description}</div>}
+        </div>
+      );
+    }
+
+    return (
+      <div className="bc-passpick">
+        {event.tickets.map(t => {
+          const selected = t.key === tier?.key;
+          const on = discounted && t.was != null && (t.was || 0) > (t.price || 0);
+          return (
+            <button type="button" key={t.key} className={`yc-pass-opt${selected ? ' sel' : ''}`}
+              onClick={() => { setTierKey(t.key); setError(''); }}>
+              <span className="radio" aria-hidden="true">{selected ? '✓' : ''}</span>
+              <span className="bc-po-mid">
+                <b>{t.name}</b>
+                {t.requiresStudentId && <em>🎓 ID required</em>}
+              </span>
+              <span className="bc-po-pr">
+                {inr(t.price || 0)}
+                {on && <s>{inr(t.was as number)}</s>}
+              </span>
+            </button>
+          );
+        })}
+        {discounted && tier && (
+          <div className="yc-save-line">Early-bird pricing — {inr((tier.was as number) - (tier.price || 0))} off for students</div>
         )}
       </div>
     );
   };
 
-  // The nav lives inside .bc-wrap, which sets `position:relative; z-index:1`
-  // and therefore opens a stacking context. A `position:fixed` overlay rendered
-  // in here can never rise above later siblings of .bc-wrap no matter how high
-  // its own z-index is — that is why the sheet used to appear *behind* the hero
-  // and the ticket cards. Portalling it out of .bc-wrap escapes that trap.
   const overlay = !open ? null : (
-    <div className="bc-overlay" onClick={close} role="dialog" aria-modal="true" aria-label="Get your pass">
+    <div className="bc-overlay" onClick={close} role="dialog" aria-modal="true" aria-label="Register for the yatra">
       <div className="bc-modal" onClick={e => e.stopPropagation()}>
             <div className="bc-mhead">
-              <div className="tt"><span className="pill">{event.name}</span><h3>Get your pass</h3></div>
+              <div className="tt"><span className="pill">{event.name}</span><h3>Register your seat</h3></div>
               <button className="bc-close" onClick={close}>✕</button>
             </div>
             <div className="bc-steps"><div className={`s ${step === 1 ? 'on' : ''}`}></div><div className={`s ${step === 2 ? 'on' : ''}`}></div></div>
@@ -278,59 +299,67 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
               {step === 1 && (
                 <>
                   <div className="bc-field">
-                    <label>Select tickets</label>
-                    {event.tickets.map(tierStep)}
+                    <label>Your pass</label>
+                    {passPicker()}
                   </div>
-
-                  {totalQty > 0 && (
-                    <div className="bc-summary" style={{ textAlign: 'left' }}>
-                      {event.tickets.filter(t => (qty[t.key] || 0) > 0).map(t => (
-                        <div className="bc-srow" key={t.key}>
-                          <span>{t.name} × {qty[t.key]}</span>
-                          <span className="amt">{inr((qty[t.key] || 0) * t.price)}</span>
-                        </div>
-                      ))}
-                      <div className="bc-srow tot"><span>Total</span><span className="amt">{inr(total)}</span></div>
-                    </div>
-                  )}
 
                   <div className="bc-field"><label>Full name</label>
                     <input className="bc-input" value={name} onChange={e => setName(e.target.value)} placeholder="Your name" /></div>
 
-                  <div className="bc-field"><label>Mobile number</label>
-                    <input className="bc-input" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} maxLength={10} placeholder="10-digit mobile" /></div>
+                  <div className="bc-grid2">
+                    <div className="bc-field"><label>Age</label>
+                      <input className="bc-input" inputMode="numeric" value={age}
+                        onChange={e => setAge(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                        maxLength={2} placeholder="e.g. 21" /></div>
+                    <div className="bc-field"><label>Mobile number</label>
+                      <input className="bc-input" inputMode="numeric" value={phone}
+                        onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                        maxLength={10} placeholder="10-digit mobile" /></div>
+                  </div>
 
-                  <div className="bc-field"><label>Email <span style={{ color: 'var(--muted2)', fontWeight: 500 }}>(optional)</span></label>
-                    <input className="bc-input" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" /></div>
+                  <div className="bc-field"><label>Email <span style={{ color: 'var(--ink-3)', fontWeight: 500 }}>(optional)</span></label>
+                    <input className="bc-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" /></div>
 
-                  {studentQty > 0 && (
-                    <div className="yc-verify">
-                      <div className="vh">🎓 Student proof</div>
-                      {!idCard ? (
-                        <label className="bc-upload" style={{ cursor: 'pointer' }}>
-                          <span className="uic">📎</span>
-                          <b>Upload college / school ID</b>
-                          <span>Image or PDF · for {studentTicket?.name || 'students'}</span>
-                          <input type="file" accept="image/*,.pdf" style={{ display: 'none' }}
-                            onChange={e => {
-                              const f = e.target.files?.[0];
-                              if (!f) return;
-                              const reader = new FileReader();
-                              reader.onload = () => setIdCard({ data: String(reader.result), type: f.type, name: f.name });
-                              reader.readAsDataURL(f);
-                            }} />
-                        </label>
-                      ) : (
-                        <div className="bc-uploaded">
-                          <div className="ok">✓</div>
-                          <div><div className="fn">{idCard.name}</div><div className="fs">Uploaded</div></div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <div className="bc-field"><label>College / school name</label>
+                    <input className="bc-input" value={college} onChange={e => setCollege(e.target.value)} placeholder="Your college / school" /></div>
+
+                  <div className="bc-grid2">
+                    <div className="bc-field"><label>Course / study</label>
+                      <input className="bc-input" value={course} onChange={e => setCourse(e.target.value)} placeholder="e.g. B.Tech CSE" /></div>
+                    <div className="bc-field"><label>Year of study</label>
+                      <select className="bc-select" value={yearOfStudy} onChange={e => setYearOfStudy(e.target.value)}>
+                        <option value="">Choose…</option>
+                        {YEAR_OPTIONS.map(y => <option key={y}>{y}</option>)}
+                      </select></div>
+                  </div>
+
+                  <div className="yc-verify">
+                    <div className="vh">🎓 Student proof</div>
+                    {!idCard ? (
+                      <label className="bc-upload" style={{ cursor: 'pointer' }}>
+                        <span className="uic">📎</span>
+                        <b>Upload college / school ID</b>
+                        <span>Image or PDF · required to confirm your seat</span>
+                        <input type="file" accept="image/*,.pdf" style={{ display: 'none' }}
+                          onChange={e => {
+                            const f = e.target.files?.[0];
+                            if (!f) return;
+                            const reader = new FileReader();
+                            reader.onload = () => setIdCard({ data: String(reader.result), type: f.type, name: f.name });
+                            reader.readAsDataURL(f);
+                          }} />
+                      </label>
+                    ) : (
+                      <div className="bc-uploaded">
+                        <div className="ok">✓</div>
+                        <div className="fn">{idCard.name}</div>
+                        <div className="fs">Uploaded — your ID is verified before the yatra</div>
+                      </div>
+                    )}
+                  </div>
 
                   <button className="bc-btn" onClick={submit} disabled={busy || !canConfirm()}>
-                    {busy ? 'Processing…' : `Confirm booking · ${inr(total)}`}
+                    {busy ? 'Processing…' : `Proceed to pay · ${inr(total)}`}
                   </button>
                   {error && <div className="bc-hint err" style={{ display: 'block', color: '#FF8A8A' }}>{error}</div>}
                   <div className="bc-secure">🔒 Secure payment via Razorpay · UPI, cards &amp; netbanking</div>
@@ -340,7 +369,7 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
               {step === 2 && result && (
                 <div className="bc-success">
                   <div className="bc-succ-ic">🪷</div>
-                  <h3>Booking confirmed</h3>
+                  <h3>Seat reserved</h3>
                   <p className="bc-succ-sub">Hare Krishna! Your seat for the <b>{event.name}</b> is booked.</p>
                   <div className="bc-summary" style={{ textAlign: 'left' }}>
                     <div className="bc-srow"><span>Name</span><span>{result.name}</span></div>
@@ -350,7 +379,7 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
                   </div>
                   <div className="bc-timeline">
                     <div className="bc-tl-item done"><div className="bc-tl-dot">✓</div><div><b>Payment received</b><span>Your seat is paid &amp; reserved.</span></div></div>
-                    <div className="bc-tl-item now"><div className="bc-tl-dot">●</div><div><b>Confirmation on WhatsApp</b><span>We'll message your booking details right away.</span></div></div>
+                    <div className="bc-tl-item now"><div className="bc-tl-dot">●</div><div><b>ID verification</b><span>We review your college ID and WhatsApp you once it's verified.</span></div></div>
                   </div>
                   <div className="bc-ref">Booking ref · {result.ref} · {result.paymentId}</div>
                   <div className="bc-succ-actions"><button className="bc-btn ghost" onClick={close}>Done</button></div>
@@ -364,7 +393,7 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
 
   return (
     <>
-      <button className="bc-navcta" onClick={() => openNow()}>Book now</button>
+      <button className="bc-navcta" onClick={() => openNow()}>Register now</button>
       {overlay ? createPortal(overlay, portalTarget()) : null}
     </>
   );

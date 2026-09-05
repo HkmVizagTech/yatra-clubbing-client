@@ -58,8 +58,9 @@ export function buildChartData(registrations: Registration[]) {
 
 export function downloadCSV(registrations: Registration[]) {
   const cols: (keyof Registration)[] = [
-    'created_at', 'ref', 'name', 'phone', 'email',
-    'pass_type', 'qty_general', 'qty_student', 'total',
+    'created_at', 'ref', 'name', 'age', 'phone', 'email',
+    'college', 'course', 'year_of_study',
+    'pass_type', 'total',
     'payment_status', 'payment_id', 'student_status',
   ];
   const head = cols.join(',');
