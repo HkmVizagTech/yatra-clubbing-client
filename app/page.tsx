@@ -1,20 +1,13 @@
 import Link from 'next/link';
 import './home.css';
 import EventLanding from './components/EventLanding';
-import { ToranBorder, TempleSkyline, FeatherFan } from './components/Decor';
+import SiteHeader from './components/SiteHeader';
+import SiteFooter from './components/SiteFooter';
 import { fetchActiveEvents, fetchEventByCode } from '@/lib/publicEvents';
-import { cdnImage } from '@/lib/img';
 import type { PublicEventCard } from '@/lib/publicTypes';
 
 // The admin can publish or unpublish at any moment, so never cache.
 export const dynamic = 'force-dynamic';
-
-export const metadata = {
-  title: 'Choose your yatra',
-  description:
-    'One-day yatras from Hare Krishna Vaikuntham, Visakhapatnam — temple trails, seva at Andhra\u2019s biggest kitchen, trekking and a prasadam feast.',
-  alternates: { canonical: '/' },
-};
 
 const CalendarIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
@@ -53,7 +46,7 @@ function EventCard({ card }: { card: PublicEventCard }) {
     <Link href={`/${card.code}`} className="ych-card" prefetch={false}>
       <div
         className={`ych-cardimg${hero ? '' : ' is-empty'}`}
-        style={hero ? { backgroundImage: `url(${cdnImage(hero, 640)})` } : undefined}
+        style={hero ? { backgroundImage: `url(${hero})` } : undefined}
       >
         {!hero && <span aria-hidden="true">🪔</span>}
         {soon && <div className="ych-tag">{soon}</div>}
@@ -73,42 +66,21 @@ function EventCard({ card }: { card: PublicEventCard }) {
 
         <div className="ych-cardfoot">
           <div className="ych-price">
-            {card.priceFrom != null ? (
-              <>From<b>₹{card.priceFrom}</b>
-                {card.wasFrom != null && card.wasFrom > card.priceFrom && (
-                  <s className="ych-was">₹{card.wasFrom}</s>
-                )}
-              </>
-            ) : <b style={{ marginTop: 0 }}>Free</b>}
+            {card.priceFrom != null ? <>From<b>₹{card.priceFrom}</b></> : <b style={{ marginTop: 0 }}>Free</b>}
           </div>
-          <span className="ych-go">Register <ArrowIcon /></span>
+          <span className="ych-go">Book now <ArrowIcon /></span>
         </div>
       </div>
     </Link>
   );
 }
 
-function Shell({ children, note }: { children: React.ReactNode; note?: string }) {
+function Shell({ children }: { children: React.ReactNode; note?: string }) {
   return (
-    <div className="ych">
-      {/* Decorative ornaments — pure SVG, behind the content, pointer-events:none. */}
-      <ToranBorder className="ych-decor ych-decor-toran" />
-      <FeatherFan className="ych-decor ych-decor-feather" />
-      <TempleSkyline uid="home-sky" className="ych-decor ych-decor-sky" />
-
-      <div className="ych-wrap">
-        <nav className="ych-nav">
-          <div className="ych-brand">
-            <span className="ych-badge">
-              <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="18" r="4" /><path d="M12 18V2l7 4" /></svg>
-            </span>
-            <span>Yatra Clubbing<small>Hare Krishna Vaikuntham</small></span>
-          </div>
-          {note && <div className="ych-navnote">{note}</div>}
-        </nav>
-      </div>
-
-      <div className="ych-wrap">{children}</div>
+    <div className="hk ych">
+      <SiteHeader activeHref="/" />
+      {children}
+      <SiteFooter />
     </div>
   );
 }
@@ -120,10 +92,16 @@ export default async function HomePage() {
   if (events.length === 0) {
     return (
       <Shell>
-        <div className="ych-empty">
-          <div className="ic">🪔</div>
-          <h2>No yatras open right now</h2>
-          <p>Registrations open closer to each yatra. Please check back soon — Hare Krishna.</p>
+        <header className="ych-head">
+          <div className="ych-eyebrow">Yatra Clubbing</div>
+          <h1 className="ych-title">Travel · Explore<br />Connect · Grow</h1>
+        </header>
+        <div className="ych-wrap">
+          <div className="ych-empty">
+            <div className="ic">🪔</div>
+            <h2>No yatras open right now</h2>
+            <p>Registrations open closer to each yatra. Please check back soon — Hare Krishna.</p>
+          </div>
         </div>
       </Shell>
     );
@@ -137,24 +115,21 @@ export default async function HomePage() {
   }
 
   return (
-    <Shell note={`${events.length} yatras open`}>
+    <Shell>
       <header className="ych-head">
-        <div className="ych-eyebrow">Choose your yatra</div>
-        <h1 className="ych-title">Yatra<br /><span className="dim">Clubbing</span></h1>
+        <div className="ych-eyebrow">Travel · Explore · Connect · Grow</div>
+        <h1 className="ych-title">Choose your yatra</h1>
         <p className="ych-sub">
-          {events.length} yatras are open for booking. Pick the one you want to join —
-          each has its own dates, route and student pass.
+          {events.length} yatras are open for booking. Each has its own dates, route
+          and passes — pick the one you want to join.
         </p>
       </header>
 
-      <div className="ych-grid">
-        {events.map(card => <EventCard key={card.code} card={card} />)}
+      <div className="ych-wrap">
+        <div className="ych-grid">
+          {events.map(card => <EventCard key={card.code} card={card} />)}
+        </div>
       </div>
-
-      <footer className="ych-foot">
-        <div><span className="org">Hare Krishna Vaikuntham</span> · Visakhapatnam</div>
-        <div>Hare Krishna</div>
-      </footer>
     </Shell>
   );
 }
