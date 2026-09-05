@@ -5,34 +5,28 @@
    ========================================================================== */
 
 .ych{
-  --ground:#180E08;
-  --ground-2:#211208;
-  --card:#2A1810;
-  --panel:#20120A;
-
-  --ink:#F8F1E5;
-  --ink-2:#CDB89C;
-  --ink-3:#9C8770;
-
-  --line:rgba(245,184,65,.16);
-  --line-2:rgba(245,184,65,.09);
-
+  --paper:#FAF8F5;
+  --card:#FFFFFF;
+  --ink:#1C1917;
+  --ink-2:#57534E;
+  --ink-3:#8A827A;
+  --line:#E9E4DC;
+  --line-2:#F3EFE9;
   --accent:#E07B00;
-  --accent-btn:#E79625;
-  --accent-btn-ink:#241309;
-  --accent-ink:#F1B665;
-  --accent-soft:rgba(231,150,37,.12);
-  --accent-line:rgba(231,150,37,.34);
+  --accent-solid:#A85A00;
+  --accent-ink:#8F4700;
+  --accent-soft:#FFF6EC;
+  --accent-line:#F0DCC2;
 
   --radius:14px;
   --radius-sm:10px;
-  --shadow:0 2px 4px rgba(0,0,0,.28), 0 18px 44px -22px rgba(0,0,0,.7);
+  --shadow:0 1px 2px rgba(28,25,23,.04), 0 10px 30px -18px rgba(28,25,23,.20);
 
   font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
   font-size:15.5px;
   line-height:1.65;
   color:var(--ink);
-  background:var(--ground);
+  background:var(--paper);
   min-height:100vh;
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
@@ -40,18 +34,17 @@
 
 @supports (color:color-mix(in srgb, red 50%, black)){
   .ych{
-    --accent-btn:color-mix(in srgb, var(--accent) 70%, #FFD37A);
-    --accent-ink:color-mix(in srgb, var(--accent) 45%, #FFE7B8);
-    --accent-soft:color-mix(in srgb, var(--accent) 14%, transparent);
-    --accent-line:color-mix(in srgb, var(--accent) 36%, transparent);
+    --accent-solid:color-mix(in srgb, var(--accent) 74%, #1C1917);
+    --accent-ink:color-mix(in srgb, var(--accent) 68%, #1C1917);
+    --accent-soft:color-mix(in srgb, var(--accent) 8%, #FFFFFF);
+    --accent-line:color-mix(in srgb, var(--accent) 26%, #FFFFFF);
   }
 }
 
 .ych *{box-sizing:border-box; margin:0; padding:0;}
 .ych a{color:inherit; text-decoration:none;}
 .ych img{display:block; max-width:100%;}
-.ych :focus-visible{outline:2px solid var(--accent-ink); outline-offset:2px; border-radius:4px;}
-.ych ::selection{background:var(--accent-line); color:var(--ink);}
+.ych :focus-visible{outline:2px solid var(--accent-solid); outline-offset:2px; border-radius:4px;}
 
 .ych-wrap{max-width:1040px; margin:0 auto; padding:0 20px;}
 
@@ -65,7 +58,7 @@
 .ych-badge{
   width:32px; height:32px; border-radius:9px; flex:none;
   display:grid; place-items:center;
-  background:var(--accent-btn); color:var(--accent-btn-ink);
+  background:var(--accent-solid); color:#fff;
 }
 .ych-brand > span{
   font-weight:600; font-size:14.5px; letter-spacing:-.01em; line-height:1.25;
@@ -74,7 +67,7 @@
   display:block; font-size:11.5px; font-weight:400; color:var(--ink-3);
 }
 .ych-navnote{
-  font-size:11.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+  font-size:11.5px; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
   color:var(--ink-3); white-space:nowrap;
 }
 
@@ -82,14 +75,14 @@
 
 .ych-head{text-align:center; padding:46px 0 4px; border-top:1px solid var(--line);}
 .ych-eyebrow{
-  font-size:11.5px; font-weight:700; letter-spacing:.18em; text-transform:uppercase;
+  font-size:11.5px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
   color:var(--accent-ink);
 }
 .ych-title{
   font-family:'Bricolage Grotesque',sans-serif;
   font-weight:700; line-height:1.06; letter-spacing:-.025em;
   font-size:clamp(32px,5.6vw,50px);
-  margin-top:12px; color:var(--ink);
+  margin-top:12px;
   text-wrap:balance;
 }
 .ych-sub{
@@ -112,35 +105,33 @@
 }
 .ych-card:hover{transform:translateY(-2px); border-color:var(--accent-line);}
 
-/* Posters are portrait artwork — contain, not cover, so nothing is chopped off. */
 .ych-cardimg{
   position:relative; aspect-ratio:4/3;
   background-size:contain; background-position:center; background-repeat:no-repeat;
-  background-color:var(--ground-2);
+  background-color:var(--paper);
   border-bottom:1px solid var(--line);
 }
 .ych-cardimg.is-empty{
-  background:var(--ground-2);
+  background:var(--accent-soft);
   display:grid; place-items:center;
 }
-.ych-cardimg.is-empty span{font-size:34px; opacity:.5;}
+.ych-cardimg.is-empty span{font-size:34px; opacity:.6;}
 .ych-when{
   display:inline-flex; align-items:center; gap:7px;
-  font-size:13px; font-weight:700; color:var(--accent-ink);
+  font-size:13px; font-weight:600; color:var(--ink);
 }
-.ych-when svg{flex:none;}
+.ych-when svg{color:var(--accent-ink); flex:none;}
 .ych-tag{
   position:absolute; right:10px; top:10px;
   padding:4px 10px; border-radius:999px;
-  font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
-  color:var(--accent-btn-ink); background:var(--accent-btn);
+  font-size:10.5px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
+  color:#fff; background:var(--accent-solid);
 }
 
 .ych-cardbody{padding:16px 18px 18px; display:flex; flex-direction:column; gap:8px; flex:1;}
 .ych-cardname{
   font-family:'Bricolage Grotesque',sans-serif;
   font-weight:700; font-size:19px; letter-spacing:-.018em; line-height:1.25;
-  color:var(--ink);
 }
 .ych-cardtag{
   color:var(--ink-2); font-size:14px; line-height:1.5;
@@ -150,7 +141,7 @@
 .ych-chip{
   display:inline-flex; align-items:center; gap:6px;
   padding:5px 10px; border-radius:999px;
-  background:var(--ground-2); border:1px solid var(--line-2);
+  background:var(--paper); border:1px solid var(--line);
   font-size:12px; color:var(--ink-2);
 }
 .ych-chip svg{color:var(--ink-3); flex:none;}
@@ -164,22 +155,22 @@
   margin-top:auto; padding-top:14px; border-top:1px solid var(--line-2);
 }
 .ych-price{
-  font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+  font-size:10.5px; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
   color:var(--ink-3); line-height:1.2;
 }
 .ych-price b{
   display:block; margin-top:3px;
   font-family:'Bricolage Grotesque',sans-serif; font-size:21px; font-weight:700;
-  color:var(--accent-ink); letter-spacing:-.02em; text-transform:none;
+  color:var(--ink); letter-spacing:-.02em; text-transform:none;
 }
 .ych-go{
   display:inline-flex; align-items:center; gap:7px;
   padding:10px 16px; border-radius:var(--radius-sm);
-  font-weight:700; font-size:14px;
-  color:var(--accent-btn-ink); background:var(--accent-btn);
+  font-weight:600; font-size:14px; color:#fff;
+  background:var(--accent-solid);
   transition:filter .15s ease;
 }
-.ych-card:hover .ych-go{filter:brightness(1.1);}
+.ych-card:hover .ych-go{filter:brightness(1.08);}
 
 /* --- Empty state --------------------------------------------------------- */
 
@@ -188,14 +179,13 @@
 .ych-empty h2{
   font-family:'Bricolage Grotesque',sans-serif;
   font-weight:700; font-size:24px; letter-spacing:-.02em; margin-bottom:8px;
-  color:var(--ink);
 }
 .ych-empty p{color:var(--ink-2); font-size:15.5px; line-height:1.65; max-width:44ch; margin:0 auto;}
 
 /* --- Footer -------------------------------------------------------------- */
 
 .ych-foot{
-  margin-top:40px; padding:22px 0 34px; border-top:1px solid var(--line-2);
+  margin-top:40px; padding:22px 0 34px; border-top:1px solid var(--line);
   display:flex; flex-wrap:wrap; gap:6px 18px; justify-content:space-between;
   color:var(--ink-3); font-size:13px;
 }

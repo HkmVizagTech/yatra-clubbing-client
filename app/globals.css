@@ -2,169 +2,73 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ============================================================================
-   Admin panel
-   ----------------------------------------------------------------------------
-   The public site is dark brown and gold, taken from the printed poster. Admin
-   deliberately stays LIGHT — dense tables and the long event form are far
-   easier to work through on a light ground — but it borrows the same warm
-   neutrals and the same gold accent, so the two read as one product.
-
-   Every colour is a token below. Change it here, not in the components.
-   ========================================================================== */
-
 @layer base {
-  :root {
-    /* Warm neutrals — the light end of the public site's brown */
-    --a-paper:#F7F3EC;
-    --a-card:#FFFFFF;
-    --a-sunk:#FBF8F2;
-    --a-line:#E7DFD2;
-    --a-line-2:#F1EAE0;
-
-    --a-ink:#241A10;
-    --a-ink-2:#6B5D4C;
-    --a-ink-3:#9A8A76;
-
-    /* Gold accent, dark enough to carry white text and to read as text */
-    --a-gold:#A85A00;
-    --a-gold-hover:#8F4C00;
-    --a-gold-soft:#FDF3E4;
-    --a-gold-line:#EBD7B4;
-  }
-
-  body {
-    background:var(--a-paper);
-    color:var(--a-ink);
-    @apply font-sans antialiased;
-  }
-  ::selection { background:var(--a-gold-soft); }
+  body { @apply bg-stone-100 text-stone-900 font-sans antialiased; }
+  ::selection { @apply bg-amber-500/20; }
 }
 
 @layer components {
   /* Buttons */
   .btn-gold {
-    @apply inline-flex items-center justify-center gap-2 text-white rounded-xl px-4 py-2.5 font-semibold text-sm cursor-pointer border-0 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
-    background:var(--a-gold);
+    @apply inline-flex items-center justify-center gap-2 bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-xl px-4 py-2.5 font-semibold text-sm cursor-pointer border-0 transition-all hover:brightness-105 active:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed;
   }
-  .btn-gold:hover:not(:disabled) { background:var(--a-gold-hover); }
-
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 text-white rounded-xl px-4 py-2.5 font-semibold text-sm cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
-    background:var(--a-ink);
-    border:1px solid var(--a-ink);
+    @apply inline-flex items-center justify-center gap-2 bg-stone-900 text-white rounded-xl px-4 py-2.5 font-semibold text-sm cursor-pointer border border-stone-900 transition-colors hover:bg-stone-700 disabled:opacity-50 disabled:cursor-not-allowed;
   }
-  .btn-primary:hover:not(:disabled) { background:#3B2A1A; }
-
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 font-semibold text-sm cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
-    background:var(--a-card);
-    color:var(--a-ink-2);
-    border:1px solid var(--a-line);
+    @apply inline-flex items-center justify-center gap-2 bg-white text-stone-700 border border-stone-200 rounded-xl px-4 py-2.5 font-semibold text-sm cursor-pointer hover:bg-stone-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
   }
-  .btn-ghost:hover:not(:disabled) { background:var(--a-sunk); color:var(--a-ink); }
-
   .btn-danger {
     @apply inline-flex items-center justify-center gap-2 bg-red-600 text-white rounded-xl px-4 py-2.5 font-semibold text-sm cursor-pointer hover:bg-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-sm { @apply px-2.5 py-1.5 text-xs rounded-lg; }
-
   .icon-btn {
-    @apply inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors cursor-pointer;
-    color:var(--a-ink-3);
+    @apply inline-flex items-center justify-center w-8 h-8 rounded-lg text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors cursor-pointer;
   }
-  .icon-btn:hover { color:var(--a-ink); background:var(--a-line-2); }
 
   /* Cards */
   .panel {
-    @apply rounded-2xl p-5;
-    background:var(--a-card);
-    border:1px solid var(--a-line);
-    box-shadow:0 1px 2px rgba(36,26,16,.04);
+    @apply bg-white rounded-2xl border border-stone-200 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-5;
   }
   .panel-header {
     @apply flex items-center justify-between gap-4 mb-4 flex-wrap;
   }
   .panel-title {
-    @apply text-sm font-bold;
-    color:var(--a-ink);
+    @apply text-sm font-bold text-stone-900;
   }
 
   /* Form controls */
   .input {
-    @apply w-full px-3 py-2.5 rounded-xl text-sm transition;
-    background:var(--a-card);
-    color:var(--a-ink);
-    border:1px solid var(--a-line);
+    @apply w-full px-3 py-2.5 rounded-xl border border-stone-300 bg-white text-sm text-stone-900 placeholder:text-stone-400 shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition;
   }
-  .input::placeholder { color:var(--a-ink-3); }
-  .input:focus {
-    outline:none;
-    border-color:var(--a-gold);
-    box-shadow:0 0 0 3px var(--a-gold-soft);
-  }
-
   .label {
-    @apply block text-xs font-semibold uppercase tracking-wide mb-1.5;
-    color:var(--a-ink-2);
+    @apply block text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1.5;
   }
-
   .select {
-    @apply w-full px-3 py-2.5 rounded-xl text-sm transition;
-    background:var(--a-card);
-    color:var(--a-ink);
-    border:1px solid var(--a-line);
-  }
-  .select:focus {
-    outline:none;
-    border-color:var(--a-gold);
-    box-shadow:0 0 0 3px var(--a-gold-soft);
+    @apply w-full px-3 py-2.5 rounded-xl border border-stone-300 bg-white text-sm text-stone-900 shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition;
   }
 
   /* Table */
-  .table-wrap {
-    @apply rounded-2xl overflow-hidden;
-    background:var(--a-card);
-    border:1px solid var(--a-line);
-  }
+  .table-wrap { @apply bg-white rounded-2xl border border-stone-200 overflow-hidden; }
   .table { @apply w-full text-sm; }
   .th {
-    @apply text-left px-4 py-3 font-semibold text-[11px] uppercase tracking-wider whitespace-nowrap;
-    color:var(--a-ink-2);
-    background:var(--a-sunk);
-    border-bottom:1px solid var(--a-line);
+    @apply text-left px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-stone-500 bg-stone-50/60 border-b border-stone-200 whitespace-nowrap;
   }
-  .td {
-    @apply px-4 py-3 align-middle;
-    border-bottom:1px solid var(--a-line-2);
-  }
+  .td { @apply px-4 py-3 border-b border-stone-100 align-middle; }
 
   /* Pills / badges */
   .pill {
     @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap;
   }
-  .pill-green { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/70; }
-  .pill-amber {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ring-1;
-    background:var(--a-gold-soft);
-    color:var(--a-gold);
-    --tw-ring-color:var(--a-gold-line);
-  }
-  .pill-red { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap bg-red-50 text-red-800 ring-1 ring-red-200/70; }
-  .pill-gray {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ring-1;
-    background:var(--a-line-2);
-    color:var(--a-ink-2);
-    --tw-ring-color:var(--a-line);
-  }
-  .pill-violet { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap bg-violet-50 text-violet-800 ring-1 ring-violet-200/70; }
+  .pill-green { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100; }
+  .pill-amber { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap bg-amber-50 text-amber-700 ring-1 ring-amber-100; }
+  .pill-red { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap bg-red-50 text-red-700 ring-1 ring-red-100; }
+  .pill-gray { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap bg-stone-100 text-stone-600 ring-1 ring-stone-200; }
+  .pill-violet { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap bg-violet-50 text-violet-700 ring-1 ring-violet-100; }
 
   /* Stat cards */
   .stat-card {
-    @apply rounded-2xl p-5 flex-1 min-w-[140px];
-    background:var(--a-card);
-    border:1px solid var(--a-line);
-    box-shadow:0 1px 2px rgba(36,26,16,.04);
+    @apply bg-white rounded-2xl border border-stone-200 p-5 flex-1 min-w-[140px] shadow-[0_1px_3px_rgba(0,0,0,0.04)];
   }
 
   /* Page shells */
@@ -172,14 +76,8 @@
   .page-header {
     @apply flex items-center justify-between gap-4 flex-wrap;
   }
-  .page-title {
-    @apply text-2xl font-extrabold tracking-tight;
-    color:var(--a-ink);
-  }
-  .page-subtitle {
-    @apply text-sm mt-1;
-    color:var(--a-ink-2);
-  }
+  .page-title { @apply text-2xl font-extrabold text-stone-900 tracking-tight; }
+  .page-subtitle { @apply text-sm text-stone-500 mt-1; }
 
   /* Section label for collapsible groups */
   .accordion-summary {
@@ -187,25 +85,8 @@
   }
 }
 
-/* Tailwind's stone/amber utilities are used throughout the admin components.
-   Remap the handful that carry meaning onto the warm tokens so the palette is
-   consistent without touching every component. */
-@layer utilities {
-  .text-stone-900 { color:var(--a-ink); }
-  .text-stone-700, .text-stone-600 { color:var(--a-ink-2); }
-  .text-stone-500, .text-stone-400 { color:var(--a-ink-3); }
-  .text-amber-700, .text-amber-800 { color:var(--a-gold); }
-  .bg-stone-100 { background-color:var(--a-paper); }
-  .bg-stone-50, .bg-stone-50\/60, .bg-stone-50\/70 { background-color:var(--a-sunk); }
-  .border-stone-200, .border-stone-300 { border-color:var(--a-line); }
-  .border-stone-100 { border-color:var(--a-line-2); }
-  .hover\:bg-stone-50:hover { background-color:var(--a-sunk); }
-  .hover\:border-amber-400:hover { border-color:var(--a-gold-line); }
-  .hover\:bg-amber-50\/40:hover { background-color:var(--a-gold-soft); }
-}
-
 /* Scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(36,26,16,.18); border-radius: 8px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(36,26,16,.32); }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,.14); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.26); }

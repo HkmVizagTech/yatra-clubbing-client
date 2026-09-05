@@ -2,6 +2,8 @@ import Script from 'next/script';
 import '../public.css';
 import BookingModal from './BookingModal';
 import BookButton from './BookButton';
+import Countdown from './Countdown';
+import { cdnImage, cdnSrcSet } from '@/lib/img';
 import type { PublicEvent } from '@/lib/publicTypes';
 
 const ArrowIcon = () => (
@@ -130,10 +132,28 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
             {poster && (
               <figure className="bc-posterframe">
                 <picture>
-                  {posterDesktop && <source srcSet={posterDesktop} media="(min-width:768px)" />}
-                  <img src={poster} alt={`${event.name} poster`} className="bc-posterimg" fetchPriority="high" />
+                  {posterDesktop && (
+                    <source
+                      media="(min-width:768px)"
+                      srcSet={cdnSrcSet(posterDesktop, [540, 810, 1080]) || posterDesktop}
+                      sizes="540px"
+                    />
+                  )}
+                  <img
+                    src={cdnImage(poster, 1080) || poster}
+                    srcSet={cdnSrcSet(poster, [420, 640, 900]) || undefined}
+                    sizes="(min-width:768px) 540px, 100vw"
+                    alt={`${event.name} poster`}
+                    className="bc-posterimg"
+                    fetchPriority="high"
+                    decoding="async"
+                  />
                 </picture>
               </figure>
+            )}
+
+            {event.branding.showCountdown && event.dates.start && (
+              <Countdown to={event.dates.start} label="Yatra begins in" />
             )}
 
             {strip.length > 0 && (
@@ -169,7 +189,19 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
               <div className="bc-highlights">
                 {highlights.map((h, i) => (
                   <article className="bc-hl" key={i}>
-                    {h.image && <img src={h.image} alt="" className="bc-hl-img" loading="lazy" />}
+                    {h.image && (
+                      <img
+                        src={cdnImage(h.image, 700) || h.image}
+                        srcSet={cdnSrcSet(h.image, [360, 700]) || undefined}
+                        sizes="(min-width:900px) 280px, (min-width:640px) 45vw, 100vw"
+                        alt=""
+                        className="bc-hl-img"
+                        width={700}
+                        height={525}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    )}
                     <div className="bc-hl-body">
                       {h.title && <h3 className="bc-hl-title">{h.title}</h3>}
                       {h.caption && <p className="bc-hl-caption">{h.caption}</p>}

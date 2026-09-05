@@ -2,10 +2,18 @@ import Link from 'next/link';
 import './home.css';
 import EventLanding from './components/EventLanding';
 import { fetchActiveEvents, fetchEventByCode } from '@/lib/publicEvents';
+import { cdnImage } from '@/lib/img';
 import type { PublicEventCard } from '@/lib/publicTypes';
 
 // The admin can publish or unpublish at any moment, so never cache.
 export const dynamic = 'force-dynamic';
+
+export const metadata = {
+  title: 'Choose your yatra',
+  description:
+    'One-day yatras from Hare Krishna Vaikuntham, Visakhapatnam — temple trails, seva at Andhra\u2019s biggest kitchen, trekking and a prasadam feast.',
+  alternates: { canonical: '/' },
+};
 
 const CalendarIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
@@ -44,7 +52,7 @@ function EventCard({ card }: { card: PublicEventCard }) {
     <Link href={`/${card.code}`} className="ych-card" prefetch={false}>
       <div
         className={`ych-cardimg${hero ? '' : ' is-empty'}`}
-        style={hero ? { backgroundImage: `url(${hero})` } : undefined}
+        style={hero ? { backgroundImage: `url(${cdnImage(hero, 640)})` } : undefined}
       >
         {!hero && <span aria-hidden="true">🪔</span>}
         {soon && <div className="ych-tag">{soon}</div>}

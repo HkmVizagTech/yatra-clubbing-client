@@ -1,4 +1,27 @@
-export const API_BASE = (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_API_URL : '') || 'http://localhost:3000';
+// Set NEXT_PUBLIC_API_URL in Vercel. It is inlined at build time, so changing
+// it needs a redeploy, not just a restart.
+//
+// The fallback used to be http://localhost:3000, which does not exist on a
+// serverless host — a missing variable therefore produced a silently empty site
+// rather than an error anyone could see. Falling back to the real backend keeps
+// the site working, and the warning below says why it is doing so.
+const PRODUCTION_API = 'https://yatra-clubbing-server-production.up.railway.app';
+
+function resolveApiBase(): string {
+  const configured = typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_API_URL : '';
+  if (configured) return configured.replace(/\/+$/, '');
+
+  const isBrowser = typeof window !== 'undefined';
+  const onLocalhost = isBrowser && /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+  if (onLocalhost) return 'http://localhost:3000';
+
+  if (!isBrowser) {
+    console.warn('[api] NEXT_PUBLIC_API_URL is not set — falling back to', PRODUCTION_API);
+  }
+  return PRODUCTION_API;
+}
+
+export const API_BASE = resolveApiBase();
 
 export const ADMIN_TOKEN_KEY = 'yc_admin_token';
 
