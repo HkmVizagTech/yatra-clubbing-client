@@ -605,29 +605,11 @@ body.yc-modal-open{overflow:hidden;}
   background:var(--accent-soft);
 }
 .yc-verify .vh{font-size:13px; font-weight:600; margin-bottom:10px;}
-.bc-upload{
-  display:block; text-align:center; padding:18px 14px;
-  border:1.5px dashed var(--accent-line); border-radius:var(--radius-sm);
-  background:var(--card);
-  transition:border-color .15s ease, box-shadow .15s ease;
+.yc-verify-note{
+  font-size:14px; line-height:1.65; color:var(--ink-2);
+  margin:0;
 }
-.bc-upload:hover{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
-.bc-upload .uic{display:block; font-size:20px; margin-bottom:6px;}
-.bc-upload b{display:block; font-size:14px; font-weight:600;}
-.bc-upload span{display:block; font-size:12.5px; color:var(--ink-3); margin-top:3px;}
-.bc-uploaded{
-  display:flex; align-items:center; gap:12px;
-  padding:13px 15px; border:1px solid var(--line);
-  border-radius:var(--radius-sm); background:var(--card);
-}
-.bc-uploaded .ok{
-  width:26px; height:26px; border-radius:50%; flex:none;
-  display:grid; place-items:center; font-size:12px;
-  background:var(--grad); color:#160E03;
-}
-.bc-uploaded .fn{font-size:14px; font-weight:600; word-break:break-all;}
-.bc-uploaded .fs{font-size:12px; color:var(--ink-3); margin-top:1px;}
-
+.yc-verify-note b{color:var(--ink); font-weight:600;}
 .bc-hint{font-size:13px; color:var(--ink-2); margin-top:10px;}
 .bc-hint.err{color:#FF8FA3; font-weight:600;}
 .bc-secure{

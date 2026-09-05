@@ -285,7 +285,7 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
                       Register for {t.name}
                     </BookButton>
                     {t.requiresStudentId && (
-                      <div className="bc-stub-note">College or school ID required</div>
+                      <div className="bc-stub-note">Carry your college / school ID — verified on the day, no upload needed</div>
                     )}
                   </div>
                 ))}

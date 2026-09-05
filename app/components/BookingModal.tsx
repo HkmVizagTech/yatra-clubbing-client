@@ -27,7 +27,6 @@ interface BookingPayload {
   tickets: QtyMap;
   total: number;
   studentStatus?: string | null;
-  idCard?: { data: string; type: string; name: string } | null;
   payment: PaymentInfo;
 }
 
@@ -58,7 +57,6 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
   const [colleges, setColleges] = useState<string[]>([]);
   const [course, setCourse] = useState('');
   const [yearOfStudy, setYearOfStudy] = useState('');
-  const [idCard, setIdCard] = useState<{ data: string; type: string; name: string } | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
@@ -75,8 +73,8 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
     const nameOk = name.trim().length > 0;
     const phoneOk = /^[0-9]{10}$/.test(phone.trim());
     const collegeOk = college.trim().length > 0;
-    return Boolean(tier) && nameOk && ageOk && phoneOk && collegeOk && Boolean(idCard);
-  }, [name, ageOk, phone, college, tier, idCard]);
+    return Boolean(tier) && nameOk && ageOk && phoneOk && collegeOk;
+  }, [name, ageOk, phone, college, tier]);
 
   function openNow() {
     // Yatra Clubbing is a single-pass, student-only booking — reselect nothing,
@@ -88,7 +86,6 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
     setCollege('');
     setCourse('');
     setYearOfStudy('');
-    setIdCard(null);
     setError('');
     setStep(1);
     setResult(null);
@@ -160,8 +157,7 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
       year_of_study: yearOfStudy || null,
       tickets: tier ? { [tier.key]: 1 } : {},
       total,
-      studentStatus: 'ID uploaded — pending verification',
-      idCard,
+      studentStatus: 'Pending ID verification',
       payment: { status: 'pending' },
     };
   }
@@ -233,7 +229,7 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
   async function submit() {
     setError('');
     if (!canConfirm()) {
-      setError('Please fill in all required details and upload your college / school ID.');
+      setError('Please fill in all required details.');
       return;
     }
     setBusy(true);
@@ -356,28 +352,11 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
                   </div>
 
                   <div className="yc-verify">
-                    <div className="vh">🎓 Student proof</div>
-                    {!idCard ? (
-                      <label className="bc-upload" style={{ cursor: 'pointer' }}>
-                        <span className="uic">📎</span>
-                        <b>Upload college / school ID</b>
-                        <span>Image or PDF · required to confirm your seat</span>
-                        <input type="file" accept="image/*,.pdf" style={{ display: 'none' }}
-                          onChange={e => {
-                            const f = e.target.files?.[0];
-                            if (!f) return;
-                            const reader = new FileReader();
-                            reader.onload = () => setIdCard({ data: String(reader.result), type: f.type, name: f.name });
-                            reader.readAsDataURL(f);
-                          }} />
-                      </label>
-                    ) : (
-                      <div className="bc-uploaded">
-                        <div className="ok">✓</div>
-                        <div className="fn">{idCard.name}</div>
-                        <div className="fs">Uploaded — your ID is verified before the yatra</div>
-                      </div>
-                    )}
+                    <div className="vh">🎓 Student pass check</div>
+                    <p className="yc-verify-note">
+                      No upload needed right now — just carry your college / school ID along with you.
+                      Our team verifies it on the day of the yatra, before you board.
+                    </p>
                   </div>
 
                   <button className="bc-btn" onClick={submit} disabled={busy || !canConfirm()}>
@@ -401,7 +380,7 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
                   </div>
                   <div className="bc-timeline">
                     <div className="bc-tl-item done"><div className="bc-tl-dot">✓</div><div><b>Payment received</b><span>Your seat is paid &amp; reserved.</span></div></div>
-                    <div className="bc-tl-item now"><div className="bc-tl-dot">●</div><div><b>ID verification</b><span>We review your college ID and WhatsApp you once it's verified.</span></div></div>
+                    <div className="bc-tl-item now"><div className="bc-tl-dot">●</div><div><b>Bring your college ID</b><span>Carry your college / school ID — our team verifies it on the day, before you board.</span></div></div>
                   </div>
                   <div className="bc-ref">Booking ref · {result.ref} · {result.paymentId}</div>
                   <div className="bc-succ-actions"><button className="bc-btn ghost" onClick={close}>Done</button></div>
