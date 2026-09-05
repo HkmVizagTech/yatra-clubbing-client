@@ -55,6 +55,7 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [college, setCollege] = useState('');
+  const [colleges, setColleges] = useState<string[]>([]);
   const [course, setCourse] = useState('');
   const [yearOfStudy, setYearOfStudy] = useState('');
   const [idCard, setIdCard] = useState<{ data: string; type: string; name: string } | null>(null);
@@ -93,6 +94,23 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
     setResult(null);
     setOpen(true);
   }
+
+  // Load the shared global college list (from the admin manager) once, so the
+  // student's college autocompletes instead of being retyped. A name not on
+  // the list is still accepted.
+  useEffect(() => {
+    if (!open || colleges.length > 0) return;
+    let cancelled = false;
+    apiFetch('/api/colleges/list', {})
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        const list = (Array.isArray(d?.colleges) ? d.colleges : []) as string[];
+        if (!cancelled && list.length) setColleges(list);
+      })
+      .catch(() => { /* best-effort */ });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, colleges.length]);
 
   useEffect(() => {
     function handler() {
@@ -321,7 +339,11 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
                     <input className="bc-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" /></div>
 
                   <div className="bc-field"><label>College / school name</label>
-                    <input className="bc-input" value={college} onChange={e => setCollege(e.target.value)} placeholder="Your college / school" /></div>
+                    <input className="bc-input" list="yc-colleges" value={college} onChange={e => setCollege(e.target.value)}
+                      placeholder={colleges.length ? 'Start typing to pick your college' : 'Your college / school'} />
+                    <datalist id="yc-colleges">
+                      {colleges.map(c => <option key={c} value={c} />)}
+                    </datalist></div>
 
                   <div className="bc-grid2">
                     <div className="bc-field"><label>Course / study</label>

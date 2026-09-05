@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @layer base {
+  html, body { overflow-x: hidden; }
   body { @apply bg-stone-100 text-stone-900 font-sans antialiased; }
   ::selection { @apply bg-amber-500/20; }
 }

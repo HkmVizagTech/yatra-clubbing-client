@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import './home.css';
 import EventLanding from './components/EventLanding';
+import { ToranBorder, TempleSkyline, FeatherFan } from './components/Decor';
 import { fetchActiveEvents, fetchEventByCode } from '@/lib/publicEvents';
 import { cdnImage } from '@/lib/img';
 import type { PublicEventCard } from '@/lib/publicTypes';
@@ -90,6 +91,11 @@ function EventCard({ card }: { card: PublicEventCard }) {
 function Shell({ children, note }: { children: React.ReactNode; note?: string }) {
   return (
     <div className="ych">
+      {/* Decorative ornaments — pure SVG, behind the content, pointer-events:none. */}
+      <ToranBorder className="ych-decor ych-decor-toran" />
+      <FeatherFan className="ych-decor ych-decor-feather" />
+      <TempleSkyline uid="home-sky" className="ych-decor ych-decor-sky" />
+
       <div className="ych-wrap">
         <nav className="ych-nav">
           <div className="ych-brand">

@@ -5,14 +5,14 @@
    ========================================================================== */
 
 .ych{
-  --paper:#0F0C1B;
-  --card:#171430;
-  --card-2:#1C1840;
-  --ink:#F6F1EA;
-  --ink-2:#C9C1D8;
-  --ink-3:#8C84A3;
-  --line:rgba(255,255,255,.09);
-  --line-2:rgba(255,255,255,.055);
+  --paper:#1A152E;
+  --card:#241D3E;
+  --card-2:#2C2448;
+  --ink:#FBF6EE;
+  --ink-2:#D9D2E6;
+  --ink-3:#A99FC4;
+  --line:rgba(255,255,255,.14);
+  --line-2:rgba(255,255,255,.09);
   --accent:#E5A13E;
   --accent-solid:#C07A1E;
   --accent-ink:#FFCB7A;
@@ -21,8 +21,8 @@
 
   --radius:18px;
   --radius-sm:12px;
-  --shadow:0 2px 0 rgba(255,255,255,.03) inset, 0 18px 44px -22px rgba(0,0,0,.75);
-  --shadow-lg:0 40px 90px -34px rgba(0,0,0,.85), 0 0 60px -20px var(--accent-line);
+  --shadow:0 2px 0 rgba(255,255,255,.04) inset, 0 20px 46px -24px rgba(23,12,52,.55);
+  --shadow-lg:0 40px 90px -34px rgba(23,12,52,.72), 0 0 70px -26px var(--accent-line);
   --grad:linear-gradient(135deg,var(--accent),var(--accent-solid));
 
   font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
@@ -30,21 +30,33 @@
   line-height:1.65;
   color:var(--ink);
   background:
-    radial-gradient(36% 26% at 10% 6%, rgba(229,161,62,.10) 0%, transparent 62%),
-    radial-gradient(42% 30% at 90% 12%, rgba(124,100,233,.12) 0%, transparent 64%),
-    radial-gradient(60% 40% at 50% 110%, rgba(229,161,62,.06) 0%, transparent 60%),
-    linear-gradient(180deg,#0E0B1B 0%, #100D1F 42%, #0B0916 100%);
+    radial-gradient(38% 28% at 10% 6%, rgba(229,161,62,.14) 0%, transparent 62%),
+    radial-gradient(40% 28% at 50% -4%, rgba(244,114,182,.10) 0%, transparent 60%),
+    radial-gradient(46% 32% at 92% 14%, rgba(45,212,191,.12) 0%, transparent 62%),
+    radial-gradient(60% 42% at 50% 112%, rgba(124,100,233,.16) 0%, transparent 62%),
+    linear-gradient(180deg,#191431 0%, #1E1836 46%, #161028 100%);
   min-height:100vh;
+  position:relative;
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
 }
 
+.ych > .ych-wrap{position:relative; z-index:1;}
+
+/* --- Ornaments ----------------------------------------------------------- */
+
+.ych-decor{position:absolute; z-index:0; pointer-events:none;}
+.ych-decor svg{width:100%; height:100%;}
+.ych-decor-toran{top:0; left:0; right:0; height:22px;}
+.ych-decor-feather{right:-8px; bottom:10px; width:190px; opacity:.55;}
+.ych-decor-sky{left:0; right:0; bottom:0; height:150px;}
+
 @supports (color:color-mix(in srgb, red 50%, black)){
   .ych{
-    --accent-solid:color-mix(in srgb, var(--accent) 70%, #0A0712);
+    --accent-solid:color-mix(in srgb, var(--accent) 70%, #120C1E);
     --accent-ink:color-mix(in srgb, var(--accent) 74%, #FFEAD0);
-    --accent-soft:color-mix(in srgb, var(--accent) 16%, #141021);
-    --accent-line:color-mix(in srgb, var(--accent) 34%, #141021);
+    --accent-soft:color-mix(in srgb, var(--accent) 16%, #1A1428);
+    --accent-line:color-mix(in srgb, var(--accent) 34%, #1A1428);
     --grad:linear-gradient(135deg, color-mix(in srgb, var(--accent) 68%, #FFE9C9), var(--accent-solid));
   }
 }
@@ -109,7 +121,7 @@
 
 .ych-grid{
   display:grid; gap:20px; margin:42px 0 10px;
-  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  grid-template-columns:repeat(auto-fill,minmax(min(280px,100%),1fr));
 }
 .ych-card{
   display:flex; flex-direction:column; overflow:hidden;
@@ -172,7 +184,8 @@
 }
 .ych-chip.is-venue span{overflow:hidden; text-overflow:ellipsis;}
 .ych-cardfoot{
-  display:flex; align-items:flex-end; justify-content:space-between; gap:12px;
+  display:flex; align-items:flex-end; justify-content:space-between; gap:12px 16px;
+  flex-wrap:wrap;
   margin-top:auto; padding-top:14px; border-top:1px solid var(--line-2);
 }
 .ych-price{

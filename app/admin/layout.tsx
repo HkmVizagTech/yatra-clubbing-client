@@ -8,6 +8,7 @@ const NAV = [
   { href: '/admin', label: 'Dashboard', icon: DashboardIcon },
   { href: '/admin/events', label: 'Events', icon: EventsIcon },
   { href: '/admin/registrations', label: 'Registrations', icon: UsersIcon },
+  { href: '/admin/colleges', label: 'Colleges', icon: CollegeIcon },
   { href: '/admin/refund', label: 'Refunds', icon: RefundIcon },
 ];
 
@@ -124,6 +125,16 @@ function RefundIcon({ className, strokeWidth = 1.8 }: IconProps) {
       <path d="M3 4v4h4" />
       <path d="M9 12l3 3 3-3" />
       <path d="M12 15V7" />
+    </svg>
+  );
+}
+
+function CollegeIcon({ className, strokeWidth = 1.8 }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M22 9 12 5 2 9l10 4 10-4Z" />
+      <path d="M6 10.6V16c0 1.1 2.7 2.5 6 2.5s6-1.4 6-2.5v-5.4" />
+      <path d="M22 9v5" />
     </svg>
   );
 }

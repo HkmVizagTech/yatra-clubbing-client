@@ -3,6 +3,7 @@ import '../public.css';
 import BookingModal from './BookingModal';
 import BookButton from './BookButton';
 import Countdown from './Countdown';
+import { TempleSkyline, DandiyaPair, DiyaStrip } from './Decor';
 import { cdnImage, cdnSrcSet } from '@/lib/img';
 import type { PublicEvent } from '@/lib/publicTypes';
 
@@ -108,6 +109,10 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
     <>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="beforeInteractive" />
       <div className="bc-root" style={{ ['--accent' as string]: theme }}>
+        {/* Decorative ornaments — pure SVG, behind the content, pointer-events:none. */}
+        <TempleSkyline uid="el-sky" className="bc-decor bc-decor-sky" />
+        <DandiyaPair className="bc-decor bc-decor-dandiya" />
+
         <div className="bc-navline">
           <nav className="bc-nav">
             {/* Back to the chooser — the home page lists every open yatra. */}
@@ -288,6 +293,7 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
             </section>
           )}
 
+          <div className="bc-diya"><DiyaStrip /></div>
           <div className="yc-mantra">{event.branding.mantra || 'Hare Krishna'}</div>
 
           <footer className="bc-foot">
