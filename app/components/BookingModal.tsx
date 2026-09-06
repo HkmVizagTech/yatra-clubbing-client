@@ -19,6 +19,7 @@ interface BookingPayload {
   ref: string;
   name: string;
   age: number;
+  gender: string;
   phone: string;
   email: string | null;
   college: string;
@@ -37,6 +38,14 @@ const YEAR_OPTIONS = [
   'Post Graduate', 'Other',
 ];
 
+// Seat and accommodation allocation on a yatra is done separately for men and
+// women, so gender is a required field — kept lowercase on the wire so the
+// admin console and exports always get one of exactly two values.
+const GENDER_OPTIONS = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+];
+
 // #yc-modal-root is the last child of .bc-root, so the overlay still inherits
 // the theme custom properties (--bg2, --gold, …) that are declared on .bc-root
 // while sitting outside .bc-wrap's stacking context. <body> is only a fallback.
@@ -51,6 +60,7 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
   );
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
+  const [gender, setGender] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [college, setCollege] = useState('');
@@ -73,14 +83,16 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
     const nameOk = name.trim().length > 0;
     const phoneOk = /^[0-9]{10}$/.test(phone.trim());
     const collegeOk = college.trim().length > 0;
-    return Boolean(tier) && nameOk && ageOk && phoneOk && collegeOk;
-  }, [name, ageOk, phone, college, tier]);
+    const genderOk = GENDER_OPTIONS.some(g => g.value === gender);
+    return Boolean(tier) && nameOk && ageOk && genderOk && phoneOk && collegeOk;
+  }, [name, ageOk, gender, phone, college, tier]);
 
   function openNow() {
     // Yatra Clubbing is a single-pass, student-only booking — reselect nothing,
     // just reset the attendee fields.
     setName('');
     setAge('');
+    setGender('');
     setPhone('');
     setEmail('');
     setCollege('');
@@ -150,6 +162,7 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
       ref,
       name: name.trim(),
       age: ageNum,
+      gender,
       phone: phone.trim(),
       email: email.trim() || null,
       college: college.trim(),
@@ -325,14 +338,21 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
                       <input className="bc-input" inputMode="numeric" value={age}
                         onChange={e => setAge(e.target.value.replace(/\D/g, '').slice(0, 2))}
                         maxLength={2} placeholder="e.g. 21" /></div>
+                    <div className="bc-field"><label>Gender</label>
+                      <select className="bc-select" value={gender} onChange={e => setGender(e.target.value)}>
+                        <option value="">Choose…</option>
+                        {GENDER_OPTIONS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+                      </select></div>
+                  </div>
+
+                  <div className="bc-grid2">
                     <div className="bc-field"><label>Mobile number</label>
                       <input className="bc-input" inputMode="numeric" value={phone}
                         onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                         maxLength={10} placeholder="10-digit mobile" /></div>
+                    <div className="bc-field"><label>Email <span style={{ color: 'var(--muted)', fontWeight: 500 }}>(optional)</span></label>
+                      <input className="bc-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" /></div>
                   </div>
-
-                  <div className="bc-field"><label>Email <span style={{ color: 'var(--ink-3)', fontWeight: 500 }}>(optional)</span></label>
-                    <input className="bc-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" /></div>
 
                   <div className="bc-field"><label>College / school name</label>
                     <input className="bc-input" list="yc-colleges" value={college} onChange={e => setCollege(e.target.value)}

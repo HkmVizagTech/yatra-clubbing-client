@@ -404,6 +404,23 @@ body.yc-modal-open{overflow:hidden;}
 .bc-input::placeholder{color:var(--muted);}
 .bc-input:focus{border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-tint); outline:none;}
 
+/* Paired fields (age + gender, mobile + email). Collapses to one column on
+   narrow phones so the labels never wrap mid-word. */
+.bc-grid2{display:grid; grid-template-columns:1fr 1fr; gap:0 14px;}
+@media (max-width:420px){ .bc-grid2{grid-template-columns:1fr; gap:0;} }
+
+.bc-select{
+  width:100%; font:inherit; font-size:15.5px; color:var(--ink);
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r); padding:12px 40px 12px 14px;
+  -webkit-appearance:none; appearance:none; cursor:pointer;
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%238A7A62' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M1 1.5 6 6.5 11 1.5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 14px center;
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+.bc-select:focus{border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-tint); outline:none;}
+.bc-select:invalid, .bc-select option[value=""]{color:var(--muted);}
+
 .yc-step{
   display:flex; align-items:center; justify-content:space-between; gap:14px;
   padding:14px 16px; margin-bottom:10px;
@@ -449,11 +466,58 @@ body.yc-modal-open{overflow:hidden;}
 }
 .bc-srow.tot .amt{font-size:21px; color:var(--gold-bright);}
 
+/* Pass summary + picker. These were referenced by the booking sheet but never
+   had rules, so the price, strike-through and features all ran together. */
+.yc-pass{
+  border:1px solid var(--border); border-radius:var(--r);
+  background:var(--paper); padding:16px 18px;
+}
+.yc-pass-head{display:flex; align-items:flex-start; justify-content:space-between; gap:14px;}
+.yc-pass-head .nm{font-size:15.5px; font-weight:600; color:var(--navy);}
+.yc-pass-head .req{margin-top:5px; font-size:12.5px; color:var(--muted);}
+.yc-pass-price{flex:none; text-align:right; line-height:1.35;}
+.yc-pass-price b{display:block; font-size:19px; font-weight:700; color:var(--gold-deep); font-variant-numeric:tabular-nums;}
+.yc-pass-price s{display:block; font-size:13px; color:var(--muted); font-weight:400;}
+.yc-save{
+  display:inline-block; margin-top:6px;
+  font-size:11px; font-weight:600; letter-spacing:.02em;
+  color:var(--gold-deep); background:var(--gold-tint);
+  border:1px solid var(--gold); border-radius:var(--r-pill); padding:3px 9px;
+}
+.yc-pass-feat{
+  margin-top:12px; padding-top:12px; border-top:1px solid var(--border);
+  font-size:13px; color:var(--ink);
+}
+.yc-pass-desc{margin-top:6px; font-size:13px; color:var(--muted); line-height:1.6;}
+
+.bc-passpick{display:flex; flex-direction:column; gap:10px;}
+.yc-pass-opt{
+  display:flex; align-items:center; gap:12px; width:100%; text-align:left;
+  font:inherit; cursor:pointer; padding:13px 15px;
+  border:1px solid var(--border); border-radius:var(--r);
+  background:var(--surface); transition:border-color .15s ease, background .15s ease;
+}
+.yc-pass-opt:hover{border-color:var(--gold);}
+.yc-pass-opt.sel{border-color:var(--gold); background:var(--gold-tint);}
+.yc-pass-opt .radio{
+  flex:none; width:20px; height:20px; border-radius:50%;
+  border:1.5px solid var(--border); background:var(--surface);
+  display:grid; place-items:center; font-size:11px; color:var(--gold-deep);
+}
+.yc-pass-opt.sel .radio{border-color:var(--gold); background:var(--gold); color:#2A1B02;}
+.bc-po-mid{flex:1; min-width:0;}
+.bc-po-mid b{display:block; font-size:14.5px; font-weight:600; color:var(--navy);}
+.bc-po-mid em{display:block; margin-top:3px; font-size:12px; font-style:normal; color:var(--muted);}
+.bc-po-pr{flex:none; font-size:15px; font-weight:600; color:var(--gold-deep); text-align:right; font-variant-numeric:tabular-nums;}
+.bc-po-pr s{display:block; font-size:12px; color:var(--muted); font-weight:400;}
+.yc-save-line{font-size:12.5px; font-weight:600; color:var(--gold-deep); margin-top:2px;}
+
 .yc-verify{
   border:1px solid var(--border); border-radius:var(--r);
   padding:16px 18px; margin-bottom:18px; background:var(--paper);
 }
 .yc-verify .vh{font-size:13.5px; font-weight:600; margin-bottom:12px; color:var(--navy);}
+.yc-verify-note{font-size:13px; color:var(--muted); line-height:1.65;}
 .bc-upload{
   display:block; text-align:center; padding:20px 16px;
   border:1.5px dashed var(--border); border-radius:var(--r); background:var(--surface);
@@ -539,9 +603,47 @@ body.yc-modal-open{overflow:hidden;}
   .bc-overlay{padding:0;}
   .bc-modal{max-width:none; min-height:100%; margin:0; border:none; border-radius:0;}
 }
+/* ============================================================================
+   FAQ accordion
+   ----------------------------------------------------------------------------
+   FAQ.tsx shipped without any styling for these classes, so the section
+   rendered as a bare stack of unstyled buttons and paragraphs.
+   ========================================================================== */
+
+.faq-list{max-width:760px; margin:0 auto; display:grid; gap:10px;}
+.faq-item{
+  border:1px solid var(--border); border-radius:var(--r);
+  background:var(--surface); overflow:hidden;
+  transition:border-color .16s ease, box-shadow .16s ease;
+}
+.faq-item.is-open{border-color:var(--gold); box-shadow:var(--sh-soft);}
+.faq-q{margin:0; font-size:inherit; font-weight:inherit;}
+.faq-btn{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  width:100%; text-align:left; font:inherit; cursor:pointer;
+  padding:16px 20px; border:none; background:transparent;
+  font-size:15.5px; font-weight:600; color:var(--navy); line-height:1.5;
+}
+.faq-btn:hover{color:var(--gold-deep);}
+.faq-chev{
+  flex:none; width:26px; height:26px; border-radius:50%;
+  display:grid; place-items:center;
+  font-size:17px; font-weight:400; line-height:1;
+  background:var(--gold-tint); color:var(--gold-deep);
+  transition:transform .2s ease, background .2s ease;
+}
+.faq-item.is-open .faq-chev{transform:rotate(45deg); background:var(--gold); color:#2A1B02;}
+/* The panel's height is animated from an inline max-height set by the
+   component, so it stays in the DOM — and readable to screen readers — while
+   collapsed. */
+.faq-a-wrap{overflow:hidden; transition:max-height .24s ease;}
+.faq-a{padding:0 20px 18px; font-size:14.5px; line-height:1.75; color:var(--muted);}
+
 @media (max-width:460px){
   .bc-badges{gap:20px 18px;}
   .bc-badges li{width:76px;}
   .bc-badges .ic{width:46px; height:46px;}
   .bc-countdown-cells{gap:7px;}
+  .faq-btn{padding:14px 16px; font-size:14.5px;}
+  .faq-a{padding:0 16px 16px;}
 }

@@ -7,7 +7,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import type { Registration } from '@/lib/types';
-import { inr, fmtDate, getStudentStatus, buildChartData } from '@/lib/utils';
+import { inr, fmtDate, getStudentStatus, buildChartData, genderLabel } from '@/lib/utils';
 import { adminFetch } from '@/lib/api';
 import { useEvents } from './components/useEvents';
 import EventFilter from './components/EventFilter';
@@ -54,6 +54,7 @@ export default function DashboardPage() {
 
   const stats = useMemo(() => {
     const paid = regs.filter(r => r.payment_status === 'paid');
+    const isG = (r: Registration, g: string) => String(r.gender || '').toLowerCase() === g;
     return {
       total: paid.length,
       revenue: paid.reduce((s, r) => s + (r.total || 0), 0),
@@ -61,6 +62,10 @@ export default function DashboardPage() {
       student: regs.reduce((s, r) => s + (r.qty_student || 0), 0),
       pending: regs.filter(r => getStudentStatus(r) === 'pending').length,
       paid: paid.length,
+      // Head-count by gender across paid bookings — used for bus and
+      // accommodation allocation.
+      male: paid.filter(r => isG(r, 'male')).length,
+      female: paid.filter(r => isG(r, 'female')).length,
     };
   }, [regs]);
 
@@ -82,16 +87,18 @@ export default function DashboardPage() {
             </p>
           )}
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center flex-wrap">
           <EventFilter events={events} value={eventSlug} onChange={(s) => { setEventSlug(s); load(s); }} />
           <button onClick={() => load()} className="btn-ghost text-sm">↻ Refresh</button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="flex flex-wrap gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
         <StatCard value={stats.total} label="Paid bookings" icon="🎟️" />
         <StatCard value={inr(stats.revenue)} label="Revenue" icon="💰" />
+        <StatCard value={stats.male} label="Male (paid)" icon="👨" />
+        <StatCard value={stats.female} label="Female (paid)" icon="👩" />
         <StatCard value={stats.general} label="General seats" icon="🎫" />
         <StatCard value={stats.student} label="Student seats" icon="🎓" />
         {stats.pending > 0 && (
@@ -158,13 +165,39 @@ export default function DashboardPage() {
             View all →
           </Link>
         </div>
-        <div className="overflow-x-auto">
+        {/* Cards (phones) */}
+        <div className="md:hidden divide-y divide-stone-100">
+          {recent.map(r => (
+            <div key={r.ref} className="px-4 py-3.5 space-y-2">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-semibold text-stone-900 truncate">{r.name}</div>
+                  <div className="text-xs font-mono text-stone-400 mt-0.5">{r.ref} · {fmtDate(r.created_at)}</div>
+                </div>
+                <div className="font-bold text-stone-900 shrink-0">{inr(r.total)}</div>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                <PayBadge status={r.payment_status} />
+                <VerifyBadge status={getStudentStatus(r)} />
+                {genderLabel(r.gender) && <span className="pill-gray">{genderLabel(r.gender)}</span>}
+                <a href={`tel:${r.phone}`} className="text-amber-700 ml-auto">{r.phone}</a>
+              </div>
+            </div>
+          ))}
+          {recent.length === 0 && (
+            <div className="px-5 py-12 text-center text-stone-400">No registrations yet.</div>
+          )}
+        </div>
+
+        {/* Table (tablet and up) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="table">
             <thead>
               <tr>
                 <th className="th">Date</th>
                 <th className="th">Ref</th>
                 <th className="th">Name</th>
+                <th className="th">Gender</th>
                 <th className="th">Phone</th>
                 <th className="th">Total</th>
                 <th className="th">Payment</th>
@@ -177,6 +210,7 @@ export default function DashboardPage() {
                   <td className="td text-stone-600 whitespace-nowrap">{fmtDate(r.created_at)}</td>
                   <td className="td font-mono text-xs font-bold text-stone-900">{r.ref}</td>
                   <td className="td font-medium">{r.name}</td>
+                  <td className="td text-stone-600">{genderLabel(r.gender) || <span className="text-stone-300">—</span>}</td>
                   <td className="td text-stone-600">{r.phone}</td>
                   <td className="td font-bold">{inr(r.total)}</td>
                   <td className="td"><PayBadge status={r.payment_status} /></td>
@@ -185,7 +219,7 @@ export default function DashboardPage() {
               ))}
               {recent.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-14 text-center text-stone-400">No registrations yet.</td>
+                  <td colSpan={8} className="px-5 py-14 text-center text-stone-400">No registrations yet.</td>
                 </tr>
               )}
             </tbody>
@@ -198,13 +232,13 @@ export default function DashboardPage() {
 
 function StatCard({ value, label, icon, alert }: { value: string | number; label: string; icon: string; alert?: boolean }) {
   return (
-    <div className={`stat-card flex gap-4 items-center ${alert ? 'ring-2 ring-amber-300/60' : ''}`}>
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 ${alert ? 'bg-amber-100' : 'bg-stone-100'}`}>
+    <div className={`stat-card flex gap-3 sm:gap-4 items-center ${alert ? 'ring-2 ring-amber-300/60' : ''}`}>
+      <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-base sm:text-xl shrink-0 ${alert ? 'bg-amber-100' : 'bg-stone-100'}`}>
         {icon}
       </div>
       <div className="min-w-0">
-        <div className={`text-2xl font-extrabold leading-none truncate ${alert ? 'text-amber-600' : 'text-stone-900'}`}>{value}</div>
-        <div className="text-xs text-stone-500 mt-1 font-medium">{label}</div>
+        <div className={`text-xl sm:text-2xl font-extrabold leading-none truncate ${alert ? 'text-amber-600' : 'text-stone-900'}`}>{value}</div>
+        <div className="text-[11px] sm:text-xs text-stone-500 mt-1 font-medium truncate">{label}</div>
       </div>
     </div>
   );

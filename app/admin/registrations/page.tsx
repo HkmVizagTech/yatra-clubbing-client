@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Registration } from '@/lib/types';
-import { inr, fmtDate, getStudentStatus, getRejectionReason, downloadCSV } from '@/lib/utils';
+import { inr, fmtDate, getStudentStatus, getRejectionReason, downloadCSV, genderLabel } from '@/lib/utils';
 import { adminFetch } from '@/lib/api';
 import { useEvents } from '../components/useEvents';
 import EventFilter from '../components/EventFilter';
@@ -16,6 +16,7 @@ const REJECT_REASONS = [
 ];
 
 type Filter = 'all' | 'paid' | 'pending' | 'students' | 'verify';
+type GenderFilter = 'all' | 'male' | 'female' | 'unknown';
 
 export default function RegistrationsPage() {
   const [regs, setRegs] = useState<Registration[]>([]);
@@ -26,6 +27,7 @@ export default function RegistrationsPage() {
   const { events, loading: loadingEvents } = useEvents();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
+  const [gender, setGender] = useState<GenderFilter>('all');
   const [verifying, setVerifying] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState<Set<string>>(new Set());
   const [rejectModal, setRejectModal] = useState<{ ref: string; name: string } | null>(null);
@@ -66,16 +68,33 @@ export default function RegistrationsPage() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return regs.filter(r => {
-      if (q && ![r.name, r.phone, r.email, r.ref, r.college, r.course, r.year_of_study].some(v => String(v ?? '').toLowerCase().includes(q))) return false;
+      if (q && ![r.name, r.phone, r.email, r.ref, r.college, r.course, r.year_of_study, genderLabel(r.gender)].some(v => String(v ?? '').toLowerCase().includes(q))) return false;
+      if (gender !== 'all') {
+        const g = String(r.gender || '').toLowerCase();
+        if (gender === 'unknown' ? (g === 'male' || g === 'female') : g !== gender) return false;
+      }
       if (filter === 'paid') return r.payment_status === 'paid';
       if (filter === 'pending') return r.payment_status !== 'paid';
       if (filter === 'students') return r.qty_student > 0;
       if (filter === 'verify') return getStudentStatus(r) === 'pending';
       return true;
     });
-  }, [regs, search, filter]);
+  }, [regs, search, filter, gender]);
 
   const pendingCount = useMemo(() => regs.filter(r => getStudentStatus(r) === 'pending').length, [regs]);
+
+  // Head-count by gender for the current event — what the yatra team actually
+  // needs when allocating buses and accommodation.
+  const genderCounts = useMemo(() => {
+    let male = 0, female = 0, unknown = 0;
+    regs.forEach(r => {
+      const g = String(r.gender || '').toLowerCase();
+      if (g === 'male') male++;
+      else if (g === 'female') female++;
+      else unknown++;
+    });
+    return { male, female, unknown };
+  }, [regs]);
 
   const doVerify = useCallback(async (ref: string, action: 'approve' | 'reject', reason: string) => {
     setVerifying(prev => new Set(prev).add(ref));
@@ -150,9 +169,18 @@ export default function RegistrationsPage() {
         </div>
       </div>
 
+      {/* Gender head-count */}
+      <div className="flex gap-3 flex-wrap">
+        <CountBox label="Male" value={genderCounts.male} tone="sky" />
+        <CountBox label="Female" value={genderCounts.female} tone="rose" />
+        {genderCounts.unknown > 0 && (
+          <CountBox label="Not recorded" value={genderCounts.unknown} tone="stone" />
+        )}
+      </div>
+
       {/* Filters */}
       <div className="flex gap-3 flex-wrap items-center">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
+        <div className="relative w-full sm:flex-1 sm:min-w-[200px] sm:max-w-sm">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">🔍</span>
           <input
             type="text"
@@ -162,7 +190,18 @@ export default function RegistrationsPage() {
             className="input pl-9"
           />
         </div>
-        <div className="flex gap-1 bg-white border border-stone-200 rounded-xl p-1">
+        <select
+          value={gender}
+          onChange={e => setGender(e.target.value as GenderFilter)}
+          className="select w-auto font-medium text-stone-700"
+          aria-label="Filter by gender"
+        >
+          <option value="all">All genders</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          {genderCounts.unknown > 0 && <option value="unknown">Not recorded</option>}
+        </select>
+        <div className="chip-bar">
           {([
             { key: 'all', label: 'All' },
             { key: 'paid', label: 'Paid' },
@@ -173,11 +212,7 @@ export default function RegistrationsPage() {
             <button
               key={tab.key}
               onClick={() => setFilter(tab.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                filter === tab.key
-                  ? 'bg-stone-900 text-white'
-                  : 'text-stone-500 hover:text-stone-900'
-              }`}
+              className={`chip ${filter === tab.key ? 'chip-on' : 'chip-off'}`}
             >
               {tab.label}
             </button>
@@ -185,8 +220,31 @@ export default function RegistrationsPage() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="table-wrap">
+      {/* Cards (phones) */}
+      <div className="card-list">
+        {filtered.map(r => (
+          <RegCard
+            key={r.ref}
+            r={r}
+            busy={verifying.has(r.ref)}
+            deleting={deleting.has(r.ref)}
+            onApprove={() => doVerify(r.ref, 'approve', '')}
+            onReject={() => openRejectModal(r.ref, r.name)}
+            onDelete={() => deleteReg(r.ref, r.name)}
+          />
+        ))}
+        {filtered.length === 0 && (
+          <div className="row-card text-center text-stone-400 py-10">
+            {search || filter !== 'all' || gender !== 'all' ? 'No results match your filter.' : 'No registrations yet.'}
+          </div>
+        )}
+        {filtered.length > 0 && (
+          <p className="text-xs text-stone-400 px-1">Showing {filtered.length} of {regs.length} registrations</p>
+        )}
+      </div>
+
+      {/* Table (tablet and up) */}
+      <div className="table-wrap hidden md:block">
         <div className="overflow-x-auto">
           <table className="table">
             <thead>
@@ -199,6 +257,7 @@ export default function RegistrationsPage() {
                 <th className="th">College</th>
                 <th className="th">Course · Year</th>
                 <th className="th">Age</th>
+                <th className="th">Gender</th>
                 <th className="th">Pass</th>
                 <th className="th">Qty</th>
                 <th className="th">Total</th>
@@ -234,6 +293,7 @@ export default function RegistrationsPage() {
                       {[r.course, r.year_of_study].filter(Boolean).join(' · ') || <span className="opacity-30">—</span>}
                     </td>
                     <td className="td text-stone-600 font-mono text-xs">{r.age ?? '—'}</td>
+                    <td className="td"><GenderTag gender={r.gender} /></td>
                     <td className="td">
                       <span className={r.pass_type === 'student' ? 'pill-amber' : 'pill-violet'}>
                         {r.pass_type}
@@ -305,8 +365,8 @@ export default function RegistrationsPage() {
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={15} className="px-4 py-14 text-center text-stone-400">
-                    {search || filter !== 'all' ? 'No results match your filter.' : 'No registrations yet.'}
+                  <td colSpan={16} className="px-4 py-14 text-center text-stone-400">
+                    {search || filter !== 'all' || gender !== 'all' ? 'No results match your filter.' : 'No registrations yet.'}
                   </td>
                 </tr>
               )}
@@ -367,6 +427,122 @@ function PayBadge({ status }: { status: string }) {
     pending: 'pill-amber',
   };
   return <span className={map[status] || 'pill-gray'}>{status}</span>;
+}
+
+function GenderTag({ gender }: { gender?: string | null }) {
+  const label = genderLabel(gender);
+  if (!label) return <span className="text-stone-300 text-xs">—</span>;
+  const cls = label === 'Female'
+    ? 'bg-rose-50 text-rose-700 ring-rose-100'
+    : 'bg-sky-50 text-sky-700 ring-sky-100';
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ring-1 ${cls}`}>
+      {label}
+    </span>
+  );
+}
+
+function CountBox({ label, value, tone }: { label: string; value: number; tone: 'sky' | 'rose' | 'stone' }) {
+  const cls = {
+    sky: 'bg-sky-50 border-sky-200 text-sky-700',
+    rose: 'bg-rose-50 border-rose-200 text-rose-700',
+    stone: 'bg-stone-50 border-stone-200 text-stone-600',
+  }[tone];
+  return (
+    <div className={`rounded-xl border px-4 py-2.5 flex-1 min-w-[110px] ${cls}`}>
+      <div className="text-xl font-extrabold leading-none">{value}</div>
+      <div className="text-[11px] font-medium mt-1 opacity-80">{label}</div>
+    </div>
+  );
+}
+
+/* One registration as a card — the phone view of a table row. */
+function RegCard({
+  r, busy, deleting, onApprove, onReject, onDelete,
+}: {
+  r: Registration;
+  busy: boolean;
+  deleting: boolean;
+  onApprove: () => void;
+  onReject: () => void;
+  onDelete: () => void;
+}) {
+  const sts = getStudentStatus(r);
+  const qty = [
+    r.qty_general > 0 ? `General × ${r.qty_general}` : '',
+    r.qty_student > 0 ? `Student × ${r.qty_student}` : '',
+  ].filter(Boolean).join(' · ');
+
+  return (
+    <div className="row-card">
+      <div className="row-card-head">
+        <div className="min-w-0">
+          <div className="font-bold text-stone-900 truncate">{r.name}</div>
+          <div className="text-xs font-mono text-stone-400 mt-0.5">{r.ref} · {fmtDate(r.created_at)}</div>
+        </div>
+        <div className="text-right shrink-0">
+          <div className="font-extrabold text-stone-900">{inr(r.total)}</div>
+          <div className="mt-1"><PayBadge status={r.payment_status} /></div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        <GenderTag gender={r.gender} />
+        <span className={r.pass_type === 'student' ? 'pill-amber' : 'pill-violet'}>{r.pass_type}</span>
+        {sts === 'verified' && <span className="pill-green">✓ Verified</span>}
+        {sts === 'rejected' && <span className="pill-red" title={getRejectionReason(r)}>✗ Rejected</span>}
+        {sts === 'pending' && <span className="pill-gray">⏳ ID to verify</span>}
+      </div>
+
+      <div className="row-kv">
+        <span className="row-k">Phone</span>
+        <span className="row-v"><a href={`tel:${r.phone}`} className="text-amber-700">{r.phone}</a></span>
+
+        {r.email && (<>
+          <span className="row-k">Email</span>
+          <span className="row-v"><a href={`mailto:${r.email}`} className="text-amber-700 break-all">{r.email}</a></span>
+        </>)}
+
+        <span className="row-k">College</span>
+        <span className="row-v">{r.college || '—'}</span>
+
+        {(r.course || r.year_of_study) && (<>
+          <span className="row-k">Course</span>
+          <span className="row-v">{[r.course, r.year_of_study].filter(Boolean).join(' · ')}</span>
+        </>)}
+
+        <span className="row-k">Age</span>
+        <span className="row-v">{r.age ?? '—'}</span>
+
+        {qty && (<>
+          <span className="row-k">Qty</span>
+          <span className="row-v">{qty}</span>
+        </>)}
+
+        {r.payment_id && (<>
+          <span className="row-k">Pay ID</span>
+          <span className="row-v font-mono text-xs break-all">{r.payment_id}</span>
+        </>)}
+      </div>
+
+      <div className="row-actions">
+        {r.id_card_url && (
+          <a href={r.id_card_url} target="_blank" rel="noopener noreferrer" className="btn-ghost btn-sm">View ID ↗</a>
+        )}
+        {sts === 'pending' && (
+          <>
+            <button onClick={onApprove} disabled={busy} className="btn-ghost btn-sm text-emerald-700">
+              {busy ? '…' : '✓ Approve'}
+            </button>
+            <button onClick={onReject} disabled={busy} className="btn-ghost btn-sm text-red-600">✗ Reject</button>
+          </>
+        )}
+        <button onClick={onDelete} disabled={deleting} className="btn-ghost btn-sm text-red-500 ml-auto">
+          {deleting ? '…' : '🗑 Delete'}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function Spinner() {

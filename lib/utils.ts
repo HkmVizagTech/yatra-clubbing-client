@@ -22,6 +22,14 @@ export function fmtShortDate(s: string): string {
   }
 }
 
+/** 'male' → 'Male'. Older bookings taken before the field existed have none. */
+export function genderLabel(g: string | null | undefined): string {
+  const v = String(g || '').trim().toLowerCase();
+  if (v === 'male') return 'Male';
+  if (v === 'female') return 'Female';
+  return '';
+}
+
 export function getStudentStatus(r: Registration): StudentStatus {
   if (r.qty_student <= 0) return 'none';
   const s = r.student_status || '';
@@ -58,7 +66,7 @@ export function buildChartData(registrations: Registration[]) {
 
 export function downloadCSV(registrations: Registration[]) {
   const cols: (keyof Registration)[] = [
-    'created_at', 'ref', 'name', 'age', 'phone', 'email',
+    'created_at', 'ref', 'name', 'age', 'gender', 'phone', 'email',
     'college', 'course', 'year_of_study',
     'pass_type', 'total',
     'payment_status', 'payment_id', 'student_status',

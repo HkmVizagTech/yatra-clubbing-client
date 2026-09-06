@@ -161,7 +161,7 @@ export default function RefundPage() {
 
         {audit && (
           <>
-            <div className="flex gap-3 flex-wrap">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3">
               <StatBox value={audit.totalCaptured} label="Total captured" color="amber" />
               <StatBox value={audit.refundedCount} label="Fully refunded" color="green" />
               <StatBox value={audit.notRefundedCount} label="NOT refunded" color="red" />
@@ -175,7 +175,30 @@ export default function RefundPage() {
               <p className="text-emerald-700 font-medium text-sm">✓ Every captured payment has been fully refunded.</p>
             ) : (
               <div className="table-wrap overflow-visible">
-                <div className="overflow-x-auto rounded-2xl">
+                {/* Cards (phones) */}
+                <div className="md:hidden divide-y divide-stone-100">
+                  {audit.rows.filter(r => r.status !== 'refunded').map(r => (
+                    <div key={r.paymentId} className="px-4 py-3.5 space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-stone-900 truncate">{r.name || '—'}</div>
+                          <div className="text-xs font-mono text-stone-400 break-all mt-0.5">{r.paymentId}</div>
+                        </div>
+                        <div className="font-bold text-stone-900 shrink-0">{inr(r.amount / 100)}</div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        {r.status === 'partial'
+                          ? <span className="pill-amber">Partially refunded</span>
+                          : <span className="pill-red">Not refunded</span>}
+                        {r.trackedInDb
+                          ? <span className="text-emerald-700">✓ tracked</span>
+                          : <span className="text-amber-700 font-semibold">⚠ missing from DB</span>}
+                        {r.ref && <span className="font-mono text-stone-400 ml-auto">{r.ref}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="hidden md:block overflow-x-auto rounded-2xl">
                   <table className="table">
                     <thead>
                       <tr>
@@ -224,14 +247,26 @@ export default function RefundPage() {
       ) : preview && (
         <div className="panel space-y-4">
           <h2 className="panel-title">Refund summary</h2>
-          <div className="flex gap-3 flex-wrap">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3">
             <StatBox value={preview.pending} label="Pending refunds" color="amber" />
             <StatBox value={inr(totalAmount)} label="Total to refund" color="red" />
             <StatBox value={preview.alreadyRefunded} label="Already refunded" color="green" />
           </div>
 
           {preview.pending > 0 && (
-            <div className="overflow-x-auto">
+            <>
+            <div className="md:hidden divide-y divide-stone-100 border-t border-stone-100">
+              {preview.bookings.map(b => (
+                <div key={b.ref} className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="min-w-0">
+                    <div className="font-medium text-stone-900 text-sm truncate">{b.name}</div>
+                    <div className="text-xs font-mono text-stone-400">{b.ref} · {b.phone}</div>
+                  </div>
+                  <div className="font-bold text-stone-900 shrink-0">{inr(b.total)}</div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
               <table className="table">
                 <thead>
                   <tr>
@@ -253,6 +288,7 @@ export default function RefundPage() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
 
           {preview.pending === 0 && (
@@ -312,7 +348,24 @@ export default function RefundPage() {
 
         {manualResults && (
           <div className="table-wrap overflow-visible">
-            <div className="overflow-x-auto rounded-2xl">
+            {/* Cards (phones) */}
+            <div className="md:hidden divide-y divide-stone-100">
+              {manualResults.map(r => (
+                <div key={r.paymentId} className="px-4 py-3.5 space-y-1.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="font-mono text-xs text-stone-500 break-all min-w-0">{r.paymentId}</div>
+                    <div className="font-bold text-stone-900 shrink-0">{r.amount ? inr(r.amount / 100) : '—'}</div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {r.ok ? <span className="pill-green">✓ Refunded</span> : <span className="pill-red">✗ Failed</span>}
+                    <span className="text-xs text-stone-500 font-mono break-all">
+                      {r.refundId === 'already-refunded' ? 'was already refunded' : (r.refundId || r.error || '')}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:block overflow-x-auto rounded-2xl">
               <table className="table">
                 <thead>
                   <tr>
@@ -359,7 +412,26 @@ export default function RefundPage() {
               )}
             </div>
           </div>
-          <div className="overflow-x-auto">
+          <div className="md:hidden divide-y divide-stone-100">
+            {results.map(r => (
+              <div key={r.ref} className="px-4 py-3.5 space-y-1.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-stone-900 truncate">{r.name}</div>
+                    <div className="text-xs font-mono text-stone-400">{r.ref}</div>
+                  </div>
+                  <div className="font-bold text-stone-900 shrink-0">{inr(r.total)}</div>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {r.ok ? <span className="pill-green">✓ Refunded</span> : <span className="pill-red">✗ Failed</span>}
+                  <span className="text-xs text-stone-500 font-mono break-all">
+                    {r.refundId === 'already-refunded' ? 'was already refunded' : (r.refundId || r.error || '')}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden md:block overflow-x-auto">
             <table className="table">
               <thead>
                 <tr>
@@ -411,7 +483,7 @@ function StatBox({ value, label, color }: { value: string | number; label: strin
   const bg = { amber: 'bg-amber-50 border-amber-200', red: 'bg-red-50 border-red-200', green: 'bg-emerald-50 border-emerald-200' }[color];
   const text = { amber: 'text-amber-700', red: 'text-red-700', green: 'text-emerald-700' }[color];
   return (
-    <div className={`rounded-xl border px-4 py-3 min-w-[130px] ${bg}`}>
+    <div className={`rounded-xl border px-4 py-3 min-w-0 sm:min-w-[130px] ${bg}`}>
       <div className={`text-2xl font-extrabold ${text}`}>{value}</div>
       <div className="text-xs text-stone-500 mt-0.5">{label}</div>
     </div>

@@ -83,7 +83,7 @@ export default function EventsPage() {
 
   if (events.length === 0) {
     return (
-      <div className="page">
+      <div className="space-y-6">
         <div className="page-header">
           <div>
             <h1 className="page-title">Events</h1>
@@ -107,7 +107,7 @@ export default function EventsPage() {
           <h1 className="page-title">Events</h1>
           <p className="page-subtitle">{events.length} events · {activeCount} active</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button onClick={load} className="btn-ghost text-sm">↻ Refresh</button>
           <Link href="/admin/events/new" className="btn-primary text-sm">＋ New Event</Link>
         </div>
@@ -120,7 +120,52 @@ export default function EventsPage() {
         </div>
       )}
 
-      <div className="table-wrap">
+      {/* Cards (phones) */}
+      <div className="card-list">
+        {events.map(e => {
+          const meta = STATUS_META[e.status] || STATUS_META.draft;
+          return (
+            <div key={e.code} className="row-card">
+              <div className="row-card-head">
+                <div className="min-w-0">
+                  <div className="font-bold text-stone-900 break-words">{e.name}</div>
+                  <a
+                    href={`/${e.code}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-stone-400 font-mono hover:text-amber-700"
+                  >
+                    /{e.code} ↗
+                  </a>
+                </div>
+                <span className={`${meta.cls} shrink-0`}>{meta.label}</span>
+              </div>
+
+              <div className="row-kv">
+                <span className="row-k">Date</span>
+                <span className="row-v">{e.dates?.display || '—'}</span>
+                <span className="row-k">Venue</span>
+                <span className="row-v">{e.venue || '—'}</span>
+                <span className="row-k">Booked</span>
+                <span className="row-v font-semibold text-stone-900">{e.registration_count}</span>
+              </div>
+
+              <div className="row-actions">
+                <Link href={`/admin/events/${e.code}`} className="btn-ghost btn-sm text-amber-700">Edit</Link>
+                <EventActions
+                  event={e}
+                  busy={busy !== null}
+                  onStatus={setStatus}
+                  onRemove={removeEvent}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Table (tablet and up) */}
+      <div className="table-wrap hidden md:block">
         <div className="overflow-x-auto">
           <table className="table">
             <thead>
@@ -137,7 +182,6 @@ export default function EventsPage() {
             <tbody>
               {events.map(e => {
                 const meta = STATUS_META[e.status] || STATUS_META.draft;
-                const active = e.status === 'active';
                 return (
                   <tr key={e.code} className="hover:bg-stone-50/70 transition-colors">
                     <td className="td">
@@ -163,52 +207,12 @@ export default function EventsPage() {
                     </td>
                     <td className="td">
                       <div className="flex flex-wrap gap-1.5">
-                        {!active && (
-                          <button
-                            onClick={() => setStatus(e.code, 'active')}
-                            disabled={busy !== null}
-                            className="btn-ghost btn-sm text-emerald-700 hover:bg-emerald-50"
-                            title="Show on public site"
-                          >
-                            Publish
-                          </button>
-                        )}
-                        {active && (
-                          <button
-                            onClick={() => setStatus(e.code, 'closed')}
-                            disabled={busy !== null}
-                            className="btn-ghost btn-sm text-amber-700 hover:bg-amber-50"
-                            title="Hide from public site"
-                          >
-                            Unpublish
-                          </button>
-                        )}
-                        {e.status !== 'cancelled' && (
-                          <button
-                            onClick={() => setStatus(e.code, 'cancelled')}
-                            disabled={busy !== null}
-                            className="btn-ghost btn-sm text-red-600 hover:bg-red-50"
-                          >
-                            Cancel
-                          </button>
-                        )}
-                        <Link
-                          href={`/admin/events/new?from=${encodeURIComponent(e.code)}`}
-                          className="btn-ghost btn-sm text-stone-600"
-                          title="Start a new event copied from this one"
-                        >
-                          Duplicate
-                        </Link>
-                        {e.registration_count === 0 && (
-                          <button
-                            onClick={() => removeEvent(e.code, e.name, e.registration_count)}
-                            disabled={busy !== null}
-                            className="btn-ghost btn-sm text-red-500 hover:bg-red-50"
-                            title="Delete event"
-                          >
-                            Delete
-                          </button>
-                        )}
+                        <EventActions
+                          event={e}
+                          busy={busy !== null}
+                          onStatus={setStatus}
+                          onRemove={removeEvent}
+                        />
                       </div>
                     </td>
                     <td className="td text-right whitespace-nowrap">
@@ -224,6 +228,69 @@ export default function EventsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+/* Publish / unpublish / cancel / duplicate / delete — shared by the desktop
+   table row and the phone card so the two never drift apart. */
+function EventActions({
+  event, busy, onStatus, onRemove,
+}: {
+  event: EventRow;
+  busy: boolean;
+  onStatus: (code: string, status: EventStatus) => void;
+  onRemove: (code: string, name: string, count: number) => void;
+}) {
+  const active = event.status === 'active';
+  return (
+    <>
+      {!active && (
+        <button
+          onClick={() => onStatus(event.code, 'active')}
+          disabled={busy}
+          className="btn-ghost btn-sm text-emerald-700 hover:bg-emerald-50"
+          title="Show on public site"
+        >
+          Publish
+        </button>
+      )}
+      {active && (
+        <button
+          onClick={() => onStatus(event.code, 'closed')}
+          disabled={busy}
+          className="btn-ghost btn-sm text-amber-700 hover:bg-amber-50"
+          title="Hide from public site"
+        >
+          Unpublish
+        </button>
+      )}
+      {event.status !== 'cancelled' && (
+        <button
+          onClick={() => onStatus(event.code, 'cancelled')}
+          disabled={busy}
+          className="btn-ghost btn-sm text-red-600 hover:bg-red-50"
+        >
+          Cancel
+        </button>
+      )}
+      <Link
+        href={`/admin/events/new?from=${encodeURIComponent(event.code)}`}
+        className="btn-ghost btn-sm text-stone-600"
+        title="Start a new event copied from this one"
+      >
+        Duplicate
+      </Link>
+      {event.registration_count === 0 && (
+        <button
+          onClick={() => onRemove(event.code, event.name, event.registration_count)}
+          disabled={busy}
+          className="btn-ghost btn-sm text-red-500 hover:bg-red-50"
+          title="Delete event"
+        >
+          Delete
+        </button>
+      )}
+    </>
   );
 }
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { apiFetch, clearAdminToken } from '@/lib/api';
@@ -15,6 +16,29 @@ const NAV = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  // Below lg the sidebar is an off-canvas drawer; from lg up it is always
+  // visible and this flag is ignored.
+  const [navOpen, setNavOpen] = useState(false);
+
+  const current = NAV.find(item =>
+    item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href)
+  );
+
+  // Tapping a link navigates — close the drawer so the new page is visible.
+  useEffect(() => { setNavOpen(false); }, [pathname]);
+
+  // Don't let the page behind the drawer scroll, and let Escape close it.
+  useEffect(() => {
+    if (!navOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setNavOpen(false); }
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [navOpen]);
 
   async function logout() {
     clearAdminToken();
@@ -23,30 +47,69 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen flex bg-stone-100">
-      {/* Sidebar */}
-      <aside className="w-60 shrink-0 bg-white border-r border-stone-200 flex flex-col fixed inset-y-0">
+    <div className="min-h-screen bg-stone-100">
+      {/* Mobile top bar */}
+      <header className="lg:hidden sticky top-0 z-30 flex items-center gap-3 h-14 px-4 bg-white/95 backdrop-blur border-b border-stone-200">
+        <button
+          onClick={() => setNavOpen(true)}
+          aria-label="Open menu"
+          aria-expanded={navOpen}
+          className="icon-btn -ml-1 shrink-0"
+        >
+          <MenuIcon className="w-5 h-5" />
+        </button>
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+          Y
+        </div>
+        <span className="font-extrabold text-sm text-stone-900 tracking-tight truncate">
+          {current?.label || 'Admin'}
+        </span>
+      </header>
+
+      {/* Backdrop (mobile only) */}
+      {navOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
+          onClick={() => setNavOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar / drawer */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-60 bg-white border-r border-stone-200 flex flex-col transition-transform duration-200 ease-out lg:translate-x-0 ${
+          navOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+        }`}
+      >
         {/* Logo */}
-        <div className="px-5 py-5 border-b border-stone-200">
-          <div className="flex items-center gap-3">
+        <div className="px-5 py-5 border-b border-stone-200 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-base font-bold shrink-0">
               Y
             </div>
-            <div>
-              <div className="text-stone-900 font-extrabold text-sm tracking-tight leading-none">Yatra Clubbing</div>
+            <div className="min-w-0">
+              <div className="text-stone-900 font-extrabold text-sm tracking-tight leading-none truncate">Yatra Clubbing</div>
               <div className="text-stone-400 text-[10px] tracking-widest leading-none mt-1 uppercase">Admin Console</div>
             </div>
           </div>
+          <button
+            onClick={() => setNavOpen(false)}
+            aria-label="Close menu"
+            className="icon-btn lg:hidden shrink-0"
+          >
+            ✕
+          </button>
         </div>
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {NAV.map(item => {
-            const isActive = item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href);
+            const isActive = item.href === current?.href;
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setNavOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                   isActive
                     ? 'bg-amber-50 text-amber-700'
@@ -73,8 +136,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main */}
-      <main className="flex-1 ml-60 min-w-0 overflow-y-auto">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-8 py-8">
+      <main className="lg:ml-60 min-w-0">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
           {children}
         </div>
       </main>
@@ -135,6 +198,14 @@ function CollegeIcon({ className, strokeWidth = 1.8 }: IconProps) {
       <path d="M22 9 12 5 2 9l10 4 10-4Z" />
       <path d="M6 10.6V16c0 1.1 2.7 2.5 6 2.5s6-1.4 6-2.5v-5.4" />
       <path d="M22 9v5" />
+    </svg>
+  );
+}
+
+function MenuIcon({ className, strokeWidth = 1.9 }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" className={className}>
+      <path d="M4 7h16M4 12h16M4 17h16" />
     </svg>
   );
 }

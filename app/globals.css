@@ -57,6 +57,32 @@
   }
   .td { @apply px-4 py-3 border-b border-stone-100 align-middle; }
 
+  /* Tables become stacked cards on phones. `.table-desktop` holds the real
+     table (hidden below md); `.card-list` holds the same rows as cards. */
+  .table-desktop { @apply hidden md:block overflow-x-auto; }
+  .card-list { @apply md:hidden space-y-3; }
+  .row-card {
+    @apply bg-white rounded-2xl border border-stone-200 p-4 space-y-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)];
+  }
+  .row-card-head { @apply flex items-start justify-between gap-3; }
+  .row-kv { @apply grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-sm; }
+  .row-k { @apply text-[11px] font-semibold uppercase tracking-wide text-stone-400 pt-0.5; }
+  .row-v { @apply text-stone-700 min-w-0 break-words; }
+  /* A bare inline link in a card row is only 16px tall — too small to hit
+     reliably with a thumb, and phone and email here are meant to be tapped. */
+  .row-v a { @apply inline-block py-0.5; }
+  .row-actions { @apply flex flex-wrap gap-2 pt-1 border-t border-stone-100; }
+
+  /* Horizontal strip of filter chips — scrolls instead of wrapping on phones */
+  .chip-bar {
+    @apply flex gap-1 bg-white border border-stone-200 rounded-xl p-1 overflow-x-auto max-w-full;
+    scrollbar-width: none;
+  }
+  .chip-bar::-webkit-scrollbar { display: none; }
+  .chip { @apply px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap shrink-0; }
+  .chip-on { @apply bg-stone-900 text-white; }
+  .chip-off { @apply text-stone-500 hover:text-stone-900; }
+
   /* Pills / badges */
   .pill {
     @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap;
@@ -69,15 +95,15 @@
 
   /* Stat cards */
   .stat-card {
-    @apply bg-white rounded-2xl border border-stone-200 p-5 flex-1 min-w-[140px] shadow-[0_1px_3px_rgba(0,0,0,0.04)];
+    @apply bg-white rounded-2xl border border-stone-200 p-4 sm:p-5 min-w-0 shadow-[0_1px_3px_rgba(0,0,0,0.04)];
   }
 
   /* Page shells */
-  .page { @apply p-6 lg:p-8 space-y-6 max-w-screen-2xl; }
+  .page { @apply p-4 sm:p-6 lg:p-8 space-y-6 max-w-screen-2xl; }
   .page-header {
-    @apply flex items-center justify-between gap-4 flex-wrap;
+    @apply flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:flex-wrap;
   }
-  .page-title { @apply text-2xl font-extrabold text-stone-900 tracking-tight; }
+  .page-title { @apply text-xl sm:text-2xl font-extrabold text-stone-900 tracking-tight; }
   .page-subtitle { @apply text-sm text-stone-500 mt-1; }
 
   /* Section label for collapsible groups */

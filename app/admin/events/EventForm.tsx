@@ -493,9 +493,9 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
               : `Live at ${SITE_ORIGIN.replace(/^https?:\/\//, '')}/${originalCode}`}
           </p>
         </div>
-        <div className="flex gap-2">
-          <button type="button" onClick={() => router.push('/admin/events')} className="btn-ghost text-sm">Cancel</button>
-          <button type="submit" disabled={saving || codeCheck.state === 'bad'} className="btn-primary text-sm">
+        <div className="flex gap-2 shrink-0">
+          <button type="button" onClick={() => router.push('/admin/events')} className="btn-ghost text-sm flex-1 sm:flex-none">Cancel</button>
+          <button type="submit" disabled={saving || codeCheck.state === 'bad'} className="btn-primary text-sm flex-1 sm:flex-none">
             {saving ? 'Saving…' : mode === 'new' ? 'Create event' : 'Save changes'}
           </button>
         </div>
@@ -744,7 +744,7 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
               {form.timeline.map((t, i) => {
                 const picker = to24(t.time);
                 return (
-                  <div key={i} className="grid grid-cols-[120px_1fr_1fr_auto] gap-2 items-start">
+                  <div key={i} className="grid grid-cols-1 sm:grid-cols-[120px_1fr_1fr_auto] gap-2 items-start">
                     <div>
                       <input
                         type="time"
@@ -904,7 +904,7 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                     <Field label="Name *" classNameWrap="!mb-0">
                       <input
                         className="input"
