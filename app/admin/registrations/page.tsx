@@ -84,18 +84,21 @@ export default function RegistrationsPage() {
 
   const pendingCount = useMemo(() => regs.filter(r => getStudentStatus(r) === 'pending').length, [regs]);
 
-  // Head-count by gender for the current event — what the yatra team actually
-  // needs when allocating buses and accommodation.
+  // Head-count by gender for the CURRENTLY FILTERED set — what the yatra team
+  // actually needs when allocating buses and accommodation. Derived from
+  // `filtered` (not `regs`) so the boxes move with the paid/unpaid/students/
+  // verify chips, the gender select and the search box instead of always
+  // reporting the whole event.
   const genderCounts = useMemo(() => {
     let male = 0, female = 0, unknown = 0;
-    regs.forEach(r => {
+    filtered.forEach(r => {
       const g = String(r.gender || '').toLowerCase();
       if (g === 'male') male++;
       else if (g === 'female') female++;
       else unknown++;
     });
     return { male, female, unknown };
-  }, [regs]);
+  }, [filtered]);
 
   const doVerify = useCallback(async (ref: string, action: 'approve' | 'reject', reason: string) => {
     setVerifying(prev => new Set(prev).add(ref));
@@ -180,7 +183,7 @@ export default function RegistrationsPage() {
         <div>
           <h1 className="page-title">Registrations</h1>
           <p className="page-subtitle">
-            {regs.length} total
+            {filtered.length !== regs.length ? `${filtered.length} shown · ` : ''}{regs.length} total
             {updatedAt && <> · Updated {updatedAt.toLocaleTimeString('en-IN')}</>}
           </p>
         </div>

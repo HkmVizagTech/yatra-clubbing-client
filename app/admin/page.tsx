@@ -58,9 +58,11 @@ export default function DashboardPage() {
     return {
       total: paid.length,
       revenue: paid.reduce((s, r) => s + (r.total || 0), 0),
-      general: regs.reduce((s, r) => s + (r.qty_general || 0), 0),
-      student: regs.reduce((s, r) => s + (r.qty_student || 0), 0),
-      pending: regs.filter(r => getStudentStatus(r) === 'pending').length,
+      // Seats and verification are only meaningful for bookings that actually
+      // paid — abandoned pre-saved rows would otherwise inflate the numbers.
+      general: paid.reduce((s, r) => s + (r.qty_general || 0), 0),
+      student: paid.reduce((s, r) => s + (r.qty_student || 0), 0),
+      pending: paid.filter(r => getStudentStatus(r) === 'pending').length,
       paid: paid.length,
       // Head-count by gender across paid bookings — used for bus and
       // accommodation allocation.
@@ -99,10 +101,10 @@ export default function DashboardPage() {
         <StatCard value={inr(stats.revenue)} label="Revenue" icon="💰" />
         <StatCard value={stats.male} label="Male (paid)" icon="👨" />
         <StatCard value={stats.female} label="Female (paid)" icon="👩" />
-        <StatCard value={stats.general} label="General seats" icon="🎫" />
-        <StatCard value={stats.student} label="Student seats" icon="🎓" />
+        <StatCard value={stats.general} label="General seats (paid)" icon="🎫" />
+        <StatCard value={stats.student} label="Student seats (paid)" icon="🎓" />
         {stats.pending > 0 && (
-          <StatCard value={stats.pending} label="IDs to verify" icon="⚠️" alert />
+          <StatCard value={stats.pending} label="IDs to verify (paid)" icon="⚠️" alert />
         )}
       </div>
 
