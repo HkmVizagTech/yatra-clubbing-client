@@ -33,6 +33,7 @@ export default function RegistrationsPage() {
   const [rejectModal, setRejectModal] = useState<{ ref: string; name: string } | null>(null);
   const [rejectReason, setRejectReason] = useState(REJECT_REASONS[0]);
   const [customReason, setCustomReason] = useState('');
+  const [savingGender, setSavingGender] = useState<Set<string>>(new Set());
 
   async function load(slug?: string) {
     setLoading(true);
@@ -135,6 +136,27 @@ export default function RegistrationsPage() {
     }
   }, []);
 
+  // Registrations taken before the booking form asked for gender have none.
+  // Buses and the overnight halls are allocated separately, so the team fills
+  // it in here once they know — it is never guessed from the name.
+  const setGenderFor = useCallback(async (ref: string, value: string) => {
+    setSavingGender(prev => new Set(prev).add(ref));
+    try {
+      const r = await adminFetch(`/api/registrations?ref=${encodeURIComponent(ref)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gender: value }),
+      });
+      const d = await r.json() as { updated?: boolean; gender?: string | null; error?: string };
+      if (!r.ok || !d.updated) throw new Error(d.error || `Server error ${r.status}`);
+      setRegs(prev => prev.map(x => (x.ref === ref ? { ...x, gender: d.gender ?? null } : x)));
+    } catch (e) {
+      alert('Could not save gender: ' + String(e));
+    } finally {
+      setSavingGender(prev => { const n = new Set(prev); n.delete(ref); return n; });
+    }
+  }, []);
+
   function openRejectModal(ref: string, name: string) {
     setRejectModal({ ref, name });
     setRejectReason(REJECT_REASONS[0]);
@@ -228,6 +250,8 @@ export default function RegistrationsPage() {
             r={r}
             busy={verifying.has(r.ref)}
             deleting={deleting.has(r.ref)}
+            savingGender={savingGender.has(r.ref)}
+            onSetGender={setGenderFor}
             onApprove={() => doVerify(r.ref, 'approve', '')}
             onReject={() => openRejectModal(r.ref, r.name)}
             onDelete={() => deleteReg(r.ref, r.name)}
@@ -293,7 +317,9 @@ export default function RegistrationsPage() {
                       {[r.course, r.year_of_study].filter(Boolean).join(' · ') || <span className="opacity-30">—</span>}
                     </td>
                     <td className="td text-stone-600 font-mono text-xs">{r.age ?? '—'}</td>
-                    <td className="td"><GenderTag gender={r.gender} /></td>
+                    <td className="td">
+                      <GenderCell r={r} saving={savingGender.has(r.ref)} onSet={setGenderFor} />
+                    </td>
                     <td className="td">
                       <span className={r.pass_type === 'student' ? 'pill-amber' : 'pill-violet'}>
                         {r.pass_type}
@@ -429,6 +455,47 @@ function PayBadge({ status }: { status: string }) {
   return <span className={map[status] || 'pill-gray'}>{status}</span>;
 }
 
+/**
+ * Gender shown as a tag, and editable in place.
+ *
+ * The 15 bookings taken before the form had the field show "Set…" — one tap
+ * records it. Rendered as a native <select> so it works the same on a phone as
+ * on a desktop, and so the value can only ever be one the API accepts.
+ */
+function GenderCell({
+  r, saving, onSet,
+}: {
+  r: Registration;
+  saving: boolean;
+  onSet: (ref: string, value: string) => void;
+}) {
+  const current = String(r.gender || '').toLowerCase();
+  const known = current === 'male' || current === 'female' || current === 'other';
+  return (
+    <div className="inline-flex items-center gap-1.5">
+      {known && <GenderTag gender={r.gender} />}
+      <select
+        value={known ? current : ''}
+        disabled={saving}
+        // Re-picking the placeholder on a row that already has a gender is a
+        // no-op rather than a clear: on a list this dense, an accidental clear
+        // is far likelier than a deliberate one.
+        onChange={e => { const v = e.target.value; if (!v && known) return; onSet(r.ref, v); }}
+        aria-label={`Gender for ${r.name}`}
+        title={known ? 'Change gender' : 'Not recorded — set it'}
+        className={`text-xs rounded-lg border px-1.5 py-1 bg-white cursor-pointer disabled:opacity-40 ${
+          known ? 'border-stone-200 text-stone-400' : 'border-amber-300 text-amber-700 font-semibold'
+        }`}
+      >
+        <option value="">{saving ? 'Saving…' : known ? 'edit' : 'Set…'}</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+  );
+}
+
 function GenderTag({ gender }: { gender?: string | null }) {
   const label = genderLabel(gender);
   if (!label) return <span className="text-stone-300 text-xs">—</span>;
@@ -458,11 +525,13 @@ function CountBox({ label, value, tone }: { label: string; value: number; tone: 
 
 /* One registration as a card — the phone view of a table row. */
 function RegCard({
-  r, busy, deleting, onApprove, onReject, onDelete,
+  r, busy, deleting, savingGender, onSetGender, onApprove, onReject, onDelete,
 }: {
   r: Registration;
   busy: boolean;
   deleting: boolean;
+  savingGender: boolean;
+  onSetGender: (ref: string, value: string) => void;
   onApprove: () => void;
   onReject: () => void;
   onDelete: () => void;
@@ -487,7 +556,7 @@ function RegCard({
       </div>
 
       <div className="flex flex-wrap gap-1.5">
-        <GenderTag gender={r.gender} />
+        <GenderCell r={r} saving={savingGender} onSet={onSetGender} />
         <span className={r.pass_type === 'student' ? 'pill-amber' : 'pill-violet'}>{r.pass_type}</span>
         {sts === 'verified' && <span className="pill-green">✓ Verified</span>}
         {sts === 'rejected' && <span className="pill-red" title={getRejectionReason(r)}>✗ Rejected</span>}
