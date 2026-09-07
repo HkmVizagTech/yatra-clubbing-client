@@ -11,21 +11,43 @@
 /* --- Masthead band ------------------------------------------------------- */
 
 .ych-head{
-  background:linear-gradient(180deg, #FFFDF8 0%, var(--paper) 100%);
-  text-align:center; padding:56px 24px 40px; position:relative;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(224,160,32,.10), transparent 60%),
+    linear-gradient(180deg, #FFFDF8 0%, var(--paper) 100%);
+  text-align:center; padding:64px 24px 48px; position:relative;
+  overflow:hidden;
+}
+.ych-head::before{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background-image:radial-gradient(circle, rgba(18,41,92,.04) .8px, transparent .8px);
+  background-size:28px 28px; opacity:.5;
+}
+.ych-head::after{
+  content:""; position:absolute; bottom:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity:.35;
 }
 .ych-eyebrow{
-  font-size:12px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+  position:relative;
+  font-size:12px; font-weight:600; letter-spacing:.2em; text-transform:uppercase;
   color:var(--gold-deep);
 }
+.ych-eyebrow::before,.ych-eyebrow::after{
+  content:""; display:inline-block; width:32px; height:1px; vertical-align:middle;
+  background:linear-gradient(90deg, transparent, var(--gold));
+  margin:0 12px;
+}
+.ych-eyebrow::after{background:linear-gradient(90deg, var(--gold), transparent);}
 .ych-title{
+  position:relative;
   font-family:'Playfair Display',Georgia,serif;
   font-weight:700; line-height:1.14; letter-spacing:-.01em;
-  font-size:clamp(32px,5vw,52px); margin-top:12px; color:var(--navy);
+  font-size:clamp(34px,5.5vw,56px); margin-top:14px; color:var(--navy);
   text-wrap:balance;
 }
 .ych-sub{
-  margin:16px auto 0; max-width:56ch;
+  position:relative;
+  margin:18px auto 0; max-width:56ch;
   color:var(--muted); font-size:17px; line-height:1.7;
   text-wrap:pretty;
 }
@@ -33,16 +55,20 @@
 /* --- Card grid, lifted out of the band ----------------------------------- */
 
 .ych-grid{
-  display:grid; gap:24px; margin:0 auto; position:relative; z-index:2; padding-bottom:64px;
-  grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+  display:grid; gap:26px; margin:0 auto; position:relative; z-index:2; padding-bottom:64px;
+  grid-template-columns:repeat(auto-fill,minmax(330px,1fr));
 }
 .ych-card{
   display:flex; flex-direction:column; overflow:hidden;
   background:var(--surface); border:1px solid var(--border);
   border-radius:var(--r-lg); box-shadow:var(--sh-card);
-  transition:transform .18s ease, box-shadow .18s ease;
+  transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease;
 }
-.ych-card:hover{transform:translateY(-3px); box-shadow:var(--sh-card);}
+.ych-card:hover{
+  transform:translateY(-5px);
+  box-shadow:0 16px 40px -12px rgba(60,42,16,.32);
+  border-color:rgba(224,160,32,.35);
+}
 
 /* Posters are portrait artwork — contain, never cropped. */
 .ych-cardimg{
@@ -50,13 +76,21 @@
   background-size:contain; background-position:center; background-repeat:no-repeat;
   background-color:var(--paper-2);
   border-bottom:1px solid var(--border);
+  overflow:hidden;
 }
+/* Subtle gradient overlay on hover for depth */
+.ych-cardimg::after{
+  content:""; position:absolute; inset:0;
+  background:linear-gradient(180deg, transparent 50%, rgba(18,41,92,.08) 100%);
+  opacity:0; transition:opacity .22s ease; pointer-events:none;
+}
+.ych-card:hover .ych-cardimg::after{opacity:1;}
 .ych-cardimg.is-empty{background:var(--paper-2); display:grid; place-items:center;}
 .ych-cardimg.is-empty span{font-size:38px; opacity:.45;}
 .ych-tag{
-  position:absolute; right:12px; top:12px;
-  padding:6px 12px; border-radius:var(--r-pill);
-  font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
+  position:absolute; right:12px; top:12px; z-index:1;
+  padding:6px 14px; border-radius:var(--r-pill);
+  font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
   color:#2A1B02; background:var(--gold); box-shadow:var(--sh-gold);
 }
 
@@ -77,8 +111,11 @@
   padding:7px 12px; border-radius:var(--r);
   background:var(--paper); border:1px solid var(--border);
   font-size:13px; color:var(--muted);
+  transition:background .15s ease, border-color .15s ease;
 }
-.ych-chip svg{color:var(--muted); flex:none;}
+.ych-chip:hover{background:var(--gold-tint); border-color:var(--gold);}
+.ych-chip svg{color:var(--muted); flex:none; transition:color .15s ease;}
+.ych-chip:hover svg{color:var(--gold-deep);}
 .ych-chip.is-venue{flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden;}
 .ych-chip.is-venue span{overflow:hidden; text-overflow:ellipsis;}
 
@@ -97,11 +134,16 @@
 }
 .ych-go{
   display:inline-flex; align-items:center; gap:8px;
-  padding:12px 22px; border-radius:var(--r-pill);
+  padding:12px 24px; border-radius:var(--r-pill);
   font-weight:600; font-size:15px; color:#2A1B02; background:var(--gold);
-  transition:background .16s ease, box-shadow .16s ease;
+  transition:background .2s ease, box-shadow .2s ease, transform .18s ease, color .2s ease;
 }
-.ych-card:hover .ych-go{background:#06306F; box-shadow:var(--sh-card);}
+.ych-go svg{transition:transform .2s ease;}
+.ych-card:hover .ych-go{
+  background:var(--navy); color:#fff;
+  box-shadow:0 8px 20px -6px rgba(18,41,92,.45);
+}
+.ych-card:hover .ych-go svg{transform:translateX(3px); color:#fff;}
 
 /* --- Empty state --------------------------------------------------------- */
 
@@ -110,9 +152,12 @@
   margin:0 auto 64px; position:relative; z-index:2;
   background:var(--surface); border:1px solid var(--border);
   border-radius:var(--r-lg); box-shadow:var(--sh-card);
-  padding:56px 32px;
+  padding:60px 36px;
 }
-.ych-empty .ic{font-size:40px; margin-bottom:16px; opacity:.6;}
+.ych-empty .ic{
+  font-size:44px; margin-bottom:18px; opacity:.7;
+  animation:pulseGold 2.5s ease infinite;
+}
 .ych-empty h2{font-size:24px; font-weight:600; letter-spacing:-.015em; margin-bottom:10px; color:var(--ink);}
 .ych-empty p{color:var(--muted); font-size:16px; line-height:1.7; max-width:44ch; margin:0 auto;}
 

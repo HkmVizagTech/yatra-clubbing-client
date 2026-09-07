@@ -11,7 +11,7 @@ interface PaymentInfo {
   paymentId?: string;
   orderId?: string;
   signature?: string;
-  status: 'pending' | 'paid' | 'demo';
+  status: 'pending' | 'paid';
 }
 
 interface BookingPayload {
@@ -32,6 +32,32 @@ interface BookingPayload {
 }
 
 const inr = (n: number) => '₹' + n.toLocaleString('en-IN');
+
+// Field icons — stroke SVG, tinted by the parent's currentColor.
+const UserIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+);
+const PhoneIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.9.36 1.78.7 2.61a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.47-1.27a2 2 0 0 1 2.11-.45c.83.34 1.71.57 2.61.7A2 2 0 0 1 22 16.92z"/></svg>
+);
+const MailIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+);
+const GradIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="m22 9-10-5L2 9l10 5 10-5Z"/><path d="M6 11.5V16c0 1.66 2.7 3 6 3s6-1.34 6-3v-4.5"/><path d="M22 9v5"/></svg>
+);
+const BookIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/><path d="M9 7h7"/></svg>
+);
+const CalIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 15h.01"/><path d="M12 15h.01"/><path d="M16 15h.01"/></svg>
+);
+const UsersIcon2 = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="7" r="4"/><path d="M2 21c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5"/><path d="M16 3.3a4 4 0 0 1 0 7.4"/><path d="M22 21c0-2.7-1.8-4.8-4.5-5.3"/></svg>
+);
+const CakeIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-9a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9"/><path d="M4 21h16"/><path d="M12 10v-2"/><path d="M12 8c-1 0-2-.7-2-1.7 0-.8.6-1.3 2-2.3 1.4 1 2 1.5 2 2.3 0 1-1 1.7-2 1.7Z"/><path d="M16 13a2.5 2.5 0 0 1-2.5 2.5 2.7 2.7 0 0 1-3-0 2.7 2.7 0 0 1-3 0A2.5 2.5 0 0 1 5 13"/></svg>
+);
 
 const YEAR_OPTIONS = [
   '1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year',
@@ -175,9 +201,52 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
     };
   }
 
+  /**
+   * Make sure Razorpay's checkout script is actually loaded.
+   *
+   * It is requested early in EventLanding, but "requested" is not "arrived":
+   * on a slow phone, behind an ad-blocker, or on a flaky connection the global
+   * can still be missing when someone taps Pay. So wait for it, and inject the
+   * tag ourselves if it never came. Returns false only when it truly cannot be
+   * loaded — and the caller then shows a real error instead of pretending.
+   */
+  function ensureRazorpay(timeoutMs = 12000): Promise<boolean> {
+    if (typeof window.Razorpay !== 'undefined') return Promise.resolve(true);
+
+    const SRC = 'https://checkout.razorpay.com/v1/checkout.js';
+    let tag = document.querySelector(`script[src="${SRC}"]`) as HTMLScriptElement | null;
+    if (!tag) {
+      tag = document.createElement('script');
+      tag.src = SRC;
+      tag.async = true;
+      document.head.appendChild(tag);
+    }
+
+    return new Promise<boolean>((resolve) => {
+      const started = Date.now();
+      // Poll rather than relying on onload alone: the tag may already have been
+      // added (and its load event already fired) before we got here.
+      const timer = setInterval(() => {
+        if (typeof window.Razorpay !== 'undefined') {
+          clearInterval(timer);
+          resolve(true);
+        } else if (Date.now() - started > timeoutMs) {
+          clearInterval(timer);
+          resolve(false);
+        }
+      }, 120);
+    });
+  }
+
   async function pay(booking: BookingPayload): Promise<PaymentInfo> {
-    if (typeof window.Razorpay === 'undefined') {
-      return { paymentId: 'demo_' + Date.now(), status: 'demo' };
+    // NO demo fallback. This used to quietly return status:'demo' whenever the
+    // checkout script was missing or create-order failed — which handed the
+    // person a "Seat reserved" screen for a seat they had never paid for, and
+    // wrote a free booking into the database. On a promotion to a thousand
+    // phones that is not a rare edge case. Every failure below is now surfaced.
+    const ready = await ensureRazorpay();
+    if (!ready) {
+      throw new Error('Could not load the secure payment window. Check your internet connection, turn off any ad-blocker, and try again.');
     }
     try {
       const order = await api('/api/create-order', {
@@ -213,9 +282,13 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
       });
     } catch (e) {
       const err = e as Error;
-      if (err && err.message === 'Payment cancelled.') throw e;
-      // Fall back to demo in case the payment provider isn't configured
-      return { paymentId: 'demo_' + Date.now(), status: 'demo' };
+      const message = (err && err.message) || '';
+      // Cancellation and verification failures are already worded for a person;
+      // anything else is a network or configuration fault, and gets a message
+      // that tells them what to do rather than a silent free seat.
+      if (message === 'Payment cancelled.' || message === 'Payment could not be verified.') throw e;
+      console.error('[booking] payment could not be started:', message);
+      throw new Error('We could not reach the payment gateway. Nothing has been charged — please try again in a moment.');
     }
   }
 
@@ -331,44 +404,76 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
                   </div>
 
                   <div className="bc-field"><label>Full name</label>
-                    <input className="bc-input" value={name} onChange={e => setName(e.target.value)} placeholder="Your name" /></div>
+                    <div className="bc-input-wrap">
+                      <span className="ic-field" aria-hidden="true"><UserIcon /></span>
+                      <input className="bc-input has-icon" value={name} onChange={e => setName(e.target.value)} placeholder="Your name" />
+                    </div>
+                  </div>
 
                   <div className="bc-grid2">
                     <div className="bc-field"><label>Age</label>
-                      <input className="bc-input" inputMode="numeric" value={age}
-                        onChange={e => setAge(e.target.value.replace(/\D/g, '').slice(0, 2))}
-                        maxLength={2} placeholder="e.g. 21" /></div>
+                      <div className="bc-input-wrap">
+                        <span className="ic-field" aria-hidden="true"><CakeIcon /></span>
+                        <input className="bc-input has-icon" inputMode="numeric" value={age}
+                          onChange={e => setAge(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                          maxLength={2} placeholder="e.g. 21" />
+                      </div>
+                    </div>
                     <div className="bc-field"><label>Gender</label>
-                      <select className="bc-select" value={gender} onChange={e => setGender(e.target.value)}>
-                        <option value="">Choose…</option>
-                        {GENDER_OPTIONS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
-                      </select></div>
+                      <div className="bc-select-wrap">
+                        <span className="ic-field" aria-hidden="true"><UsersIcon2 /></span>
+                        <select className="bc-select has-icon" value={gender} onChange={e => setGender(e.target.value)}>
+                          <option value="">Choose…</option>
+                          {GENDER_OPTIONS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+                        </select>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="bc-grid2">
                     <div className="bc-field"><label>Mobile number</label>
-                      <input className="bc-input" inputMode="numeric" value={phone}
-                        onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                        maxLength={10} placeholder="10-digit mobile" /></div>
-                    <div className="bc-field"><label>Email <span style={{ color: 'var(--muted)', fontWeight: 500 }}>(optional)</span></label>
-                      <input className="bc-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" /></div>
+                      <div className="bc-input-wrap">
+                        <span className="ic-field" aria-hidden="true"><PhoneIcon /></span>
+                        <input className="bc-input has-icon" inputMode="numeric" value={phone}
+                          onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                          maxLength={10} placeholder="10-digit mobile" />
+                      </div>
+                    </div>
+                    <div className="bc-field"><label>Email <span className="optional">(optional)</span></label>
+                      <div className="bc-input-wrap">
+                        <span className="ic-field" aria-hidden="true"><MailIcon /></span>
+                        <input className="bc-input has-icon" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="bc-field"><label>College / school name</label>
-                    <input className="bc-input" list="yc-colleges" value={college} onChange={e => setCollege(e.target.value)}
-                      placeholder={colleges.length ? 'Start typing to pick your college' : 'Your college / school'} />
+                    <div className="bc-input-wrap">
+                      <span className="ic-field" aria-hidden="true"><GradIcon /></span>
+                      <input className="bc-input has-icon" list="yc-colleges" value={college} onChange={e => setCollege(e.target.value)}
+                        placeholder={colleges.length ? 'Start typing to pick your college' : 'Your college / school'} />
+                    </div>
                     <datalist id="yc-colleges">
                       {colleges.map(c => <option key={c} value={c} />)}
-                    </datalist></div>
+                    </datalist>
+                  </div>
 
                   <div className="bc-grid2">
                     <div className="bc-field"><label>Course / study</label>
-                      <input className="bc-input" value={course} onChange={e => setCourse(e.target.value)} placeholder="e.g. B.Tech CSE" /></div>
+                      <div className="bc-input-wrap">
+                        <span className="ic-field" aria-hidden="true"><BookIcon /></span>
+                        <input className="bc-input has-icon" value={course} onChange={e => setCourse(e.target.value)} placeholder="e.g. B.Tech CSE" />
+                      </div>
+                    </div>
                     <div className="bc-field"><label>Year of study</label>
-                      <select className="bc-select" value={yearOfStudy} onChange={e => setYearOfStudy(e.target.value)}>
-                        <option value="">Choose…</option>
-                        {YEAR_OPTIONS.map(y => <option key={y}>{y}</option>)}
-                      </select></div>
+                      <div className="bc-select-wrap">
+                        <span className="ic-field" aria-hidden="true"><CalIcon /></span>
+                        <select className="bc-select has-icon" value={yearOfStudy} onChange={e => setYearOfStudy(e.target.value)}>
+                          <option value="">Choose…</option>
+                          {YEAR_OPTIONS.map(y => <option key={y}>{y}</option>)}
+                        </select>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="yc-verify">

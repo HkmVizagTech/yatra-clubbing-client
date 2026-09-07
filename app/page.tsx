@@ -3,6 +3,7 @@ import './home.css';
 import EventLanding from './components/EventLanding';
 import SiteHeader from './components/SiteHeader';
 import SiteFooter from './components/SiteFooter';
+import { DiyaStrip } from './components/Decor';
 import { fetchActiveEvents, fetchEventByCode } from '@/lib/publicEvents';
 import type { PublicEventCard } from '@/lib/publicTypes';
 
@@ -38,12 +39,12 @@ function whenLabel(card: PublicEventCard): string | null {
   return null;
 }
 
-function EventCard({ card }: { card: PublicEventCard }) {
+function EventCard({ card, index }: { card: PublicEventCard; index: number }) {
   const hero = card.branding?.heroDesktop || card.branding?.heroMobile || '';
   const soon = whenLabel(card);
 
   return (
-    <Link href={`/${card.code}`} className="ych-card" prefetch={false}>
+    <Link href={`/${card.code}`} className="ych-card hk-fade-in" prefetch={false} style={{ animationDelay: `${0.06 * (index + 1)}s` }}>
       <div
         className={`ych-cardimg${hero ? '' : ' is-empty'}`}
         style={hero ? { backgroundImage: `url(${hero})` } : undefined}
@@ -97,6 +98,7 @@ export default async function HomePage() {
           <h1 className="ych-title">Travel · Explore<br />Connect · Grow</h1>
         </header>
         <div className="ych-wrap">
+          <DiyaStrip aria-hidden="true" style={{ margin: '-8px auto 20px', maxWidth: 384, opacity: .55 }} />
           <div className="ych-empty">
             <div className="ic">🪔</div>
             <h2>No yatras open right now</h2>
@@ -126,8 +128,9 @@ export default async function HomePage() {
       </header>
 
       <div className="ych-wrap">
+        <DiyaStrip aria-hidden="true" style={{ margin: '-10px auto 26px', maxWidth: 384, opacity: .55 }} />
         <div className="ych-grid">
-          {events.map(card => <EventCard key={card.code} card={card} />)}
+          {events.map((card, i) => <EventCard key={card.code} card={card} index={i} />)}
         </div>
       </div>
     </Shell>
