@@ -454,37 +454,6 @@ body.yc-modal-open{overflow:hidden;}
 .bc-select option{padding:10px 14px; font-weight:500;}
 .bc-select option:checked{background:var(--gold-tint); color:var(--navy); font-weight:600;}
 
-/* Custom pickers — gender (segmented) + year of study (chip grid). These
-   replace native <select> dropdowns so the booking sheet never shows a
-   browser-styled menu. */
-.yc-seg{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
-.yc-seg-opt{
-  display:flex; align-items:center; justify-content:center; gap:8px;
-  padding:12px 10px; font:inherit; font-size:14.5px; font-weight:600; color:var(--ink);
-  background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r);
-  cursor:pointer; transition:border-color .18s ease, background .18s ease, box-shadow .18s ease;
-}
-.yc-seg-opt > span{font-size:15px; line-height:1; transition:transform .15s ease;}
-.yc-seg-opt:hover{border-color:var(--gold); background:rgba(224,160,32,.04);}
-.yc-seg-opt.sel{
-  background:var(--navy); border-color:var(--navy); color:#fff;
-  box-shadow:0 8px 18px -8px rgba(18,41,92,.5);
-}
-.yc-seg-opt.sel > span{transform:scale(1.08);}
-
-.yc-ycars{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
-@media (max-width:430px){ .yc-ycars{grid-template-columns:1fr 1fr;} }
-.yc-ycar{
-  padding:10px 8px; font:inherit; font-size:13px; font-weight:600; color:var(--ink);
-  background:var(--surface); border:1.5px solid var(--border); border-radius:12px;
-  cursor:pointer; transition:border-color .18s ease, background .18s ease, box-shadow .18s ease;
-}
-.yc-ycar:hover{border-color:var(--gold); background:rgba(224,160,32,.04);}
-.yc-ycar.sel{
-  background:var(--gold); border-color:var(--gold); color:#2A1B02;
-  box-shadow:0 6px 14px -6px rgba(224,160,32,.6);
-}
-
 .yc-step{
   display:flex; align-items:center; justify-content:space-between; gap:14px;
   padding:14px 16px; margin-bottom:10px;
@@ -536,36 +505,36 @@ body.yc-modal-open{overflow:hidden;}
   position:relative; overflow:hidden;
   border:1.5px solid var(--border); border-radius:var(--r);
   background:linear-gradient(165deg, var(--surface) 30%, var(--paper));
-  padding:15px 16px;
+  padding:12px 16px;
 }
 .yc-pass.is-offer{border-color:rgba(224,160,32,.5); box-shadow:0 0 0 1px var(--gold-tint);}
 .yc-pass-row{display:flex; align-items:center; gap:12px;}
 .yc-pass-ic{
-  flex:none; width:42px; height:42px; border-radius:12px;
-  display:grid; place-items:center; font-size:18px;
+  flex:none; width:38px; height:38px; border-radius:10px;
+  display:grid; place-items:center; font-size:16px;
   background:var(--gold-tint); border:1px solid rgba(224,160,32,.4);
 }
 .yc-pass-id{flex:1; min-width:0;}
-.yc-pass-id .nm{font-size:15.5px; font-weight:600; color:var(--navy); line-height:1.3;}
-.yc-pass-id .req{margin-top:3px; font-size:12px; color:var(--muted);}
+.yc-pass-id .nm{font-size:15px; font-weight:600; color:var(--navy); line-height:1.3;}
+.yc-pass-id .req{margin-top:2px; font-size:11.5px; color:var(--muted);}
 .yc-pass-price{flex:none; display:flex; align-items:baseline; gap:8px;}
 .yc-pass-price s{font-size:13px; color:var(--muted); font-weight:400;}
-.yc-pass-price b{font-size:21px; font-weight:700; color:var(--gold-deep); font-variant-numeric:tabular-nums; line-height:1;}
+.yc-pass-price b{font-size:19px; font-weight:700; color:var(--gold-deep); font-variant-numeric:tabular-nums; line-height:1;}
 .yc-offer{
   display:flex; align-items:center; flex-wrap:wrap; gap:8px;
-  margin-top:13px; padding-top:12px; border-top:1px dashed rgba(224,160,32,.35);
+  margin-top:10px; padding-top:9px; border-top:1px dashed rgba(224,160,32,.35);
 }
 .yc-offer .tag{
   font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
   color:var(--gold-deep); background:var(--gold-tint);
-  border:1px solid rgba(224,160,32,.45); border-radius:var(--r-pill); padding:4px 11px;
+  border:1px solid rgba(224,160,32,.45); border-radius:var(--r-pill); padding:3px 10px;
 }
-.yc-offer .save{font-size:12.5px; font-weight:600; color:#8A5A00;}
+.yc-offer .save{font-size:12px; font-weight:600; color:#8A5A00;}
 .yc-pass-feat{
-  margin-top:12px; padding-top:12px; border-top:1px solid var(--border);
-  font-size:12.5px; color:var(--ink); line-height:1.7;
+  margin-top:10px; padding-top:9px; border-top:1px solid var(--border);
+  font-size:12px; color:var(--ink); line-height:1.6;
 }
-.yc-pass-desc{margin-top:6px; font-size:12.5px; color:var(--muted); line-height:1.55;}
+.yc-pass-desc{margin-top:5px; font-size:12px; color:var(--muted); line-height:1.55;}
 
 .bc-passpick{display:flex; flex-direction:column; gap:10px;}
 .yc-pass-opt{
@@ -604,10 +573,10 @@ body.yc-modal-open{overflow:hidden;}
 
 .yc-verify{
   border:1px solid var(--border); border-radius:var(--r);
-  padding:16px 18px; margin-bottom:18px; background:var(--paper);
+  padding:11px 16px 12px; margin-bottom:16px; background:var(--paper);
 }
-.yc-verify .vh{font-size:13.5px; font-weight:600; margin-bottom:12px; color:var(--navy);}
-.yc-verify-note{font-size:13px; color:var(--muted); line-height:1.65;}
+.yc-verify .vh{font-size:12.5px; font-weight:600; margin-bottom:5px; color:var(--navy);}
+.yc-verify-note{font-size:12.5px; color:var(--muted); line-height:1.6;}
 .bc-upload{
   display:block; text-align:center; padding:20px 16px;
   border:1.5px dashed var(--border); border-radius:var(--r); background:var(--surface);

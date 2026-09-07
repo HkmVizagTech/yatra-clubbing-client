@@ -49,6 +49,114 @@
     @apply w-full px-3 py-2.5 rounded-xl border border-stone-300 bg-white text-sm text-stone-900 shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition;
   }
 
+  /* Themed dropdown (Select.tsx) — replaces native <select>s everywhere.
+     Native popups are drawn by the browser (default blue highlight etc.) and
+     can't be styled, so <Select> renders a button + custom listbox in the
+     navy/gold brand palette. Colors are hard-coded brand values so the menu
+     looks identical on the public pages and in admin (globals.css is the only
+     stylesheet both load). */
+  .yatra-select { position: relative; display: block; width: 100%; }
+  .yatra-select-trigger {
+    position: relative;
+    display: flex; align-items: center; width: 100%;
+    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+    font-size: 15px; font-weight: 500; line-height: 1.4;
+    color: #1A2340; text-align: left;
+    background: #FFFFFF;
+    border: 1.5px solid #EADFC9; border-radius: 14px;
+    padding: 12px 40px 12px 14px;
+    cursor: pointer; user-select: none; -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color .18s ease, box-shadow .18s ease, background-color .15s ease;
+  }
+  .yatra-select-trigger:hover {
+    border-color: #E0A020; background-color: rgba(224, 160, 32, .04);
+  }
+  .yatra-select[data-open] .yatra-select-trigger,
+  .yatra-select-trigger:focus-visible {
+    border-color: #E0A020;
+    box-shadow: 0 0 0 3.5px rgba(224, 160, 32, .14);
+    outline: none;
+  }
+  .yatra-select-trigger:disabled { opacity: .5; cursor: not-allowed; }
+  .yatra-select-trigger.has-icon { padding-left: 42px; }
+
+  /* Leading icon (booking form's gender / year-of-study fields) */
+  .yatra-select-trigger .ys-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    display: flex; pointer-events: none;
+    color: #6E6152; opacity: .65;
+    transition: color .18s ease, opacity .18s ease;
+  }
+  .yatra-select-trigger .ys-icon svg { width: 18px; height: 18px; display: block; }
+  .yatra-select[data-open] .yatra-select-trigger .ys-icon { color: #B97D0C; opacity: 1; }
+
+  .yatra-select-trigger .ys-value {
+    flex: 1 1 auto; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .yatra-select-trigger .ys-value.is-placeholder { color: #6E6152; font-weight: 400; }
+
+  .yatra-select-trigger .ys-chevron {
+    position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
+    display: flex; pointer-events: none; color: #B97D0C;
+    transition: transform .18s ease;
+  }
+  .yatra-select-trigger .ys-chevron svg { width: 12px; height: 8px; display: block; }
+  .yatra-select[data-open] .yatra-select-trigger .ys-chevron {
+    transform: translateY(-50%) rotate(180deg);
+  }
+
+  /* Tones — gold for an actionable empty cell ("Set…"), muted for an
+     already-set value that should stay unobtrusive in a dense table. */
+  .yatra-select-trigger.ys-tone-gold { border-color: rgba(224, 160, 32, .5); }
+  .yatra-select-trigger.ys-tone-gold .ys-value,
+  .yatra-select-trigger.ys-tone-gold .ys-value.is-placeholder { color: #B97D0C; font-weight: 600; }
+  .yatra-select-trigger.ys-tone-muted { border-color: #E8E0D2; }
+  .yatra-select-trigger.ys-tone-muted .ys-value { color: #8A7E6E; font-weight: 500; }
+
+  /* Compact per-row variant (admin gender cells) */
+  .yatra-select-trigger.ys-sm {
+    font-size: 12px; border-radius: 9px; line-height: 1.35;
+    padding: 5px 28px 5px 9px;
+  }
+  .yatra-select-trigger.ys-sm .ys-chevron { right: 8px; }
+  .yatra-select-trigger.ys-sm .ys-chevron svg { width: 9px; height: 6px; }
+
+  /* Open menu — portaled to <body>, so positioned fixed and themed here. */
+  .yatra-select-panel {
+    position: fixed; z-index: 1300;
+    width: max-content; max-width: min(92vw, 360px);
+    background: #FFFFFF;
+    border: 1px solid #EADFC9; border-radius: 14px;
+    box-shadow: 0 18px 44px -16px rgba(20, 14, 4, .3), 0 2px 10px rgba(60, 42, 16, .08);
+    padding: 6px; max-height: 264px; overflow-y: auto;
+    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+    font-size: 14.5px; line-height: 1.45;
+  }
+  .yatra-select-panel.ys-sm {
+    font-size: 12.5px; border-radius: 10px; padding: 4px; max-height: 240px;
+  }
+  .yatra-select-opt {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 9px 12px; border-radius: 9px;
+    color: #1A2340; font-weight: 500;
+    cursor: pointer; user-select: none; -webkit-user-select: none;
+    white-space: normal; overflow-wrap: anywhere;
+    transition: background-color .1s ease;
+  }
+  .yatra-select-opt:hover,
+  .yatra-select-opt.ys-active { background: rgba(224, 160, 32, .12); }
+  .yatra-select-opt.ys-selected { color: #B97D0C; font-weight: 600; }
+  .yatra-select-opt .ys-check {
+    flex: none; display: flex; margin-left: auto; color: #B97D0C;
+    opacity: 0; transition: opacity .12s ease;
+  }
+  .yatra-select-opt .ys-check svg { width: 13px; height: 13px; display: block; }
+  .yatra-select-opt.ys-selected .ys-check { opacity: 1; }
+  .yatra-select-opt.ys-disabled { opacity: .45; cursor: not-allowed; }
+  .yatra-select-panel.ys-sm .yatra-select-opt { padding: 6px 10px; border-radius: 7px; }
+
   /* Table */
   .table-wrap { @apply bg-white rounded-2xl border border-stone-200 overflow-hidden; }
   .table { @apply w-full text-sm; }
@@ -117,3 +225,20 @@
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(0,0,0,.14); border-radius: 8px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.26); }
+
+/* Inside the public booking sheet the brand reset `.hk * { margin:0; padding:0 }`
+   (brand.css, unlayered) otherwise flattens the layered dropdown rules above,
+   leaving a ~23px sliver next to the full-height inputs. These unlayered,
+   .hk-scoped rules restore the trigger to the exact metrics of the sheet's
+   text inputs (.bc-input: 15.5px font · 1.7 line-height · 13px padding). */
+.hk .yatra-select-trigger {
+  font-size: 15.5px;
+  line-height: 1.7;
+  padding: 13px 44px 13px 14px;
+}
+.hk .yatra-select-trigger.has-icon { padding-left: 42px; }
+.hk .yatra-select-trigger.ys-sm {
+  font-size: 12px;
+  line-height: 1.35;
+  padding: 5px 28px 5px 9px;
+}

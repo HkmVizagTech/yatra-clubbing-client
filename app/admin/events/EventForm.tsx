@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminFetch } from '@/lib/api';
 import type { Event, EventHighlight, EventStatus, EventTicketTier, EventTimelineItem } from '@/lib/eventTypes';
+import Select from '../../components/Select';
 
 type FormState = {
   code: string;
@@ -547,12 +548,17 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Status" hint="Several events can be Active at once — the home page lists them all.">
-                <select className="select" value={form.status} onChange={e => update({ status: e.target.value as EventStatus })}>
-                  <option value="draft">Draft — not on the site</option>
-                  <option value="active">Active — listed and bookable</option>
-                  <option value="closed">Closed — bookings stopped</option>
-                  <option value="cancelled">Cancelled — shows refund notice</option>
-                </select>
+                <Select
+                  value={form.status}
+                  onChange={v => update({ status: v as EventStatus })}
+                  options={[
+                    { value: 'draft', label: 'Draft — not on the site' },
+                    { value: 'active', label: 'Active — listed and bookable' },
+                    { value: 'closed', label: 'Closed — bookings stopped' },
+                    { value: 'cancelled', label: 'Cancelled — shows refund notice' },
+                  ]}
+                  ariaLabel="Event status"
+                />
               </Field>
               <Field label="Venue / start point *">
                 <input className="input" value={form.venue} onChange={e => update({ venue: e.target.value })} placeholder="Hare Krishna Vaikuntham, Visakhapatnam" />

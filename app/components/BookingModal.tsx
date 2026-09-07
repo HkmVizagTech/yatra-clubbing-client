@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { apiFetch } from '@/lib/api';
+import Select from './Select';
 import type { PublicEvent, PublicTicketTier } from '@/lib/publicTypes';
 
 type QtyMap = Record<string, number>;
@@ -48,6 +49,12 @@ const GradIcon = () => (
 );
 const BookIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/><path d="M9 7h7"/></svg>
+);
+const CalIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 15h.01"/><path d="M12 15h.01"/><path d="M16 15h.01"/></svg>
+);
+const UsersIcon2 = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="7" r="4"/><path d="M2 21c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5"/><path d="M16 3.3a4 4 0 0 1 0 7.4"/><path d="M22 21c0-2.7-1.8-4.8-4.5-5.3"/></svg>
 );
 const CakeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-9a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9"/><path d="M4 21h16"/><path d="M12 10v-2"/><path d="M12 8c-1 0-2-.7-2-1.7 0-.8.6-1.3 2-2.3 1.4 1 2 1.5 2 2.3 0 1-1 1.7-2 1.7Z"/><path d="M16 13a2.5 2.5 0 0 1-2.5 2.5 2.7 2.7 0 0 1-3-0 2.7 2.7 0 0 1-3 0A2.5 2.5 0 0 1 5 13"/></svg>
@@ -335,6 +342,17 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
     t.was != null && t.was > (t.price || 0) ? (t.tag || 'Early-bird offer') : null;
   const savings = (t: PublicTicketTier) => ((t.was as number) - (t.price || 0));
 
+  // The offer pill + "Save ₹X" row already announce an early-bird offer, so a
+  // description that merely restates the same label (admins often reuse it)
+  // would show the offer text twice — drop it.
+  const descRepeatsOffer = (off: string | null, desc?: string | null) => {
+    if (!off || !desc) return false;
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '');
+    const o = norm(off);
+    const d = norm(desc);
+    return d === o || d === o + 'offer' || o === d + 'offer';
+  };
+
   const passPicker = () => {
     if (event.tickets.length <= 1 && tier) {
       const off = offerLabel(tier);
@@ -360,7 +378,9 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
           {(tier.features?.length || 0) > 0 && (
             <div className="yc-pass-feat">{tier.features.join(' · ')}</div>
           )}
-          {tier.description && <div className="yc-pass-desc">{tier.description}</div>}
+          {tier.description && !descRepeatsOffer(off, tier.description) && (
+            <div className="yc-pass-desc">{tier.description}</div>
+          )}
         </div>
       );
     }
@@ -429,20 +449,14 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
                       </div>
                     </div>
                     <div className="bc-field"><label>Gender</label>
-                      <div className="yc-seg" role="radiogroup" aria-label="Gender">
-                        {GENDER_OPTIONS.map(g => (
-                          <button
-                            type="button"
-                            key={g.value}
-                            role="radio"
-                            aria-checked={gender === g.value}
-                            className={`yc-seg-opt${gender === g.value ? ' sel' : ''}`}
-                            onClick={() => setGender(g.value)}
-                          >
-                            <span aria-hidden="true">{g.value === 'male' ? '👨' : '👩'}</span>{g.label}
-                          </button>
-                        ))}
-                      </div>
+                      <Select
+                        icon={<UsersIcon2 />}
+                        value={gender}
+                        onChange={setGender}
+                        options={GENDER_OPTIONS}
+                        placeholder="Choose…"
+                        ariaLabel="Gender"
+                      />
                     </div>
                   </div>
 
@@ -474,33 +488,30 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
                     </datalist>
                   </div>
 
-                  <div className="bc-field"><label>Course / study</label>
-                    <div className="bc-input-wrap">
-                      <span className="ic-field" aria-hidden="true"><BookIcon /></span>
-                      <input className="bc-input has-icon" value={course} onChange={e => setCourse(e.target.value)} placeholder="e.g. B.Tech CSE" />
+                  <div className="bc-grid2">
+                    <div className="bc-field"><label>Course / study</label>
+                      <div className="bc-input-wrap">
+                        <span className="ic-field" aria-hidden="true"><BookIcon /></span>
+                        <input className="bc-input has-icon" value={course} onChange={e => setCourse(e.target.value)} placeholder="e.g. B.Tech CSE" />
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="bc-field"><label>Year of study</label>
-                    <div className="yc-ycars" role="radiogroup" aria-label="Year of study">
-                      {YEAR_OPTIONS.map(y => (
-                        <button
-                          type="button"
-                          key={y}
-                          className={`yc-ycar${yearOfStudy === y ? ' sel' : ''}`}
-                          onClick={() => setYearOfStudy(yearOfStudy === y ? '' : y)}
-                        >
-                          {y}
-                        </button>
-                      ))}
+                    <div className="bc-field"><label>Year of study</label>
+                      <Select
+                        icon={<CalIcon />}
+                        value={yearOfStudy}
+                        onChange={setYearOfStudy}
+                        options={YEAR_OPTIONS.map(y => ({ value: y, label: y }))}
+                        placeholder="Choose…"
+                        ariaLabel="Year of study"
+                      />
                     </div>
                   </div>
 
                   <div className="yc-verify">
                     <div className="vh">🎓 Student pass check</div>
                     <p className="yc-verify-note">
-                      No upload needed right now — just carry your college / school ID along with you.
-                      Our team verifies it on the day of the yatra, before you board.
+                      Just carry your college / school ID along with you.
+                      Our team verifies it on the day of the yatra.
                     </p>
                   </div>
 

@@ -6,6 +6,7 @@ import { inr, fmtDate, getStudentStatus, getRejectionReason, downloadCSV, gender
 import { adminFetch } from '@/lib/api';
 import { useEvents } from '../components/useEvents';
 import EventFilter from '../components/EventFilter';
+import Select from '../../components/Select';
 
 const REJECT_REASONS = [
   'ID image is unclear or unreadable',
@@ -13,6 +14,12 @@ const REJECT_REASONS = [
   'ID appears to be expired',
   'ID is not a valid student card',
   'Other',
+];
+
+const GENDER_SET_OPTIONS = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'other', label: 'Other' },
 ];
 
 type Filter = 'all' | 'paid' | 'pending' | 'students' | 'verify';
@@ -215,17 +222,18 @@ export default function RegistrationsPage() {
             className="input pl-9"
           />
         </div>
-        <select
+        <Select
           value={gender}
-          onChange={e => setGender(e.target.value as GenderFilter)}
-          className="select w-auto font-medium text-stone-700"
-          aria-label="Filter by gender"
-        >
-          <option value="all">All genders</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          {genderCounts.unknown > 0 && <option value="unknown">Not recorded</option>}
-        </select>
+          onChange={v => setGender(v as GenderFilter)}
+          className="w-auto"
+          ariaLabel="Filter by gender"
+          options={[
+            { value: 'all', label: 'All genders' },
+            { value: 'male', label: 'Male' },
+            { value: 'female', label: 'Female' },
+            ...(genderCounts.unknown > 0 ? [{ value: 'unknown' as const, label: 'Not recorded' }] : []),
+          ]}
+        />
         <div className="chip-bar">
           {([
             { key: 'all', label: 'All' },
@@ -420,13 +428,13 @@ export default function RegistrationsPage() {
             </p>
 
             <label className="label">Reason</label>
-            <select
+            <Select
               value={rejectReason}
-              onChange={e => setRejectReason(e.target.value)}
-              className="select mb-3"
-            >
-              {REJECT_REASONS.map(r => <option key={r}>{r}</option>)}
-            </select>
+              onChange={setRejectReason}
+              className="mb-3"
+              options={REJECT_REASONS.map(r => ({ value: r, label: r }))}
+              ariaLabel="Reject reason"
+            />
 
             {rejectReason === 'Other' && (
               <input
@@ -462,8 +470,9 @@ function PayBadge({ status }: { status: string }) {
  * Gender shown as a tag, and editable in place.
  *
  * The 15 bookings taken before the form had the field show "Set…" — one tap
- * records it. Rendered as a native <select> so it works the same on a phone as
- * on a desktop, and so the value can only ever be one the API accepts.
+ * records it. The placeholder is never a real option (so picking it can't ever
+ * clear an existing gender), and the only values on the wire are the three the
+ * API accepts.
  */
 function GenderCell({
   r, saving, onSet,
@@ -477,24 +486,18 @@ function GenderCell({
   return (
     <div className="inline-flex items-center gap-1.5">
       {known && <GenderTag gender={r.gender} />}
-      <select
+      <Select
+        size="sm"
+        className="w-auto"
         value={known ? current : ''}
         disabled={saving}
-        // Re-picking the placeholder on a row that already has a gender is a
-        // no-op rather than a clear: on a list this dense, an accidental clear
-        // is far likelier than a deliberate one.
-        onChange={e => { const v = e.target.value; if (!v && known) return; onSet(r.ref, v); }}
-        aria-label={`Gender for ${r.name}`}
+        onChange={v => onSet(r.ref, v)}
+        options={GENDER_SET_OPTIONS}
+        placeholder={saving ? 'Saving…' : known ? 'edit' : 'Set…'}
+        ariaLabel={`Gender for ${r.name}`}
         title={known ? 'Change gender' : 'Not recorded — set it'}
-        className={`text-xs rounded-lg border px-1.5 py-1 bg-white cursor-pointer disabled:opacity-40 ${
-          known ? 'border-stone-200 text-stone-400' : 'border-amber-300 text-amber-700 font-semibold'
-        }`}
-      >
-        <option value="">{saving ? 'Saving…' : known ? 'edit' : 'Set…'}</option>
-        <option value="male">Male</option>
-        <option value="female">Female</option>
-        <option value="other">Other</option>
-      </select>
+        tone={known ? 'muted' : 'gold'}
+      />
     </div>
   );
 }

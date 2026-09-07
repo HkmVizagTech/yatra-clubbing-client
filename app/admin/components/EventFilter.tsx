@@ -1,6 +1,7 @@
 'use client';
 
 import type { EventRow } from './useEvents';
+import Select from '../../components/Select';
 
 export default function EventFilter({
   events,
@@ -13,15 +14,15 @@ export default function EventFilter({
 }) {
   if (events.length === 0) return null;
   return (
-    <select
+    <Select
       value={value}
-      onChange={e => onChange(e.target.value)}
-      className="select w-auto font-medium text-stone-700"
-    >
-      <option value="all">All events</option>
-      {events.map(e => (
-        <option key={e.code} value={e.code}>{e.name}</option>
-      ))}
-    </select>
+      onChange={onChange}
+      className="w-auto"
+      ariaLabel="Filter by event"
+      options={[
+        { value: 'all', label: 'All events' },
+        ...events.map(e => ({ value: e.code, label: e.name })),
+      ]}
+    />
   );
 }
