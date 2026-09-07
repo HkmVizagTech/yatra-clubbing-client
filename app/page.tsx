@@ -42,15 +42,24 @@ function whenLabel(card: PublicEventCard): string | null {
 function EventCard({ card, index }: { card: PublicEventCard; index: number }) {
   const hero = card.branding?.heroDesktop || card.branding?.heroMobile || '';
   const soon = whenLabel(card);
+  const offer = card.wasFrom != null && card.priceFrom != null && card.wasFrom > card.priceFrom;
 
   return (
     <Link href={`/${card.code}`} className="ych-card hk-fade-in" prefetch={false} style={{ animationDelay: `${0.06 * (index + 1)}s` }}>
       <div
-        className={`ych-cardimg${hero ? '' : ' is-empty'}`}
-        style={hero ? { backgroundImage: `url(${hero})` } : undefined}
+        className={`ych-cardimg${hero ? ' has-art' : ' is-empty'}`}
+        style={hero
+          ? {
+              backgroundImage: `radial-gradient(circle at 50% 28%, rgba(224,160,32,.16), transparent 60%), url(${hero})`,
+              backgroundSize: '100% 100%, contain',
+            }
+          : undefined}
       >
         {!hero && <span aria-hidden="true">🪔</span>}
-        {soon && <div className="ych-tag">{soon}</div>}
+        <div className="ych-tags">
+          {offer && <span className="ych-tag is-offer">Offer</span>}
+          {soon && <span className="ych-tag is-soon">{soon}</span>}
+        </div>
       </div>
 
       <div className="ych-cardbody">
@@ -67,6 +76,7 @@ function EventCard({ card, index }: { card: PublicEventCard; index: number }) {
 
         <div className="ych-cardfoot">
           <div className="ych-price">
+            {offer && <s>₹{card.wasFrom}</s>}
             {card.priceFrom != null ? <>From<b>₹{card.priceFrom}</b></> : <b style={{ marginTop: 0 }}>Free</b>}
           </div>
           <span className="ych-go">Book now <ArrowIcon /></span>
@@ -116,19 +126,32 @@ export default async function HomePage() {
     if (only) return <EventLanding event={only} />;
   }
 
+  const venues = new Set(events.map(e => e.venue).filter(Boolean));
+  const destCount = events.reduce((s, e) => s + Math.max(0, e.locations?.length || 0), 0);
+
   return (
     <Shell>
       <header className="ych-head">
         <div className="ych-eyebrow">Travel · Explore · Connect · Grow</div>
-        <h1 className="ych-title">Choose your yatra</h1>
+        <h1 className="ych-title">Choose your <span>yatra</span></h1>
         <p className="ych-sub">
           {events.length} yatras are open for booking. Each has its own dates, route
           and passes — pick the one you want to join.
         </p>
+        <div className="ych-cta-row"><a href="#yatra-list" className="ych-cta">Explore yatras <ArrowIcon /></a></div>
+        <div className="ych-stats">
+          <div className="stat"><b>{events.length}</b><span>{events.length === 1 ? 'Yatra open' : 'Yatras open'}</span></div>
+          <div className="stat"><b>{venues.size}</b><span>Start point{venues.size === 1 ? '' : 's'}</span></div>
+          <div className="stat"><b>{destCount}</b><span>Destinations</span></div>
+        </div>
       </header>
 
-      <div className="ych-wrap">
-        <DiyaStrip aria-hidden="true" style={{ margin: '-10px auto 26px', maxWidth: 384, opacity: .55 }} />
+      <div className="ych-wrap" id="yatra-list">
+        <DiyaStrip aria-hidden="true" style={{ margin: '-8px auto 22px', maxWidth: 384, opacity: .55 }} />
+        <div className="ych-gridhead">
+          <h2>Open yatras</h2>
+          <span className="gd-count">{events.length} open</span>
+        </div>
         <div className="ych-grid">
           {events.map((card, i) => <EventCard key={card.code} card={card} index={i} />)}
         </div>

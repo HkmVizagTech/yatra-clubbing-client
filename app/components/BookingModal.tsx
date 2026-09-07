@@ -49,12 +49,6 @@ const GradIcon = () => (
 const BookIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/><path d="M9 7h7"/></svg>
 );
-const CalIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 15h.01"/><path d="M12 15h.01"/><path d="M16 15h.01"/></svg>
-);
-const UsersIcon2 = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="7" r="4"/><path d="M2 21c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5"/><path d="M16 3.3a4 4 0 0 1 0 7.4"/><path d="M22 21c0-2.7-1.8-4.8-4.5-5.3"/></svg>
-);
 const CakeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-9a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9"/><path d="M4 21h16"/><path d="M12 10v-2"/><path d="M12 8c-1 0-2-.7-2-1.7 0-.8.6-1.3 2-2.3 1.4 1 2 1.5 2 2.3 0 1-1 1.7-2 1.7Z"/><path d="M16 13a2.5 2.5 0 0 1-2.5 2.5 2.7 2.7 0 0 1-3-0 2.7 2.7 0 0 1-3 0A2.5 2.5 0 0 1 5 13"/></svg>
 );
@@ -99,7 +93,6 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
   const [result, setResult] = useState<{ ref: string; name: string; phone: string; total: number; paymentId: string; studentStatus: string } | null>(null);
 
   const tier: PublicTicketTier | undefined = event.tickets.find(t => t.key === tierKey) || event.tickets[0];
-  const discounted = Boolean(tier && tier.was != null && (tier.was || 0) > (tier.price || 0));
   const total = tier?.price || 0;
 
   const ageNum = Number(age);
@@ -336,21 +329,34 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
     setOpen(false);
   }
 
+  // A pass is "on offer" when it carries a higher original price. The offer name
+  // falls through to the tier's tag (e.g. "Early bird") when the admin set one.
+  const offerLabel = (t: PublicTicketTier) =>
+    t.was != null && t.was > (t.price || 0) ? (t.tag || 'Early-bird offer') : null;
+  const savings = (t: PublicTicketTier) => ((t.was as number) - (t.price || 0));
+
   const passPicker = () => {
     if (event.tickets.length <= 1 && tier) {
+      const off = offerLabel(tier);
       return (
-        <div className="yc-pass">
-          <div className="yc-pass-head">
-            <div>
+        <div className={`yc-pass${off ? ' is-offer' : ''}`}>
+          <div className="yc-pass-row">
+            <span className="yc-pass-ic" aria-hidden="true">🎫</span>
+            <div className="yc-pass-id">
               <div className="nm">{tier.name || 'Student pass'}</div>
               {tier.requiresStudentId && <div className="req">🎓 College / school ID required</div>}
             </div>
             <div className="yc-pass-price">
+              {off && <s>{inr(tier.was as number)}</s>}
               <b>{inr(tier.price || 0)}</b>
-              {discounted && <s>{inr(tier.was as number)}</s>}
-              {discounted && <span className="yc-save">Save {inr((tier.was as number) - (tier.price || 0))}</span>}
             </div>
           </div>
+          {off && (
+            <div className="yc-offer">
+              <span className="tag">{off}</span>
+              <span className="save">Save {inr(savings(tier))} on regular price</span>
+            </div>
+          )}
           {(tier.features?.length || 0) > 0 && (
             <div className="yc-pass-feat">{tier.features.join(' · ')}</div>
           )}
@@ -363,7 +369,7 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
       <div className="bc-passpick">
         {event.tickets.map(t => {
           const selected = t.key === tier?.key;
-          const on = discounted && t.was != null && (t.was || 0) > (t.price || 0);
+          const off = offerLabel(t);
           return (
             <button type="button" key={t.key} className={`yc-pass-opt${selected ? ' sel' : ''}`}
               onClick={() => { setTierKey(t.key); setError(''); }}>
@@ -373,14 +379,17 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
                 {t.requiresStudentId && <em>🎓 ID required</em>}
               </span>
               <span className="bc-po-pr">
-                {inr(t.price || 0)}
-                {on && <s>{inr(t.was as number)}</s>}
+                <span className="pr-line">
+                  {off && <s>{inr(t.was as number)}</s>}
+                  <b>{inr(t.price || 0)}</b>
+                </span>
+                {off && <em className="off">{off}</em>}
               </span>
             </button>
           );
         })}
-        {discounted && tier && (
-          <div className="yc-save-line">Early-bird pricing — {inr((tier.was as number) - (tier.price || 0))} off for students</div>
+        {event.tickets.length > 1 && (
+          <div className="yc-save-note">Choose the pass that fits you · prices are per person</div>
         )}
       </div>
     );
@@ -420,12 +429,19 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
                       </div>
                     </div>
                     <div className="bc-field"><label>Gender</label>
-                      <div className="bc-select-wrap">
-                        <span className="ic-field" aria-hidden="true"><UsersIcon2 /></span>
-                        <select className="bc-select has-icon" value={gender} onChange={e => setGender(e.target.value)}>
-                          <option value="">Choose…</option>
-                          {GENDER_OPTIONS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
-                        </select>
+                      <div className="yc-seg" role="radiogroup" aria-label="Gender">
+                        {GENDER_OPTIONS.map(g => (
+                          <button
+                            type="button"
+                            key={g.value}
+                            role="radio"
+                            aria-checked={gender === g.value}
+                            className={`yc-seg-opt${gender === g.value ? ' sel' : ''}`}
+                            onClick={() => setGender(g.value)}
+                          >
+                            <span aria-hidden="true">{g.value === 'male' ? '👨' : '👩'}</span>{g.label}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -458,21 +474,25 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
                     </datalist>
                   </div>
 
-                  <div className="bc-grid2">
-                    <div className="bc-field"><label>Course / study</label>
-                      <div className="bc-input-wrap">
-                        <span className="ic-field" aria-hidden="true"><BookIcon /></span>
-                        <input className="bc-input has-icon" value={course} onChange={e => setCourse(e.target.value)} placeholder="e.g. B.Tech CSE" />
-                      </div>
+                  <div className="bc-field"><label>Course / study</label>
+                    <div className="bc-input-wrap">
+                      <span className="ic-field" aria-hidden="true"><BookIcon /></span>
+                      <input className="bc-input has-icon" value={course} onChange={e => setCourse(e.target.value)} placeholder="e.g. B.Tech CSE" />
                     </div>
-                    <div className="bc-field"><label>Year of study</label>
-                      <div className="bc-select-wrap">
-                        <span className="ic-field" aria-hidden="true"><CalIcon /></span>
-                        <select className="bc-select has-icon" value={yearOfStudy} onChange={e => setYearOfStudy(e.target.value)}>
-                          <option value="">Choose…</option>
-                          {YEAR_OPTIONS.map(y => <option key={y}>{y}</option>)}
-                        </select>
-                      </div>
+                  </div>
+
+                  <div className="bc-field"><label>Year of study</label>
+                    <div className="yc-ycars" role="radiogroup" aria-label="Year of study">
+                      {YEAR_OPTIONS.map(y => (
+                        <button
+                          type="button"
+                          key={y}
+                          className={`yc-ycar${yearOfStudy === y ? ' sel' : ''}`}
+                          onClick={() => setYearOfStudy(yearOfStudy === y ? '' : y)}
+                        >
+                          {y}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
