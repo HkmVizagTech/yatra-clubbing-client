@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Registration } from '@/lib/types';
-import { inr, fmtDate, getStudentStatus, getRejectionReason, downloadCSV, genderLabel } from '@/lib/utils';
+import { inr, fmtDate, getStudentStatus, getRejectionReason, downloadCSV, genderLabel, getWhatsappStatus, isWhatsappConfirmed } from '@/lib/utils';
 import { adminFetch } from '@/lib/api';
 import { useEvents } from '../components/useEvents';
 import EventFilter from '../components/EventFilter';
@@ -299,6 +299,7 @@ export default function RegistrationsPage() {
                 <th className="th">Payment</th>
                 <th className="th">Student ID</th>
                 <th className="th">Verify</th>
+                <th className="th">WhatsApp</th>
                 <th className="th"></th>
               </tr>
             </thead>
@@ -388,6 +389,9 @@ export default function RegistrationsPage() {
                       {sts === 'none' && <span className="text-stone-300 text-xs">—</span>}
                     </td>
                     <td className="td">
+                      <WaBadge r={r} />
+                    </td>
+                    <td className="td">
                       <button
                         onClick={() => deleteReg(r.ref, r.name)}
                         disabled={deleting.has(r.ref)}
@@ -402,7 +406,7 @@ export default function RegistrationsPage() {
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={16} className="px-4 py-14 text-center text-stone-400">
+                  <td colSpan={17} className="px-4 py-14 text-center text-stone-400">
                     {search || filter !== 'all' || gender !== 'all' ? 'No results match your filter.' : 'No registrations yet.'}
                   </td>
                 </tr>
@@ -464,6 +468,21 @@ function PayBadge({ status }: { status: string }) {
     pending: 'pill-amber',
   };
   return <span className={map[status] || 'pill-gray'}>{status}</span>;
+}
+
+/**
+ * Delivery state of the WhatsApp confirmation, as a compact badge + tooltip.
+ * The tooltip carries the failure reason so a retry can be targeted instead of
+ * blanketing everyone.
+ */
+function WaBadge({ r }: { r: Registration }) {
+  const s = getWhatsappStatus(r);
+  if (s === 'none') return <span className="text-stone-300 text-xs">—</span>;
+  const base = 'inline-flex items-center gap-1 whitespace-nowrap';
+  if (s === 'delivered') return <span className={`${base} pill-green`} title={`WhatsApp delivered ${r.whatsapp_delivered_at ? '· ' + fmtDate(r.whatsapp_delivered_at) : ''}`}>📲 Delivered</span>;
+  if (s === 'read') return <span className={`${base} pill-violet`} title={`WhatsApp read ${r.whatsapp_read_at ? '· ' + fmtDate(r.whatsapp_read_at) : ''}`}>📲 Read</span>;
+  if (s === 'failed') return <span className={`${base} pill-red`} title={r.whatsapp_failure_reason ? `Failed: ${r.whatsapp_failure_reason}` : 'Failed to deliver'}>📲 Failed</span>;
+  return <span className={`${base} pill-amber`} title="Sent to WhatsApp — awaiting delivery confirmation">📲 Sent</span>;
 }
 
 /**
@@ -567,6 +586,7 @@ function RegCard({
         {sts === 'verified' && <span className="pill-green">✓ Verified</span>}
         {sts === 'rejected' && <span className="pill-red" title={getRejectionReason(r)}>✗ Rejected</span>}
         {sts === 'pending' && <span className="pill-gray">⏳ ID to verify</span>}
+        <WaBadge r={r} />
       </div>
 
       <div className="row-kv">

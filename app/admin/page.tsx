@@ -7,7 +7,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import type { Registration } from '@/lib/types';
-import { inr, fmtDate, getStudentStatus, buildChartData, genderLabel } from '@/lib/utils';
+import { inr, fmtDate, getStudentStatus, buildChartData, genderLabel, isWhatsappConfirmed } from '@/lib/utils';
 import { adminFetch } from '@/lib/api';
 import { useEvents } from './components/useEvents';
 import EventFilter from './components/EventFilter';
@@ -68,6 +68,10 @@ export default function DashboardPage() {
       // accommodation allocation.
       male: paid.filter(r => isG(r, 'male')).length,
       female: paid.filter(r => isG(r, 'female')).length,
+      // Paid bookings whose WhatsApp confirmation actually reached the devotee
+      // (delivered or read). 'none'/'sent' are not counted — a message that
+      // hasn't landed yet can't be relied on.
+      what: paid.filter(isWhatsappConfirmed).length,
     };
   }, [regs]);
 
@@ -106,6 +110,7 @@ export default function DashboardPage() {
         {stats.pending > 0 && (
           <StatCard value={stats.pending} label="IDs to verify (paid)" icon="⚠️" alert />
         )}
+        <StatCard value={stats.what} label={`WhatsApp confirmed · / ${stats.total} paid`} icon="📲" />
       </div>
 
       {/* Charts */}

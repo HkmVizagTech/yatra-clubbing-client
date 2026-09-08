@@ -1,4 +1,4 @@
-import type { Registration, StudentStatus } from './types';
+import type { Registration, StudentStatus, WhatsAppStatus } from './types';
 
 export function inr(n: number | null | undefined): string {
   return '₹' + Number(n || 0).toLocaleString('en-IN');
@@ -42,6 +42,31 @@ export function getRejectionReason(r: Registration): string {
   return (r.student_status || '').replace(/^rejected\s*—?\s*/i, '');
 }
 
+/**
+ * WhatsApp delivery state of the confirmation message.
+ *
+ *   none      — no confirmation was sent (or no message id recorded)
+ *   sent      — handed to Gupshup; no delivery callback yet
+ *   delivered — reached the devotee's WhatsApp
+ *   read      — the devotee opened it (also delivered)
+ *   failed    — Gupshup reported a failure
+ */
+export function getWhatsappStatus(r: Registration): WhatsAppStatus {
+  const s = (r.whatsapp_status || '').toLowerCase();
+  if (s === 'delivered' || s === 'read' || s === 'failed') return s as WhatsAppStatus;
+  if (r.whatsapp_message_id || r.whatsapp_sent_at) return 'sent';
+  return 'none';
+}
+
+/**
+ * A booking is "confirmed" only when the message actually reached the devotee.
+ * "failed" is the one outcome that unambiguously did NOT get there.
+ */
+export function isWhatsappConfirmed(r: Registration): boolean {
+  const s = getWhatsappStatus(r);
+  return s === 'delivered' || s === 'read';
+}
+
 export function buildChartData(registrations: Registration[]) {
   const map = new Map<string, { count: number; revenue: number }>();
   registrations.forEach(r => {
@@ -65,15 +90,18 @@ export function buildChartData(registrations: Registration[]) {
 }
 
 export function downloadCSV(registrations: Registration[]) {
-  const cols: (keyof Registration)[] = [
+  const cols: string[] = [
     'created_at', 'ref', 'name', 'age', 'gender', 'phone', 'email',
     'college', 'course', 'year_of_study',
     'pass_type', 'total',
     'payment_status', 'payment_id', 'student_status',
+    'whatsapp_status', 'whatsapp_message_id',
+    'whatsapp_sent_at', 'whatsapp_delivered_at', 'whatsapp_read_at', 'whatsapp_failed_at',
+    'whatsapp_failure_reason',
   ];
   const head = cols.join(',');
   const body = registrations.map(x =>
-    cols.map(c => '"' + String(x[c] ?? '').replace(/"/g, '""') + '"').join(',')
+    cols.map(c => '"' + String((x as unknown as Record<string, unknown>)[c] ?? '').replace(/"/g, '""') + '"').join(',')
   ).join('\n');
   const blob = new Blob([head + '\n' + body], { type: 'text/csv' });
   const a = document.createElement('a');

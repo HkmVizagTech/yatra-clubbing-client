@@ -23,6 +23,19 @@ export interface Registration {
   payment_signature: string | null;
   payment_status: 'paid' | 'pending' | 'failed';
   raw?: Record<string, unknown>;
+  whatsapp_status?: string | null;
+  whatsapp_message_id?: string | null;
+  whatsapp_sent_at?: string | null;
+  whatsapp_delivered_at?: string | null;
+  whatsapp_read_at?: string | null;
+  whatsapp_failed_at?: string | null;
+  whatsapp_failure_reason?: string | null;
 }
+
+/**
+ * WhatsApp delivery of the booking-confirmation template, as tracked by the
+ * Gupshup webhook. Values match Gupshup's callback eventType.
+ */
+export type WhatsAppStatus = 'sent' | 'delivered' | 'read' | 'failed' | 'none';
 
 export type StudentStatus = 'verified' | 'rejected' | 'pending' | 'none';
