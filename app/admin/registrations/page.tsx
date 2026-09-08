@@ -37,6 +37,7 @@ export default function RegistrationsPage() {
   const [gender, setGender] = useState<GenderFilter>('all');
   const [verifying, setVerifying] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState<Set<string>>(new Set());
+  const [sending, setSending] = useState<Set<string>>(new Set());
   const [rejectModal, setRejectModal] = useState<{ ref: string; name: string } | null>(null);
   const [rejectReason, setRejectReason] = useState(REJECT_REASONS[0]);
   const [customReason, setCustomReason] = useState('');
@@ -167,6 +168,34 @@ export default function RegistrationsPage() {
     }
   }, []);
 
+  // Send (or re-send) the WhatsApp booking confirmation to one devotee.
+  // "resend: true" is deliberate on purpose — it messages someone a second time
+  // even if they were already confirmed.
+  async function resendWhatsApp(ref: string, name: string) {
+    if (!confirm(`Send the WhatsApp confirmation to "${name}" (${ref})? This sends a real message.`)) return;
+    setSending(prev => new Set(prev).add(ref));
+    try {
+      const evt = eventSlug && eventSlug !== 'all' ? eventSlug : regs.find(x => x.ref === ref)?.event_code || '';
+      const r = await adminFetch('/api/admin/send-confirmations?event_code=' + encodeURIComponent(evt), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: true, refs: [ref], resend: true }),
+      });
+      const d = await r.json() as { sent?: number; error?: string; results?: { ref?: string }[] };
+      if (!r.ok) throw new Error(d.error || `Server error ${r.status}`);
+      const sent = (d.results && d.results[0]?.ref === ref && d.sent === 1);
+      alert(sent
+        ? `Confirmation sent to ${name}.`
+        : `Message could not be sent (${d.sent === 0 ? 'see server log' : 'unknown reason'}).`);
+      // Refresh so the WhatsApp badge reflects the new send.
+      await load();
+    } catch (e) {
+      alert('Could not send confirmation: ' + String(e));
+    } finally {
+      setSending(prev => { const n = new Set(prev); n.delete(ref); return n; });
+    }
+  }
+
   function openRejectModal(ref: string, name: string) {
     setRejectModal({ ref, name });
     setRejectReason(REJECT_REASONS[0]);
@@ -261,11 +290,13 @@ export default function RegistrationsPage() {
             r={r}
             busy={verifying.has(r.ref)}
             deleting={deleting.has(r.ref)}
+            sending={sending.has(r.ref)}
             savingGender={savingGender.has(r.ref)}
             onSetGender={setGenderFor}
             onApprove={() => doVerify(r.ref, 'approve', '')}
             onReject={() => openRejectModal(r.ref, r.name)}
             onDelete={() => deleteReg(r.ref, r.name)}
+            onResendWhatsApp={() => resendWhatsApp(r.ref, r.name)}
           />
         ))}
         {filtered.length === 0 && (
@@ -390,6 +421,14 @@ export default function RegistrationsPage() {
                     </td>
                     <td className="td">
                       <WaBadge r={r} />
+                      <button
+                        onClick={() => resendWhatsApp(r.ref, r.name)}
+                        disabled={sending.has(r.ref)}
+                        title="Re-send the WhatsApp booking confirmation to this devotee"
+                        className="btn-sm mt-1 text-[11px] font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-lg disabled:opacity-40 transition-colors"
+                      >
+                        {sending.has(r.ref) ? 'Sending…' : '📲 Resend'}
+                      </button>
                     </td>
                     <td className="td">
                       <button
@@ -550,16 +589,18 @@ function CountBox({ label, value, tone }: { label: string; value: number; tone: 
 
 /* One registration as a card — the phone view of a table row. */
 function RegCard({
-  r, busy, deleting, savingGender, onSetGender, onApprove, onReject, onDelete,
+  r, busy, deleting, sending, savingGender, onSetGender, onApprove, onReject, onDelete, onResendWhatsApp,
 }: {
   r: Registration;
   busy: boolean;
   deleting: boolean;
+  sending: boolean;
   savingGender: boolean;
   onSetGender: (ref: string, value: string) => void;
   onApprove: () => void;
   onReject: () => void;
   onDelete: () => void;
+  onResendWhatsApp: () => void;
 }) {
   const sts = getStudentStatus(r);
   const qty = [
@@ -634,6 +675,9 @@ function RegCard({
         )}
         <button onClick={onDelete} disabled={deleting} className="btn-ghost btn-sm text-red-500 ml-auto">
           {deleting ? '…' : '🗑 Delete'}
+        </button>
+        <button onClick={onResendWhatsApp} disabled={sending} className="btn-ghost btn-sm text-amber-700">
+          {sending ? 'Sending…' : '📲 Resend confirmation'}
         </button>
       </div>
     </div>
