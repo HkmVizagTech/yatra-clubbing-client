@@ -2,8 +2,10 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
 import Select from './Select';
+import JourneyScene from './JourneyScene';
 import type { PublicEvent, PublicTicketTier } from '@/lib/publicTypes';
 
 type QtyMap = Record<string, number>;
@@ -81,6 +83,7 @@ function portalTarget(): HTMLElement {
 }
 
 export default function BookingModal({ event }: { event: PublicEvent }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [tierKey, setTierKey] = useState<string | undefined>(
     () => event.tickets.find(t => t.requiresStudentId)?.key || event.tickets[0]?.key
@@ -97,7 +100,6 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
-  const [result, setResult] = useState<{ ref: string; name: string; phone: string; total: number; paymentId: string; studentStatus: string } | null>(null);
 
   const tier: PublicTicketTier | undefined = event.tickets.find(t => t.key === tierKey) || event.tickets[0];
   const total = tier?.price || 0;
@@ -126,7 +128,6 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
     setYearOfStudy('');
     setError('');
     setStep(1);
-    setResult(null);
     setOpen(true);
   }
 
@@ -293,16 +294,6 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
   }
 
   async function finishBooking(booking: BookingPayload, payment: PaymentInfo) {
-    setResult({
-      ref: booking.ref,
-      name: booking.name,
-      phone: booking.phone,
-      total: booking.total,
-      paymentId: payment.paymentId || '',
-      studentStatus: booking.studentStatus || '—',
-    });
-    setStep(2);
-
     try {
       await api('/api/register', { ...booking, payment });
     } catch { /* best-effort */ }
@@ -310,6 +301,19 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
     try {
       await api('/api/whatsapp', { ...booking, event_code: booking.event_code });
     } catch { /* best-effort */ }
+
+    // The success screen lives on its own page, so leave the sheet.
+    close();
+    router.push(
+      '/success?' + new URLSearchParams({
+        ref: booking.ref,
+        event: booking.event_code,
+        name: booking.name,
+        phone: booking.phone,
+        total: String(booking.total),
+        tier: tier?.key || '',
+      }).toString()
+    );
   }
 
   async function submit() {
@@ -422,6 +426,7 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
               <div className="tt"><span className="pill">{event.name}</span><h3>Register your seat</h3></div>
               <button className="bc-close" onClick={close}>✕</button>
             </div>
+            <JourneyScene variant="compact" />
             <div className="bc-steps"><div className={`s ${step === 1 ? 'on' : ''}`}></div><div className={`s ${step === 2 ? 'on' : ''}`}></div></div>
             <div className="bc-mbody">
 
@@ -522,28 +527,7 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
                   <div className="bc-secure">🔒 Secure payment via Razorpay · UPI, cards &amp; netbanking</div>
                 </>
               )}
-
-              {step === 2 && result && (
-                <div className="bc-success">
-                  <div className="bc-succ-ic">🪷</div>
-                  <h3>Seat reserved</h3>
-                  <p className="bc-succ-sub">Hare Krishna! Your seat for the <b>{event.name}</b> is booked.</p>
-                  <div className="bc-summary" style={{ textAlign: 'left' }}>
-                    <div className="bc-srow"><span>Name</span><span>{result.name}</span></div>
-                    <div className="bc-srow"><span>Phone</span><span>{result.phone}</span></div>
-                    <div className="bc-srow"><span>Amount paid</span><span className="amt">{inr(result.total)}</span></div>
-                    {result.studentStatus && <div className="bc-srow"><span>Student</span><span>{result.studentStatus}</span></div>}
-                  </div>
-                  <div className="bc-timeline">
-                    <div className="bc-tl-item done"><div className="bc-tl-dot">✓</div><div><b>Payment received</b><span>Your seat is paid &amp; reserved.</span></div></div>
-                    <div className="bc-tl-item now"><div className="bc-tl-dot">●</div><div><b>Bring your college ID</b><span>Carry your college / school ID — our team verifies it on the day, before you board.</span></div></div>
-                  </div>
-                  <div className="bc-ref">Booking ref · {result.ref} · {result.paymentId}</div>
-                  <div className="bc-succ-actions"><button className="bc-btn ghost" onClick={close}>Done</button></div>
-                </div>
-              )}
-
-      </div>
+        </div>
       </div>
     </div>
   );

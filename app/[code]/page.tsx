@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 // stray requests like /favicon.ico reaching the catch-all.
 const RESERVED = new Set([
   'admin', 'login', 'logout', 'api', 'favicon.ico', 'robots.txt',
-  'sitemap.xml', '_next', 'static', 'assets', 'public',
+  'sitemap.xml', '_next', 'static', 'assets', 'public', 'success',
 ]);
 
 type Params = { params: Promise<{ code: string }> };

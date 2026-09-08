@@ -1,0 +1,169 @@
+/* ============================================================================
+   JourneyScene animation layer
+   Handles the moving parts of the animated yatra scenery:
+   wheels, body-bob, drifting clouds, gliding birds, trekking pilgrims and the
+   fluttering saffron flag. Honours prefers-reduced-motion.
+   ========================================================================== */
+
+/* -- wrappers --------------------------------------------------------------- */
+
+.yc-scene {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(224, 160, 32, 0.28);
+  box-shadow: 0 22px 44px -26px rgba(18, 41, 92, 0.5);
+  background: linear-gradient(180deg, #fffdf6, #ffe1a0);
+}
+
+.yc-scene > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.bc-mstrip {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  background: linear-gradient(180deg, #fffdf6, #ffe3a4);
+}
+
+.bc-mstrip > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* -- wheels ----------------------------------------------------------------- */
+
+.yc-wheel {
+  animation: yc-wheel-spin 1.1s linear infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes yc-wheel-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* -- gentle body bob over potholes ------------------------------------------- */
+
+.yc-bob {
+  animation: yc-bob 3.4s ease-in-out infinite;
+}
+
+@keyframes yc-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+/* -- drifting clouds --------------------------------------------------------- */
+
+.yc-cloud {
+  animation: yc-drift 54s linear infinite;
+}
+
+@keyframes yc-drift {
+  0% {
+    transform: translateX(-150px);
+  }
+  100% {
+    transform: translateX(1260px);
+  }
+}
+
+/* -- birds gliding across ---------------------------------------------------- */
+
+.yc-bird {
+  animation: yc-bird 40s linear infinite;
+}
+
+@keyframes yc-bird {
+  0% {
+    transform: translateX(-70px) translateY(0);
+  }
+  50% {
+    transform: translateX(560px) translateY(-7px);
+  }
+  100% {
+    transform: translateX(1240px) translateY(0);
+  }
+}
+
+/* -- trekking pilgrims -------------------------------------------------------- */
+
+.yc-trek {
+  animation: yc-trek 2.4s ease-in-out infinite;
+}
+
+@keyframes yc-trek {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-2px) rotate(-1.4deg);
+  }
+}
+
+/* -- saffron flag ------------------------------------------------------------- */
+
+.yc-flag {
+  animation: yc-flag 1.4s ease-in-out infinite;
+}
+
+@keyframes yc-flag {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-8deg);
+  }
+}
+
+/* -- temple kalasha ----------------------------------------------------------- */
+
+.yc-kalasha {
+  animation: yc-twinkle 2.8s ease-in-out infinite;
+}
+
+@keyframes yc-twinkle {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* -- reduced motion ------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .yc-scene .yc-wheel,
+  .yc-scene .yc-bob,
+  .yc-scene .yc-cloud,
+  .yc-scene .yc-bird,
+  .yc-scene .yc-trek,
+  .yc-scene .yc-flag,
+  .yc-scene .yc-kalasha,
+  .bc-mstrip .yc-wheel,
+  .bc-mstrip .yc-bob,
+  .bc-mstrip .yc-cloud,
+  .bc-mstrip .yc-bird,
+  .bc-mstrip .yc-trek,
+  .bc-mstrip .yc-flag,
+  .bc-mstrip .yc-kalasha {
+    animation: none !important;
+  }
+}
