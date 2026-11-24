@@ -1,6 +1,8 @@
 import type { Registration, StudentStatus, WhatsAppStatus } from './types';
 
 export function inr(n: number | null | undefined): string {
+  // undefined/null = the server withheld the amount (role without revenue access)
+  if (n === null || n === undefined) return '—';
   return '₹' + Number(n || 0).toLocaleString('en-IN');
 }
 

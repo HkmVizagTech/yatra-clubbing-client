@@ -114,7 +114,7 @@ export default function RefundPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Refunds</h1>
-          <p className="page-subtitle">Issue full Razorpay refunds to all paid participants for a cancelled event.</p>
+          <p className="page-subtitle">Issue full Razorpay refunds to all paid participants for a cancelled trip.</p>
         </div>
         <EventFilter
           events={events}

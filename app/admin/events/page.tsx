@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { adminFetch } from '@/lib/api';
 import type { Event, EventStatus } from '@/lib/eventTypes';
+import { useAdmin } from '../AdminContext';
+import { eventPath } from '@/lib/links';
 
 type EventRow = Event & { registration_count: number };
 
@@ -16,6 +18,8 @@ const STATUS_META: Record<EventStatus, { label: string; cls: string }> = {
 };
 
 export default function EventsPage() {
+  const { can } = useAdmin();
+  const canWrite = can('events:write');
   const [events, setEvents] = useState<EventRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +55,7 @@ export default function EventsPage() {
       if (d.event) {
         setEvents(prev => prev.map(e => e.code === code ? { ...e, ...d.event! } as EventRow : e));
       } else {
-        alert('Could not update event status.');
+        alert('Could not update trip status.');
       }
     } catch (e) {
       alert('Error: ' + String(e));
@@ -62,15 +66,15 @@ export default function EventsPage() {
 
   async function removeEvent(code: string, name: string, count: number) {
     if (count > 0) {
-      alert('Cannot delete an event that has registrations. Close or cancel it instead.');
+      alert('Cannot delete a trip that has registrations. Close or cancel it instead.');
       return;
     }
-    if (!confirm(`Delete event "${name}"? This cannot be undone.`)) return;
+    if (!confirm(`Delete trip "${name}"? This cannot be undone.`)) return;
     try {
       const r = await adminFetch(`/api/events/${encodeURIComponent(code)}`, { method: 'DELETE' });
       const d = await r.json() as { deleted?: boolean };
       if (d.deleted) setEvents(prev => prev.filter(e => e.code !== code));
-      else alert('Could not delete that event.');
+      else alert('Could not delete that trip.');
     } catch (e) {
       alert('Error: ' + String(e));
     }
@@ -86,15 +90,15 @@ export default function EventsPage() {
       <div className="space-y-6">
         <div className="page-header">
           <div>
-            <h1 className="page-title">Events</h1>
-            <p className="page-subtitle">No events yet.</p>
+            <h1 className="page-title">Trips</h1>
+            <p className="page-subtitle">No trips yet.</p>
           </div>
-          <Link href="/admin/events/new" className="btn-primary text-sm">＋ New Event</Link>
+          {canWrite && <Link href="/admin/events/new" className="btn-primary text-sm">＋ New trip</Link>}
         </div>
         <div className="panel py-16 text-center">
           <div className="w-14 h-14 rounded-2xl bg-stone-100 flex items-center justify-center mx-auto mb-4 text-2xl">🎪</div>
-          <p className="text-stone-500 mb-4">You haven&apos;t created any events yet.</p>
-          <Link href="/admin/events/new" className="btn-primary text-sm">Create your first event</Link>
+          <p className="text-stone-500 mb-4">You haven&apos;t created any trips yet.</p>
+          {canWrite && <Link href="/admin/events/new" className="btn-primary text-sm">Create your first trip</Link>}
         </div>
       </div>
     );
@@ -104,12 +108,12 @@ export default function EventsPage() {
     <div className="space-y-6">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Events</h1>
-          <p className="page-subtitle">{events.length} events · {activeCount} active</p>
+          <h1 className="page-title">Trips</h1>
+          <p className="page-subtitle">{events.length} {events.length === 1 ? 'trip' : 'trips'} · {activeCount} active</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <button onClick={load} className="btn-ghost text-sm">↻ Refresh</button>
-          <Link href="/admin/events/new" className="btn-primary text-sm">＋ New Event</Link>
+          {canWrite && <Link href="/admin/events/new" className="btn-primary text-sm">＋ New trip</Link>}
         </div>
       </div>
 
@@ -123,19 +127,20 @@ export default function EventsPage() {
       {/* Cards (phones) */}
       <div className="card-list">
         {events.map(e => {
-          const meta = STATUS_META[e.status] || STATUS_META.draft;
+          const base = STATUS_META[e.status] || STATUS_META.draft;
+          const meta = e.status === 'closed' && e.ended ? { label: 'Ended', cls: 'pill-gray' } : base;
           return (
             <div key={e.code} className="row-card">
               <div className="row-card-head">
                 <div className="min-w-0">
                   <div className="font-bold text-stone-900 break-words">{e.name}</div>
                   <a
-                    href={`/${e.code}`}
+                    href={eventPath(e)}
                     target="_blank"
                     rel="noreferrer"
                     className="text-xs text-stone-400 font-mono hover:text-amber-700"
                   >
-                    /{e.code} ↗
+                    {eventPath(e)} ↗
                   </a>
                 </div>
                 <span className={`${meta.cls} shrink-0`}>{meta.label}</span>
@@ -151,13 +156,13 @@ export default function EventsPage() {
               </div>
 
               <div className="row-actions">
-                <Link href={`/admin/events/${e.code}`} className="btn-ghost btn-sm text-amber-700">Edit</Link>
-                <EventActions
+                <Link href={`/admin/events/${e.code}`} className="btn-ghost btn-sm text-amber-700">{canWrite ? 'Edit' : 'View'}</Link>
+                {canWrite && (<EventActions
                   event={e}
                   busy={busy !== null}
                   onStatus={setStatus}
                   onRemove={removeEvent}
-                />
+                />)}
               </div>
             </div>
           );
@@ -170,7 +175,7 @@ export default function EventsPage() {
           <table className="table">
             <thead>
               <tr>
-                <th className="th">Event</th>
+                <th className="th">Trip</th>
                 <th className="th">Date</th>
                 <th className="th">Venue</th>
                 <th className="th">Bookings</th>
@@ -181,19 +186,20 @@ export default function EventsPage() {
             </thead>
             <tbody>
               {events.map(e => {
-                const meta = STATUS_META[e.status] || STATUS_META.draft;
+                const base = STATUS_META[e.status] || STATUS_META.draft;
+          const meta = e.status === 'closed' && e.ended ? { label: 'Ended', cls: 'pill-gray' } : base;
                 return (
                   <tr key={e.code} className="hover:bg-stone-50/70 transition-colors">
                     <td className="td">
                       <div className="font-semibold text-stone-900">{e.name}</div>
                       <a
-                        href={`/${e.code}`}
+                        href={eventPath(e)}
                         target="_blank"
                         rel="noreferrer"
-                        title="Open the public page for this event"
+                        title="Open the public page for this trip"
                         className="text-xs text-stone-400 font-mono hover:text-amber-700 hover:underline"
                       >
-                        /{e.code} ↗
+                        {eventPath(e)} ↗
                       </a>
                     </td>
                     <td className="td text-stone-600 whitespace-nowrap">{e.dates?.display || '—'}</td>
@@ -207,17 +213,17 @@ export default function EventsPage() {
                     </td>
                     <td className="td">
                       <div className="flex flex-wrap gap-1.5">
-                        <EventActions
+                        {canWrite && (<EventActions
                           event={e}
                           busy={busy !== null}
                           onStatus={setStatus}
                           onRemove={removeEvent}
-                        />
+                        />)}
                       </div>
                     </td>
                     <td className="td text-right whitespace-nowrap">
                       <Link href={`/admin/events/${e.code}`} className="inline-flex items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-800 hover:underline">
-                        Edit
+                        {canWrite ? 'Edit' : 'View'}
                       </Link>
                     </td>
                   </tr>
@@ -276,7 +282,7 @@ function EventActions({
       <Link
         href={`/admin/events/new?from=${encodeURIComponent(event.code)}`}
         className="btn-ghost btn-sm text-stone-600"
-        title="Start a new event copied from this one"
+        title="Start a new trip copied from this one"
       >
         Duplicate
       </Link>
@@ -285,7 +291,7 @@ function EventActions({
           onClick={() => onRemove(event.code, event.name, event.registration_count)}
           disabled={busy}
           className="btn-ghost btn-sm text-red-500 hover:bg-red-50"
-          title="Delete event"
+          title="Delete trip"
         >
           Delete
         </button>
@@ -299,7 +305,7 @@ function Spinner() {
     <div className="flex items-center justify-center h-96">
       <div className="text-center">
         <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-stone-500 text-sm">Loading events…</p>
+        <p className="text-stone-500 text-sm">Loading trips…</p>
       </div>
     </div>
   );

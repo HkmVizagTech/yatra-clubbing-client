@@ -3,6 +3,7 @@ export interface PublicTicketTier {
   name: string;
   price: number;
   was: number | null;
+  returningPrice?: number | null;
   maxQty: number;
   description: string;
   tag?: string;
@@ -40,6 +41,10 @@ export interface PublicEvent {
     showCountdown?: boolean;
     mantra?: string;
   };
+  /** true when a returning-attendee list is uploaded (price lookup by mobile number). */
+  returning?: { enabled: boolean; skipId?: boolean; label?: string };
+  /** The trip's date has passed. */
+  ended?: boolean;
   /** Booking ref prefix for this event, e.g. "YJ-". */
   receiptPrefix?: string;
   status: string;
@@ -48,6 +53,7 @@ export interface PublicEvent {
 /** Slimmer shape returned by /api/public/events for the home page chooser. */
 export interface PublicEventCard {
   code: string;
+  slug?: string;
   name: string;
   tagline: string;
   org: string;

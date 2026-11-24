@@ -3,11 +3,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminFetch } from '@/lib/api';
+import AttendeesUpload, { type PendingList } from './AttendeesUpload';
 import type { Event, EventHighlight, EventStatus, EventTicketTier, EventTimelineItem } from '@/lib/eventTypes';
 import Select from '../../components/Select';
 
 type FormState = {
   code: string;
+  slug: string;
   name: string;
   tagline: string;
   org: string;
@@ -23,6 +25,7 @@ type FormState = {
   timeline: EventTimelineItem[];
   tickets: EventTicketTier[];
   branding: { heroDesktop: string; heroMobile: string; themeColor: string; showCountdown: boolean; mantra: string };
+  returning: { skipId: boolean; label: string; autoSync: boolean };
   payments: { receiptPrefix: string; whatsapp: { booking: string; studentApproved: string; studentRejected: string } };
   status: EventStatus;
 };
@@ -116,6 +119,10 @@ function buildDisplay(start: string, end: string): string {
 type Preset = { label: string; emoji: string; tier: Omit<EventTicketTier, 'price' | 'was'> };
 const TICKET_PRESETS: Preset[] = [
   {
+    label: 'Working', emoji: '💼',
+    tier: { key: 'working', name: 'Working', maxQty: 1, description: 'For working professionals', requiresStudentId: false, features: ['Full yatra access'] },
+  },
+  {
     label: 'General', emoji: '🎟️',
     tier: { key: 'general', name: 'General', maxQty: 20, description: 'Open to everyone', requiresStudentId: false, features: ['Full yatra access', 'Lunch feast'] },
   },
@@ -145,6 +152,7 @@ function fromEvent(e?: Event): FormState {
   if (!e) {
     return {
       code: '',
+      slug: '',
       name: '',
       tagline: '',
       org: '',
@@ -160,6 +168,7 @@ function fromEvent(e?: Event): FormState {
       timeline: [],
       tickets: [],
       branding: { heroDesktop: '', heroMobile: '', themeColor: DEFAULTS.themeColor, showCountdown: false, mantra: '' },
+      returning: { skipId: true, label: '', autoSync: false },
       payments: {
         receiptPrefix: DEFAULTS.receiptPrefix,
         whatsapp: {
@@ -173,6 +182,7 @@ function fromEvent(e?: Event): FormState {
   }
   return {
     code: e.code,
+    slug: e.slug || '',
     name: e.name,
     tagline: e.tagline,
     org: e.org,
@@ -187,6 +197,7 @@ function fromEvent(e?: Event): FormState {
     dates: { display: e.dates.display, start: e.dates.start, end: e.dates.end },
     timeline: e.timeline.map(t => ({ ...t })),
     tickets: e.tickets.map(t => ({ ...t, features: [...(t.features || [])] })),
+    returning: { skipId: !!e.returning?.skipId, label: e.returning?.label || '', autoSync: !!e.returning?.autoSync },
     branding: {
       heroDesktop: e.branding.heroDesktop || '',
       heroMobile: e.branding.heroMobile || '',
@@ -207,6 +218,14 @@ function fromEvent(e?: Event): FormState {
 }
 
 // Turn "Ramayana Circuit Yatra 2026" into a short code like "RCY26".
+function toLinkSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+}
+
 function generateCode(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
   const initials = words
@@ -229,6 +248,7 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
   const router = useRouter();
   const [form, setForm] = useState<FormState>(() => fromEvent(initial));
   const [codeTouched, setCodeTouched] = useState(mode === 'edit');
+  const [slugTouched, setSlugTouched] = useState(mode === 'edit' && !!initial?.slug);
   const [codeCheck, setCodeCheck] = useState<CodeCheck>({ state: 'idle' });
   // Once someone writes their own display date, stop overwriting it from the picker.
   const [displayTouched, setDisplayTouched] = useState(() => Boolean(initial?.dates?.display));
@@ -279,11 +299,11 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
   }
 
   function onNameChange(val: string) {
-    if (!codeTouched) {
-      update({ name: val, code: generateCode(val) });
-    } else {
-      update({ name: val });
-    }
+    update({
+      name: val,
+      ...(!codeTouched ? { code: generateCode(val) } : {}),
+      ...(!slugTouched ? { slug: toLinkSlug(val) } : {}),
+    });
   }
 
   // ── Dates ──
@@ -337,6 +357,78 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
       tickets[i] = { ...tickets[i], ...patch };
       return { ...prev, tickets };
     });
+  }
+
+  // "Who can register?" — one click sets the right tiers. Existing prices are
+  // kept when a tier of that kind is already there, so switching modes never
+  // wipes the amounts the admin typed.
+  type Audience = 'student' | 'working' | 'both';
+  const audience: Audience | null = (() => {
+    if (form.tickets.length === 0) return null;
+    const stu = form.tickets.some(t => t.requiresStudentId);
+    const wrk = form.tickets.some(t => !t.requiresStudentId);
+    return stu && wrk ? 'both' : stu ? 'student' : 'working';
+  })();
+
+  function applyAudience(mode: Audience) {
+    setForm(prev => {
+      const preset = (label: string) => TICKET_PRESETS.find(p => p.label === label)!.tier;
+      const make = (isStudent: boolean): EventTicketTier => {
+        const existing = prev.tickets.find(t => !!t.requiresStudentId === isStudent);
+        if (existing) return { ...existing, maxQty: 1 };
+        const base = preset(isStudent ? 'Student' : 'Working');
+        return { ...base, features: [...(base.features || [])], maxQty: 1, price: 0, was: null } as EventTicketTier;
+      };
+      const tickets = mode === 'student' ? [make(true)] : mode === 'working' ? [make(false)] : [make(false), make(true)];
+      return { ...prev, tickets };
+    });
+  }
+
+  // Amounts for the audience(s). "Same amount" keeps one price for both, so the
+  // public page shows a single pass.
+  const [returningOn, setReturningOn] = useState(() => form.tickets.some(t => Number(t.returningPrice) > 0));
+  const [pendingList, setPendingList] = useState<PendingList | null>(null);
+  const [syncAfterCreate, setSyncAfterCreate] = useState(false);
+  const [sameAmount, setSameAmount] = useState(() => {
+    const st = form.tickets.find(t => t.requiresStudentId);
+    const wk = form.tickets.find(t => !t.requiresStudentId);
+    return !!st && !!wk && Number(st.price) === Number(wk.price);
+  });
+  const studentTier = form.tickets.find(t => t.requiresStudentId);
+  const workingTier = form.tickets.find(t => !t.requiresStudentId);
+
+  function setAudiencePrice(forStudent: boolean, raw: string) {
+    const price = Math.max(0, Number(raw.replace(/[^0-9]/g, '')) || 0);
+    setForm(prev => ({
+      ...prev,
+      tickets: prev.tickets.map(t => {
+        const isThis = !!t.requiresStudentId === forStudent;
+        const both = sameAmount && prev.tickets.some(x => x.requiresStudentId) && prev.tickets.some(x => !x.requiresStudentId);
+        return isThis || both ? { ...t, price } : t;
+      }),
+    }));
+  }
+
+  function setReturningPrice(forStudent: boolean, raw: string) {
+    const digits = raw.replace(/[^0-9]/g, '');
+    const returningPrice = digits === '' ? null : Number(digits);
+    setForm(prev => ({
+      ...prev,
+      tickets: prev.tickets.map(t => (!!t.requiresStudentId === forStudent ? { ...t, returningPrice } : t)),
+    }));
+  }
+
+  function toggleReturning(on: boolean) {
+    setReturningOn(on);
+    if (!on) setForm(prev => ({ ...prev, tickets: prev.tickets.map(t => ({ ...t, returningPrice: null })) }));
+  }
+
+  function toggleSameAmount(on: boolean) {
+    setSameAmount(on);
+    if (on && studentTier) {
+      const p = Number(studentTier.price) || 0;
+      setForm(prev => ({ ...prev, tickets: prev.tickets.map(t => ({ ...t, price: p })) }));
+    }
   }
 
   function addPresetTicket(preset: Preset | null) {
@@ -427,12 +519,12 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
 
   // ── What still blocks this event from going live ──
   const checks = [
-    { ok: Boolean(form.name.trim()), label: 'Event name' },
+    { ok: Boolean(form.name.trim()), label: 'Trip name' },
     { ok: Boolean(form.code.trim()) && codeCheck.state !== 'bad', label: 'Public code' },
     { ok: Boolean(form.dates.start), label: 'Date and start time' },
     { ok: Boolean(form.venue.trim()), label: 'Venue' },
-    { ok: form.tickets.length > 0, label: 'At least one ticket tier' },
-    { ok: form.tickets.every(t => t.name.trim() && t.key.trim()), label: 'Every tier has a name and key' },
+    { ok: form.tickets.length > 0, label: 'At least one pass' },
+    { ok: form.tickets.every(t => t.name.trim() && t.key.trim()), label: 'Every pass has a name and key' },
     { ok: duplicateKeys.length === 0, label: 'No duplicate ticket keys' },
   ];
   const blockers = checks.filter(c => !c.ok).length;
@@ -441,18 +533,18 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
     e.preventDefault();
 
     // Catch the things that make an event unusable, before the round trip.
-    if (!form.name.trim()) { setError('Give the event a name.'); return; }
-    if (!form.code.trim()) { setError('Set a public code — it becomes the event’s link.'); return; }
+    if (!form.name.trim()) { setError('Give the trip a name.'); return; }
+    if (!form.code.trim()) { setError('Set a public code — it becomes the trip’s link.'); return; }
     if (codeCheck.state === 'bad') { setError(codeCheck.message); return; }
     if (duplicateKeys.length) {
       setError(`Two ticket tiers share the key "${duplicateKeys[0]}". Keys must be unique — bookings are matched by them.`);
       return;
     }
     if (form.tickets.length === 0 && !confirm(
-      'This event has no ticket tiers, so nobody can book it.\n\nSave anyway?'
+      'This trip has no passes, so nobody can book it.\n\nSave anyway?'
     )) return;
     if (form.status === 'active' && blockers > 0 && !confirm(
-      `This event is set to Active but ${blockers} thing(s) are still missing.\n\nPublish anyway?`
+      `This trip is set to Active but ${blockers} thing(s) are still missing.\n\nPublish anyway?`
     )) return;
 
     setSaving(true);
@@ -470,6 +562,26 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
       });
       const d = await r.json() as { event?: Event; error?: string };
       if (d.event) {
+        if (mode === 'new') {
+          const base = `/api/events/${encodeURIComponent(d.event.code)}/attendees`;
+          const problems: string[] = [];
+          if (pendingList && pendingList.entries.length) {
+            try {
+              const ur = await adminFetch(base, { method: 'POST', body: JSON.stringify({ entries: pendingList.entries }) });
+              if (!ur.ok) problems.push('the Excel list could not be saved');
+            } catch { problems.push('the Excel list could not be saved'); }
+          }
+          if (syncAfterCreate) {
+            try {
+              const sr = await adminFetch(base + '/sync', { method: 'POST' });
+              if (!sr.ok) {
+                const sd = await sr.json().catch(() => ({})) as { error?: string };
+                problems.push('the Vanabhojanam sync failed' + (sd.error ? ` (${sd.error})` : ''));
+              }
+            } catch { problems.push('the Vanabhojanam sync failed'); }
+          }
+          if (problems.length) alert('The trip was created, but ' + problems.join(' and ') + '. Open the trip and try again from the Excel-sheet section.');
+        }
         router.push('/admin/events');
         router.refresh();
       } else {
@@ -487,17 +599,17 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">{mode === 'new' ? 'Create event' : 'Edit event'}</h1>
+          <h1 className="page-title">{mode === 'new' ? 'Create trip' : 'Edit trip'}</h1>
           <p className="page-subtitle">
             {mode === 'new'
               ? 'Fill in the basics — everything else has sensible defaults.'
-              : `Live at ${SITE_ORIGIN.replace(/^https?:\/\//, '')}/${originalCode}`}
+              : `Live at ${SITE_ORIGIN.replace(/^https?:\/\//, '')}/${form.slug || originalCode}`}
           </p>
         </div>
         <div className="flex gap-2 shrink-0">
           <button type="button" onClick={() => router.push('/admin/events')} className="btn-ghost text-sm flex-1 sm:flex-none">Cancel</button>
           <button type="submit" disabled={saving || codeCheck.state === 'bad'} className="btn-primary text-sm flex-1 sm:flex-none">
-            {saving ? 'Saving…' : mode === 'new' ? 'Create event' : 'Save changes'}
+            {saving ? 'Saving…' : mode === 'new' ? 'Create trip' : 'Save changes'}
           </button>
         </div>
       </div>
@@ -508,7 +620,7 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
         {/* Main column */}
         <div className="lg:col-span-2 space-y-6">
           <Card title="Basics">
-            <Field label="Event name *">
+            <Field label="Trip name *">
               <input className="input" value={form.name} onChange={e => onNameChange(e.target.value)} placeholder="Ramayana Circuit Yatra" autoFocus />
             </Field>
 
@@ -528,9 +640,9 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
                 />
                 <div className="min-w-0">
                   <div className="text-sm text-stone-700">
-                    People will book this event at{' '}
-                    <span className="font-mono font-semibold text-amber-800 break-all">
-                      {SITE_ORIGIN.replace(/^https?:\/\//, '')}/{form.code || '····'}
+                    Short code for this event. The public link is the <strong>Page link</strong> below
+                    <span className="block font-mono font-semibold text-amber-800 break-all mt-0.5">
+                      {SITE_ORIGIN.replace(/^https?:\/\//, '')}/{form.slug || form.code || '····'}
                     </span>
                   </div>
                   <p className="text-[11px] text-stone-500 mt-1 leading-relaxed">
@@ -546,8 +658,29 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
               </div>
             </div>
 
+            <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+              <label className="label" htmlFor="event-slug">Page link</label>
+              <div className="flex items-stretch rounded-xl border border-stone-300 bg-white overflow-hidden focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20">
+                <span className="px-3 flex items-center text-xs text-stone-500 bg-stone-50 border-r border-stone-200 whitespace-nowrap">
+                  {SITE_ORIGIN.replace(/^https?:\/\//, '')}/
+                </span>
+                <input
+                  id="event-slug"
+                  className="flex-1 min-w-0 px-3 py-2.5 text-sm font-mono outline-none"
+                  value={form.slug}
+                  maxLength={60}
+                  onChange={e => { setSlugTouched(true); update({ slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-{2,}/g, '-') }); }}
+                  placeholder="ramateertham-trip"
+                />
+              </div>
+              <p className="text-[11px] text-stone-500 mt-1.5 leading-relaxed">
+                The readable link people open and share. Built from the trip name — edit it if you like.
+                The short code above keeps working and redirects here.
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Status" hint="Several events can be Active at once — the home page lists them all.">
+              <Field label="Status" hint="Several trips can be Active at once — each has its own page.">
                 <Select
                   value={form.status}
                   onChange={v => update({ status: v as EventStatus })}
@@ -557,7 +690,7 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
                     { value: 'closed', label: 'Closed — bookings stopped' },
                     { value: 'cancelled', label: 'Cancelled — shows refund notice' },
                   ]}
-                  ariaLabel="Event status"
+                  ariaLabel="Trip status"
                 />
               </Field>
               <Field label="Venue / start point *">
@@ -863,7 +996,157 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
           </Card>
 
           {/* ── Tickets ────────────────────────────────────────────────── */}
-          <Card title="Tickets & pricing">
+          <Card title="Who can join & pricing">
+            {/* 1 — audience */}
+            <div>
+              <StepLabel n={1} title="Who can join this trip?" />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" role="radiogroup" aria-label="Who can join">
+                {([
+                  ['student', '🎓', 'Students only', 'Only students can book. They must upload their ID.'],
+                  ['working', '💼', 'Working professionals', 'Only working people can book. No ID needed.'],
+                  ['both', '👥', 'Both', 'Students and working people, each with their own price.'],
+                ] as [Audience, string, string, string][]).map(([mode2, icon, label, hint]) => {
+                  const on = audience === mode2;
+                  return (
+                    <button
+                      key={mode2}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      onClick={() => {
+                        if (audience && audience !== mode2 && form.tickets.length > 0 &&
+                          !confirm('Change who can join? Passes that no longer apply will be removed; prices you keep stay.')) return;
+                        applyAudience(mode2);
+                      }}
+                      className={`relative text-left rounded-2xl border-2 p-4 transition ${on ? 'border-amber-500 bg-amber-50/60 shadow-sm' : 'border-stone-200 bg-white hover:border-amber-300'}`}
+                    >
+                      <span className={`absolute top-3 right-3 w-5 h-5 rounded-full border-2 flex items-center justify-center ${on ? 'border-amber-500 bg-amber-500' : 'border-stone-300'}`}>
+                        {on && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </span>
+                      <span className="text-2xl block mb-2" aria-hidden="true">{icon}</span>
+                      <span className="block text-sm font-bold text-stone-900">{label}</span>
+                      <span className="block text-[12px] text-stone-500 mt-1 leading-snug">{hint}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 2 — amounts */}
+            {audience && (
+              <div>
+                <StepLabel n={2} title="What do they pay?" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {studentTier && (
+                    <PriceInput
+                      label={audience === 'both' ? 'Students' : 'Amount per person'}
+                      icon="🎓"
+                      value={studentTier.price}
+                      onChange={v => setAudiencePrice(true, v)}
+                      placeholder="599"
+                    />
+                  )}
+                  {workingTier && (
+                    <PriceInput
+                      label={audience === 'both' ? 'Working professionals' : 'Amount per person'}
+                      icon="💼"
+                      value={workingTier.price}
+                      onChange={v => setAudiencePrice(false, v)}
+                      placeholder="799"
+                      disabled={audience === 'both' && sameAmount}
+                    />
+                  )}
+                </div>
+                {audience === 'both' && (
+                  <div className="mt-3">
+                    <Switch
+                      checked={sameAmount}
+                      onChange={toggleSameAmount}
+                      label="Same amount for students and working professionals"
+                      hint="The page then shows one price and one form. With different amounts, Razorpay charges the one they pick."
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 3 — special price for people in an Excel sheet */}
+            {audience && (
+              <div>
+                <StepLabel n={3} title="Special price for people in an Excel sheet" optional />
+                <Switch
+                  checked={returningOn}
+                  onChange={toggleReturning}
+                  label="Give the people in an Excel sheet a different price"
+                  hint="Upload the Excel sheet of people who attended the last event (Name + Mobile). Anyone in it who registers automatically gets this price."
+                />
+                {returningOn && (
+                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/40 p-4 space-y-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {studentTier && (
+                        <PriceInput
+                          label={audience === 'both' ? 'Students in the sheet' : 'Price for people in the Excel sheet'}
+                          icon="🎓"
+                          value={studentTier.returningPrice || 0}
+                          onChange={v => setReturningPrice(true, v)}
+                          placeholder="399"
+                        />
+                      )}
+                      {workingTier && (
+                        <PriceInput
+                          label={audience === 'both' ? 'Working professionals in the sheet' : 'Price for people in the Excel sheet'}
+                          icon="💼"
+                          value={workingTier.returningPrice || 0}
+                          onChange={v => setReturningPrice(false, v)}
+                          placeholder="599"
+                        />
+                      )}
+                    </div>
+                    {(studentTier || audience === 'student' || audience === 'both') && (
+                      <Switch
+                        checked={form.returning.skipId}
+                        onChange={v => update({ returning: { ...form.returning, skipId: v } })}
+                        label="People in the Excel sheet don't need to upload a student ID"
+                        hint="They pay the Excel-sheet price and skip the ID. Everyone else must upload their student ID."
+                      />
+                    )}
+                    <div>
+                      <label className="label" htmlFor="ret-label">Name of this group (shown on the form, optional)</label>
+                      <input
+                        id="ret-label"
+                        className="input"
+                        value={form.returning.label}
+                        maxLength={40}
+                        onChange={e => update({ returning: { ...form.returning, label: e.target.value } })}
+                        placeholder="Vanabhojanam"
+                      />
+                      <p className="text-[11px] text-stone-400 mt-1">Students see it on the form, e.g. “On the special list (Vanabhojanam)? Enter your mobile number to see your price.”</p>
+                    </div>
+                    <AttendeesUpload
+                      eventKey={mode === 'edit' && originalCode ? originalCode : undefined}
+                      pending={pendingList}
+                      onPending={setPendingList}
+                      syncAfterCreate={syncAfterCreate}
+                      onSyncAfterCreate={setSyncAfterCreate}
+                      autoSync={form.returning.autoSync}
+                      onAutoSync={v => update({ returning: { ...form.returning, autoSync: v } })}
+                      lastSync={mode === 'edit' ? initial?.returning : undefined}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Advanced: the individual passes */}
+            <details className="group rounded-2xl border border-stone-200 bg-white">
+              <summary className="cursor-pointer select-none list-none flex items-center justify-between gap-3 px-4 py-3.5">
+                <span>
+                  <span className="block text-sm font-semibold text-stone-800">Advanced — edit passes in detail</span>
+                  <span className="block text-[12px] text-stone-500">Add extra passes (VIP, couple, group), set features, badges and descriptions.</span>
+                </span>
+                <span className="text-stone-400 transition group-open:rotate-180" aria-hidden="true">▾</span>
+              </summary>
+              <div className="px-4 pb-4 space-y-4 border-t border-stone-100 pt-4">
             <div className="rounded-xl border border-stone-200 bg-stone-50/60 p-3">
               <div className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">Add a tier</div>
               <div className="flex flex-wrap gap-2">
@@ -1017,6 +1300,8 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
                 <p className="text-xs text-stone-400">No tiers yet — add at least one so people can book.</p>
               )}
             </div>
+              </div>
+            </details>
           </Card>
         </div>
 
@@ -1076,7 +1361,7 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
             {showAdvanced && (
               <div className="px-4 pb-5 space-y-4 border-t border-stone-100 pt-4">
                 <p className="text-xs text-stone-500 leading-relaxed">
-                  Most events never need to change these. Pre-filled with the standard Yatra defaults.
+                  Most trips never need to change these. Pre-filled with the standard Yatra defaults.
                 </p>
                 <Field label="Organizer">
                   <input className="input" value={form.org} onChange={e => update({ org: e.target.value })} placeholder="Hare Krishna Vaikuntham" />
@@ -1196,6 +1481,59 @@ function ImageField({
         />
       )}
     </div>
+  );
+}
+
+function StepLabel({ n, title, optional }: { n: number; title: string; optional?: boolean }) {
+  return (
+    <div className="flex items-center gap-2.5 mb-3">
+      <span className="w-6 h-6 rounded-full bg-stone-900 text-white text-xs font-bold flex items-center justify-center shrink-0">{n}</span>
+      <h3 className="text-sm font-bold text-stone-900">{title}</h3>
+      {optional && <span className="pill-gray">Optional</span>}
+    </div>
+  );
+}
+
+function PriceInput({
+  label, icon, value, onChange, placeholder, disabled,
+}: { label: string; icon: string; value: number | string; onChange: (v: string) => void; placeholder?: string; disabled?: boolean }) {
+  return (
+    <div className={`rounded-2xl border border-stone-200 bg-white p-3.5 ${disabled ? 'opacity-60' : ''}`}>
+      <label className="flex items-center gap-1.5 text-xs font-semibold text-stone-500 mb-2">
+        <span aria-hidden="true">{icon}</span>{label}
+      </label>
+      <div className="flex items-center rounded-xl border border-stone-300 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20 bg-white overflow-hidden">
+        <span className="pl-3 pr-1 text-lg font-bold text-stone-400">₹</span>
+        <input
+          className="flex-1 min-w-0 py-2.5 pr-3 text-xl font-bold text-stone-900 outline-none bg-transparent disabled:cursor-not-allowed"
+          inputMode="numeric"
+          value={value ? String(value) : ''}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          disabled={disabled}
+        />
+      </div>
+    </div>
+  );
+}
+
+function Switch({ checked, onChange, label, hint }: { checked: boolean; onChange: (v: boolean) => void; label: string; hint?: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="w-full flex items-start gap-3 text-left rounded-2xl border border-stone-200 bg-white px-4 py-3 hover:border-amber-300 transition"
+    >
+      <span className={`mt-0.5 relative inline-flex h-6 w-11 shrink-0 rounded-full transition ${checked ? 'bg-amber-500' : 'bg-stone-300'}`}>
+        <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-5' : ''}`} />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-semibold text-stone-800">{label}</span>
+        {hint && <span className="block text-[12px] text-stone-500 mt-0.5 leading-snug">{hint}</span>}
+      </span>
+    </button>
   );
 }
 

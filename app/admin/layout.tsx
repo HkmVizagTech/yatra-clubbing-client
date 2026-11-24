@@ -2,27 +2,34 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { apiFetch, clearAdminToken } from '@/lib/api';
+import { usePathname } from 'next/navigation';
+import { AdminProvider, useAdmin } from './AdminContext';
 
+// `perm` is the permission needed to open the page; the server enforces the same.
 const NAV = [
-  { href: '/admin', label: 'Dashboard', icon: DashboardIcon },
-  { href: '/admin/events', label: 'Events', icon: EventsIcon },
-  { href: '/admin/registrations', label: 'Registrations', icon: UsersIcon },
-  { href: '/admin/colleges', label: 'Colleges', icon: CollegeIcon },
-  { href: '/admin/refund', label: 'Refunds', icon: RefundIcon },
+  { href: '/admin', label: 'Dashboard', icon: DashboardIcon, perm: 'dashboard:read' },
+  { href: '/admin/events', label: 'Trips', icon: EventsIcon, perm: 'events:read' },
+  { href: '/admin/registrations', label: 'Registrations', icon: UsersIcon, perm: 'registrations:read' },
+  { href: '/admin/colleges', label: 'Colleges', icon: CollegeIcon, perm: 'colleges:read' },
+  { href: '/admin/refund', label: 'Refunds', icon: RefundIcon, perm: 'refunds:manage' },
+  { href: '/admin/team', label: 'Team', icon: ShieldIcon, perm: 'users:manage' },
+  { href: '/admin/account', label: 'My account', icon: UserIcon, perm: 'auth' },
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
+  const { user, can, signOut } = useAdmin();
   // Below lg the sidebar is an off-canvas drawer; from lg up it is always
   // visible and this flag is ignored.
   const [navOpen, setNavOpen] = useState(false);
 
+  const allowed = (perm: string) => perm === 'auth' || can(perm);
+  const visibleNav = NAV.filter(i => allowed(i.perm));
   const current = NAV.find(item =>
     item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href)
   );
+  // Typing a URL you have no permission for shows a notice instead of a page of errors.
+  const blocked = !!current && !allowed(current.perm);
 
   // Tapping a link navigates — close the drawer so the new page is visible.
   useEffect(() => { setNavOpen(false); }, [pathname]);
@@ -40,11 +47,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
   }, [navOpen]);
 
-  async function logout() {
-    clearAdminToken();
-    try { await apiFetch('/api/admin/logout', { method: 'POST' }); } catch { /* best-effort */ }
-    router.replace('/login');
-  }
+  const logout = signOut;
 
   return (
     <div className="min-h-screen bg-stone-100">
@@ -103,7 +106,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {NAV.map(item => {
+          {visibleNav.map(item => {
             const isActive = item.href === current?.href;
             return (
               <Link
@@ -123,8 +126,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        {/* Logout */}
+        {/* Who is signed in + logout */}
         <div className="px-3 py-4 border-t border-stone-200">
+          <div className="flex items-center gap-3 px-3 pb-3">
+            <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-xs font-bold shrink-0">
+              {(user.name || user.email).slice(0, 1).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-stone-800 truncate">{user.name}</div>
+              <div className="text-[11px] text-stone-400 truncate">{user.roleLabel}</div>
+            </div>
+          </div>
           <button
             onClick={logout}
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-stone-500 hover:text-red-600 hover:bg-red-50 transition-colors w-full"
@@ -138,9 +150,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main */}
       <main className="lg:ml-60 min-w-0">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
-          {children}
+          {blocked ? <NoAccess /> : children}
         </div>
       </main>
+    </div>
+  );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AdminProvider>
+      <AdminShell>{children}</AdminShell>
+    </AdminProvider>
+  );
+}
+
+function NoAccess() {
+  const { user } = useAdmin();
+  return (
+    <div className="panel py-14 text-center max-w-md mx-auto">
+      <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center mx-auto mb-4">
+        <ShieldIcon className="w-6 h-6" />
+      </div>
+      <h1 className="text-lg font-extrabold text-stone-900">You don&apos;t have access to this page</h1>
+      <p className="text-sm text-stone-500 mt-2">
+        Your role ({user.roleLabel}) can&apos;t open it. Ask a super admin if you need it.
+      </p>
+      <Link href="/admin" className="btn-primary text-sm mt-5 inline-flex">Back to dashboard</Link>
     </div>
   );
 }
@@ -216,6 +252,24 @@ function LogoutIcon({ className, strokeWidth = 1.8 }: IconProps) {
       <path d="M9 4h7a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9" />
       <path d="M15 12H3" />
       <path d="M6 8l-4 4 4 4" />
+    </svg>
+  );
+}
+
+function ShieldIcon({ className, strokeWidth = 1.8 }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.9 7.5-9.5V6L12 3Z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  );
+}
+
+function UserIcon({ className, strokeWidth = 1.8 }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="12" cy="8" r="3.8" />
+      <path d="M4.5 20.5c.9-3.6 3.7-5.5 7.5-5.5s6.6 1.9 7.5 5.5" />
     </svg>
   );
 }

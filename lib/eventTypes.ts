@@ -11,6 +11,8 @@ export interface EventTicketTier {
   name: string;
   price: number;
   was: number | null;
+  /** Price for people on the uploaded returning-attendee list (optional). */
+  returningPrice?: number | null;
   maxQty: number;
   description: string;
   tag?: string;
@@ -74,6 +76,19 @@ export interface Event {
   branding: EventBranding;
   payments: EventPaymentConfig;
   status: EventStatus;
+  /** The trip's date has passed (set by the server). A live trip that ends closes itself. */
+  ended?: boolean;
+  /** How returning attendees are treated: skipId = they don't need to upload a student ID. */
+  returning?: {
+    skipId: boolean;
+    label: string;
+    /** pull new attendees from Vanabhojanam every hour (off unless switched on) */
+    autoSync?: boolean;
+    lastSyncAt?: string;
+    lastSyncAdded?: number;
+    lastSyncTotal?: number;
+    lastSyncError?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }

@@ -5,8 +5,9 @@ import type { Registration } from '@/lib/types';
 import { inr, fmtDate, getStudentStatus, getRejectionReason, downloadCSV, genderLabel, getWhatsappStatus, isWhatsappConfirmed } from '@/lib/utils';
 import { adminFetch } from '@/lib/api';
 import { useEvents } from '../components/useEvents';
-import EventFilter from '../components/EventFilter';
+import TripTabs, { latestTripCode } from '../components/TripTabs';
 import Select from '../../components/Select';
+import { useAdmin } from '../AdminContext';
 
 const REJECT_REASONS = [
   'ID image is unclear or unreadable',
@@ -22,10 +23,16 @@ const GENDER_SET_OPTIONS = [
   { value: 'other', label: 'Other' },
 ];
 
-type Filter = 'all' | 'paid' | 'pending' | 'students' | 'verify';
+type Filter = 'all' | 'paid' | 'pending' | 'verify' | 'returning';
+type Audience = 'all' | 'students' | 'working';
 type GenderFilter = 'all' | 'male' | 'female' | 'unknown';
 
 export default function RegistrationsPage() {
+  const { can } = useAdmin();
+  const canVerify = can('students:verify');
+  const canWrite = can('registrations:write');
+  const canMoney = can('dashboard:revenue');
+  const [audience, setAudience] = useState<Audience>('all');
   const [regs, setRegs] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,8 +71,8 @@ export default function RegistrationsPage() {
   useEffect(() => {
     if (loadingEvents) return;
     if (events.length > 0 && eventSlug === 'all') {
-      const active = events.find(e => e.status === 'active');
-      const initial = active ? active.code : 'all';
+      // Open on the latest trip only; "All trips" is one tap away.
+      const initial = latestTripCode(events) ?? 'all';
       setEventSlug(initial);
       load(initial);
     } else {
@@ -82,13 +89,37 @@ export default function RegistrationsPage() {
         const g = String(r.gender || '').toLowerCase();
         if (gender === 'unknown' ? (g === 'male' || g === 'female') : g !== gender) return false;
       }
+      if (audience === 'students' && r.qty_student <= 0) return false;
+      if (audience === 'working' && r.qty_student > 0) return false;
       if (filter === 'paid') return r.payment_status === 'paid';
       if (filter === 'pending') return r.payment_status !== 'paid';
-      if (filter === 'students') return r.qty_student > 0;
       if (filter === 'verify') return getStudentStatus(r) === 'pending';
+      if (filter === 'returning') return !!r.returning_attendee;
       return true;
     });
-  }, [regs, search, filter, gender]);
+  }, [regs, search, filter, gender, audience]);
+
+  const tripName = useMemo(() => new Map(events.map(e => [e.code, e.name])), [events]);
+  // Student / working filters only make sense when the trip has BOTH kinds of people.
+  const scopeTrip = events.find(e => e.code === eventSlug) || null;
+  const audiences = useMemo(() => {
+    const tix = scopeTrip ? (scopeTrip.tickets || []) : events.flatMap(e => e.tickets || []);
+    return {
+      students: tix.some(t => t.requiresStudentId) || regs.some(r => r.qty_student > 0),
+      working: tix.some(t => !t.requiresStudentId) || regs.some(r => r.qty_student <= 0),
+    };
+  }, [scopeTrip, events, regs]);
+  const showAudience = audiences.students && audiences.working;
+  useEffect(() => { if (!showAudience && audience !== 'all') setAudience('all'); }, [showAudience, audience]);
+  useEffect(() => { if (!audiences.students && filter === 'verify') setFilter('all'); }, [audiences.students, filter]);
+
+  const counts = useMemo(() => ({
+    total: regs.length,
+    paid: regs.filter(r => r.payment_status === 'paid').length,
+    students: regs.filter(r => r.qty_student > 0).length,
+    working: regs.filter(r => r.qty_student <= 0).length,
+    returning: regs.filter(r => r.returning_attendee).length,
+  }), [regs]);
 
   const pendingCount = useMemo(() => regs.filter(r => getStudentStatus(r) === 'pending').length, [regs]);
 
@@ -212,6 +243,11 @@ export default function RegistrationsPage() {
   if (loading) return <Spinner />;
   if (error) return <ErrorBox error={error} onRetry={load} />;
 
+  const switchTrip = (code: string) => { setEventSlug(code); load(code); };
+  const actions = (r: Registration) => ({
+    busy: verifying.has(r.ref), deleting: deleting.has(r.ref), sending: sending.has(r.ref), savingGender: savingGender.has(r.ref),
+  });
+
   return (
     <div className="space-y-5">
       {/* Header */}
@@ -220,78 +256,89 @@ export default function RegistrationsPage() {
           <h1 className="page-title">Registrations</h1>
           <p className="page-subtitle">
             {filtered.length !== regs.length ? `${filtered.length} shown · ` : ''}{regs.length} total
-            {updatedAt && <> · Updated {updatedAt.toLocaleTimeString('en-IN')}</>}
+            {updatedAt && <> · updated {updatedAt.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}</>}
           </p>
         </div>
         <div className="flex gap-2 items-center flex-wrap">
-          <EventFilter events={events} value={eventSlug} onChange={(s) => { setEventSlug(s); load(s); }} />
-          <button onClick={() => downloadCSV(regs)} className="btn-ghost text-sm">⤓ Export CSV</button>
+          <button onClick={() => downloadCSV(filtered)} className="btn-ghost text-sm">⤓ Export CSV</button>
           <button onClick={() => load()} className="btn-ghost text-sm">↻ Refresh</button>
         </div>
       </div>
 
-      {/* Gender head-count */}
-      <div className="flex gap-3 flex-wrap">
-        <CountBox label="Male" value={genderCounts.male} tone="sky" />
-        <CountBox label="Female" value={genderCounts.female} tone="rose" />
-        {genderCounts.unknown > 0 && (
-          <CountBox label="Not recorded" value={genderCounts.unknown} tone="stone" />
-        )}
+      {/* Trip tabs: current trips as buttons, ended ones in a dropdown */}
+      {events.length > 0 && (
+        <TripTabs events={events} value={eventSlug} onChange={switchTrip} />
+      )}
+
+      {/* Summary */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
+        <Tile label="Registrations" value={counts.total} />
+        <Tile label="Paid" value={counts.paid} tone="green" />
+        {showAudience && <Tile label="Students" value={counts.students} tone="violet" />}
+        {showAudience && <Tile label="Working" value={counts.working} tone="amber" />}
+        {audiences.students && <Tile label="IDs to verify" value={pendingCount} tone={pendingCount > 0 ? 'alert' : undefined} onClick={pendingCount > 0 ? () => setFilter('verify') : undefined} />}
+        <Tile label="Male / Female" value={`${genderCounts.male} / ${genderCounts.female}`} />
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 flex-wrap items-center">
-        <div className="relative w-full sm:flex-1 sm:min-w-[200px] sm:max-w-sm">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">🔍</span>
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search name, phone, email, ref…"
-            className="input pl-9"
+      <div className="panel !p-3 sm:!p-4 space-y-3">
+        <div className="flex gap-3 flex-wrap items-center">
+          <div className="relative w-full sm:flex-1 sm:min-w-[220px] sm:max-w-md">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm" aria-hidden="true">🔍</span>
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search name, phone, email, ref, college…"
+              className="input pl-9"
+              aria-label="Search registrations"
+            />
+          </div>
+          {showAudience && (
+          <div className="seg" role="group" aria-label="Who">
+            {([['all', 'Everyone'], ['students', '🎓 Students'], ['working', '💼 Working']] as [Audience, string][]).map(([k, label]) => (
+              <button key={k} onClick={() => setAudience(k)} className={`seg-btn ${audience === k ? 'seg-on' : ''}`}>{label}</button>
+            ))}
+          </div>
+          )}
+          <Select
+            value={gender}
+            onChange={v => setGender(v as GenderFilter)}
+            className="w-auto"
+            ariaLabel="Filter by gender"
+            options={[
+              { value: 'all', label: 'All genders' },
+              { value: 'male', label: 'Male' },
+              { value: 'female', label: 'Female' },
+              ...(genderCounts.unknown > 0 ? [{ value: 'unknown' as const, label: 'Not recorded' }] : []),
+            ]}
           />
         </div>
-        <Select
-          value={gender}
-          onChange={v => setGender(v as GenderFilter)}
-          className="w-auto"
-          ariaLabel="Filter by gender"
-          options={[
-            { value: 'all', label: 'All genders' },
-            { value: 'male', label: 'Male' },
-            { value: 'female', label: 'Female' },
-            ...(genderCounts.unknown > 0 ? [{ value: 'unknown' as const, label: 'Not recorded' }] : []),
-          ]}
-        />
-        <div className="chip-bar">
+        <div className="flex gap-2 flex-wrap">
           {([
-            { key: 'all', label: 'All' },
-            { key: 'paid', label: 'Paid' },
-            { key: 'pending', label: 'Unpaid' },
-            { key: 'students', label: 'Students' },
-            { key: 'verify', label: `To verify (${pendingCount})` },
-          ] as { key: Filter; label: string }[]).map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setFilter(tab.key)}
-              className={`chip ${filter === tab.key ? 'chip-on' : 'chip-off'}`}
-            >
-              {tab.label}
-            </button>
+            ['all', 'All'],
+            ['paid', 'Paid'],
+            ['pending', 'Unpaid'],
+            ...(audiences.students ? [['verify', `To verify (${pendingCount})`]] : []),
+            ...(counts.returning > 0 ? [['returning', `📋 In Excel list (${counts.returning})`]] : []),
+          ] as [Filter, string][]).map(([k, label]) => (
+            <button key={k} onClick={() => setFilter(k)} className={`chip ${filter === k ? 'chip-on' : 'chip-off'}`}>{label}</button>
           ))}
         </div>
       </div>
 
-      {/* Cards (phones) */}
-      <div className="card-list">
+      {/* Cards (everything below 1500px wide) */}
+      <div className="min-[1500px]:hidden grid grid-cols-1 md:grid-cols-2 gap-3">
         {filtered.map(r => (
           <RegCard
             key={r.ref}
             r={r}
-            busy={verifying.has(r.ref)}
-            deleting={deleting.has(r.ref)}
-            sending={sending.has(r.ref)}
-            savingGender={savingGender.has(r.ref)}
+            trip={tripName.get(r.event_code)}
+            {...actions(r)}
+            showAudience={showAudience}
+            canMoney={canMoney}
+            canVerify={canVerify}
+            canWrite={canWrite}
             onSetGender={setGenderFor}
             onApprove={() => doVerify(r.ref, 'approve', '')}
             onReject={() => openRejectModal(r.ref, r.name)}
@@ -299,162 +346,144 @@ export default function RegistrationsPage() {
             onResendWhatsApp={() => resendWhatsApp(r.ref, r.name)}
           />
         ))}
-        {filtered.length === 0 && (
-          <div className="row-card text-center text-stone-400 py-10">
-            {search || filter !== 'all' || gender !== 'all' ? 'No results match your filter.' : 'No registrations yet.'}
-          </div>
-        )}
-        {filtered.length > 0 && (
-          <p className="text-xs text-stone-400 px-1">Showing {filtered.length} of {regs.length} registrations</p>
-        )}
+        {filtered.length === 0 && <EmptyRows filtered={!!(search || filter !== 'all' || gender !== 'all' || audience !== 'all')} />}
       </div>
 
-      {/* Table (tablet and up) */}
-      <div className="table-wrap hidden md:block">
+      {/* Table (desktop) */}
+      <div className="hidden min-[1500px]:block rounded-2xl border border-stone-200 bg-white overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="table">
+          <table className="w-full text-sm">
             <thead>
-              <tr>
-                <th className="th whitespace-nowrap">Date</th>
-                <th className="th">Ref</th>
-                <th className="th">Name</th>
-                <th className="th">Phone</th>
-                <th className="th">Email</th>
-                <th className="th">College</th>
-                <th className="th">Course · Year</th>
-                <th className="th">Age</th>
-                <th className="th">Gender</th>
-                <th className="th">Pass</th>
-                <th className="th">Qty</th>
-                <th className="th">Total</th>
-                <th className="th">Payment</th>
-                <th className="th">Student ID</th>
-                <th className="th">Verify</th>
-                <th className="th">WhatsApp</th>
-                <th className="th"></th>
+              <tr className="bg-stone-50 text-[11px] uppercase tracking-wider text-stone-500">
+                <th className="text-left font-semibold px-5 py-3">Person</th>
+                <th className="text-left font-semibold px-3 py-3">Booking</th>
+                <th className="text-left font-semibold px-3 py-3">For</th>
+                <th className="text-left font-semibold px-3 py-3">Payment</th>
+                <th className="text-left font-semibold px-3 py-3">Student ID</th>
+                <th className="text-right font-semibold px-5 py-3">WhatsApp</th>
               </tr>
             </thead>
-            <tbody>
-              {filtered.map((r) => {
+            <tbody className="divide-y divide-stone-100">
+              {filtered.map(r => {
                 const sts = getStudentStatus(r);
-                const busy = verifying.has(r.ref);
-                const qty = [
-                  r.qty_general > 0 ? `G×${r.qty_general}` : '',
-                  r.qty_student > 0 ? `S×${r.qty_student}` : '',
-                ].filter(Boolean).join(' ');
+                const a = actions(r);
+                const student = r.qty_student > 0;
+                const detail = student
+                  ? [r.course, r.year_of_study].filter(Boolean).join(' · ')
+                  : '';
                 return (
-                  <tr key={r.ref} className="hover:bg-stone-50/70 transition-colors">
-                    <td className="td text-stone-500 whitespace-nowrap text-xs">{fmtDate(r.created_at)}</td>
-                    <td className="td font-mono text-xs font-bold">{r.ref}</td>
-                    <td className="td font-medium whitespace-nowrap">{r.name}</td>
-                    <td className="td text-stone-600 whitespace-nowrap">{r.phone}</td>
-                    <td className="td text-stone-600">
-                      {r.email ? (
-                        <a href={`mailto:${r.email}`} className="hover:underline text-amber-700">{r.email}</a>
-                      ) : <span className="opacity-30">—</span>}
+                  <tr key={r.ref} className="align-top hover:bg-amber-50/30 transition-colors">
+                    {/* Person */}
+                    <td className="px-5 py-4">
+                      <div className="flex items-start gap-3 min-w-[230px]">
+                        <Avatar name={r.name} student={student} />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-semibold text-stone-900">{r.name}</span>
+                            {r.returning_attendee && <span className="pill-green" title="Their number is in the Excel sheet: special price, no student ID needed">📋 In Excel list</span>}
+                          </div>
+                          <a href={`tel:${r.phone}`} className="block text-stone-600 hover:text-amber-700 tabular-nums">{r.phone}</a>
+                          {r.email && <a href={`mailto:${r.email}`} className="block text-xs text-stone-400 hover:text-amber-700 truncate max-w-[220px]">{r.email}</a>}
+                        </div>
+                      </div>
                     </td>
-                    <td className="td text-stone-600 whitespace-nowrap max-w-[220px] truncate" title={r.college || ''}>
-                      {r.college || <span className="opacity-30">—</span>}
+
+                    {/* Booking */}
+                    <td className="px-3 py-4">
+                      <div className="font-mono text-xs font-bold text-stone-800 whitespace-nowrap">{r.ref}</div>
+                      <div className="text-xs text-stone-400 mt-0.5 whitespace-nowrap">{fmtDate(r.created_at)}</div>
+                      {tripName.get(r.event_code) && <div className="mt-1.5 inline-block max-w-[150px] truncate rounded-md bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-600" title={tripName.get(r.event_code)}>{tripName.get(r.event_code)}</div>}
                     </td>
-                    <td className="td text-stone-600 whitespace-nowrap">
-                      {[r.course, r.year_of_study].filter(Boolean).join(' · ') || <span className="opacity-30">—</span>}
+
+                    {/* For */}
+                    <td className="px-3 py-4">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {showAudience && (student ? <span className="pill-violet">🎓 Student</span> : <span className="pill-amber">💼 Working</span>)}
+                        <GenderCell r={r} saving={a.savingGender} onSet={setGenderFor} />
+                      </div>
+                      <div className="mt-1.5 text-xs text-stone-600 max-w-[230px]">
+                        {student ? (
+                          <>
+                            <div className="truncate" title={r.college || ''}>{r.college || '—'}</div>
+                            {(detail || r.age) && <div className="text-stone-400">{[detail, r.age ? `Age ${r.age}` : ''].filter(Boolean).join(' · ')}</div>}
+                          </>
+                        ) : (
+                          <>
+                            {r.organisation && <div className="truncate" title={r.organisation}>{r.organisation}</div>}
+                            {r.age ? <div className="text-stone-400">Age {r.age}</div> : null}
+                          </>
+                        )}
+                      </div>
                     </td>
-                    <td className="td text-stone-600 font-mono text-xs">{r.age ?? '—'}</td>
-                    <td className="td">
-                      <GenderCell r={r} saving={savingGender.has(r.ref)} onSet={setGenderFor} />
-                    </td>
-                    <td className="td">
-                      <span className={r.pass_type === 'student' ? 'pill-amber' : 'pill-violet'}>
-                        {r.pass_type}
-                      </span>
-                    </td>
-                    <td className="td text-stone-600 font-mono text-xs">{qty}</td>
-                    <td className="td font-bold">{inr(r.total)}</td>
-                    <td className="td">
+
+                    {/* Payment */}
+                    <td className="px-3 py-4 whitespace-nowrap">
                       <PayBadge status={r.payment_status} />
-                      {r.payment_id && (
-                        <div className="text-[10px] text-stone-400 font-mono mt-0.5 max-w-[80px] truncate" title={r.payment_id}>
-                          {r.payment_id}
+                      {canMoney && r.total !== undefined && <div className="mt-1.5 font-extrabold text-stone-900">{inr(r.total)}</div>}
+                      {canMoney && r.payment_id && <div className="text-[10px] text-stone-400 font-mono mt-0.5 max-w-[110px] truncate" title={r.payment_id}>{r.payment_id}</div>}
+                    </td>
+
+                    {/* ID check */}
+                    <td className="px-3 py-4">
+                      {student && r.id_waived ? (
+                        <div>
+                          <span className="pill-green">📋 In Excel list</span>
+                          <div className="text-[11px] text-stone-500 mt-1.5 leading-snug">Student ID not needed</div>
                         </div>
-                      )}
-                    </td>
-                    <td className="td">
-                      {r.id_card_url ? (
-                        <a
-                          href={r.id_card_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-medium text-amber-700 hover:underline"
-                        >
-                          View ID ↗
-                        </a>
-                      ) : (
-                        <span className="text-stone-300 text-xs">—</span>
-                      )}
-                    </td>
-                    <td className="td">
-                      {sts === 'verified' && <span className="pill-green">✓ Verified</span>}
-                      {sts === 'rejected' && (
-                        <span className="pill-red cursor-default" title={getRejectionReason(r)}>
-                          ✗ Rejected
-                        </span>
-                      )}
-                      {sts === 'pending' && (
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => doVerify(r.ref, 'approve', '')}
-                            disabled={busy}
-                            className="btn-sm font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg disabled:opacity-40 transition-colors"
-                          >
-                            {busy ? '…' : '✓'}
-                          </button>
-                          <button
-                            onClick={() => openRejectModal(r.ref, r.name)}
-                            disabled={busy}
-                            className="btn-sm font-bold bg-red-50 text-red-700 hover:bg-red-100 rounded-lg disabled:opacity-40 transition-colors"
-                          >
-                            ✗
-                          </button>
+                      ) : student ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {sts === 'verified' && <span className="pill-green">✓ Verified</span>}
+                            {sts === 'rejected' && <span className="pill-red cursor-default" title={getRejectionReason(r)}>✗ Rejected</span>}
+                            {sts === 'pending' && <span className="pill-amber">⏳ To verify</span>}
+                            {r.id_card_url
+                              ? <a href={r.id_card_url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-amber-700 hover:underline">View ID ↗</a>
+                              : <span className="text-xs text-stone-400">No ID</span>}
+                          </div>
+                          {sts === 'pending' && canVerify && (
+                            <div className="flex gap-1.5">
+                              <button onClick={() => doVerify(r.ref, 'approve', '')} disabled={a.busy} className="btn-sm font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg disabled:opacity-40 transition-colors">{a.busy ? '…' : '✓ Approve'}</button>
+                              <button onClick={() => openRejectModal(r.ref, r.name)} disabled={a.busy} className="btn-sm font-bold bg-red-50 text-red-700 hover:bg-red-100 rounded-lg disabled:opacity-40 transition-colors">✗ Reject</button>
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {sts === 'none' && <span className="text-stone-300 text-xs">—</span>}
+                      ) : <span className="text-stone-300 text-xs">Not needed</span>}
                     </td>
-                    <td className="td">
-                      <WaBadge r={r} />
-                      <button
-                        onClick={() => resendWhatsApp(r.ref, r.name)}
-                        disabled={sending.has(r.ref)}
-                        title="Re-send the WhatsApp booking confirmation to this devotee"
-                        className="btn-sm mt-1 text-[11px] font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-lg disabled:opacity-40 transition-colors"
-                      >
-                        {sending.has(r.ref) ? 'Sending…' : '📲 Resend'}
-                      </button>
-                    </td>
-                    <td className="td">
-                      <button
-                        onClick={() => deleteReg(r.ref, r.name)}
-                        disabled={deleting.has(r.ref)}
-                        title="Delete this registration"
-                        className="icon-btn text-red-500 hover:bg-red-50"
-                      >
-                        {deleting.has(r.ref) ? '…' : '🗑'}
-                      </button>
+
+                    {/* WhatsApp + delete */}
+                    <td className="px-5 py-4">
+                      <div className="flex items-start justify-end gap-2">
+                        <div className="text-right">
+                          <WaBadge r={r} />
+                          {canWrite && (
+                            <button
+                              onClick={() => resendWhatsApp(r.ref, r.name)}
+                              disabled={a.sending}
+                              title="Re-send the WhatsApp booking confirmation"
+                              className="block ml-auto mt-1.5 text-[11px] font-semibold text-amber-700 hover:underline disabled:opacity-40"
+                            >
+                              {a.sending ? 'Sending…' : '📲 Resend'}
+                            </button>
+                          )}
+                        </div>
+                        {canWrite && (
+                          <button onClick={() => deleteReg(r.ref, r.name)} disabled={a.deleting} title="Delete this registration" className="icon-btn text-stone-400 hover:text-red-600 hover:bg-red-50">
+                            {a.deleting ? '…' : '🗑'}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={17} className="px-4 py-14 text-center text-stone-400">
-                    {search || filter !== 'all' || gender !== 'all' ? 'No results match your filter.' : 'No registrations yet.'}
-                  </td>
-                </tr>
+                <tr><td colSpan={6} className="px-4 py-16"><EmptyRows filtered={!!(search || filter !== 'all' || gender !== 'all' || audience !== 'all')} /></td></tr>
               )}
             </tbody>
           </table>
         </div>
         {filtered.length > 0 && (
-          <div className="px-4 py-3 border-t border-stone-100 text-xs text-stone-400">
+          <div className="px-5 py-3 border-t border-stone-100 bg-stone-50/60 text-xs text-stone-500">
             Showing {filtered.length} of {regs.length} registrations
           </div>
         )}
@@ -573,25 +602,47 @@ function GenderTag({ gender }: { gender?: string | null }) {
   );
 }
 
-function CountBox({ label, value, tone }: { label: string; value: number; tone: 'sky' | 'rose' | 'stone' }) {
-  const cls = {
-    sky: 'bg-sky-50 border-sky-200 text-sky-700',
-    rose: 'bg-rose-50 border-rose-200 text-rose-700',
-    stone: 'bg-stone-50 border-stone-200 text-stone-600',
-  }[tone];
+function Avatar({ name, student }: { name: string; student: boolean }) {
   return (
-    <div className={`rounded-xl border px-4 py-2.5 flex-1 min-w-[110px] ${cls}`}>
-      <div className="text-xl font-extrabold leading-none">{value}</div>
-      <div className="text-[11px] font-medium mt-1 opacity-80">{label}</div>
+    <span
+      aria-hidden="true"
+      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${student ? 'bg-violet-100 text-violet-700' : 'bg-amber-100 text-amber-800'}`}
+    >
+      {(name || '?').trim().slice(0, 1).toUpperCase()}
+    </span>
+  );
+}
+
+function Tile({ label, value, tone, onClick }: { label: string; value: number | string; tone?: 'green' | 'violet' | 'amber' | 'alert'; onClick?: () => void }) {
+  const accent = tone === 'green' ? 'text-emerald-700' : tone === 'violet' ? 'text-violet-700' : tone === 'amber' ? 'text-amber-700' : tone === 'alert' ? 'text-amber-600' : 'text-stone-900';
+  const Tag = onClick ? 'button' : 'div';
+  return (
+    <Tag
+      onClick={onClick}
+      className={`rounded-2xl border bg-white px-4 py-3 text-left ${tone === 'alert' ? 'border-amber-300 ring-2 ring-amber-200/50' : 'border-stone-200'} ${onClick ? 'hover:shadow-md transition cursor-pointer' : ''}`}
+    >
+      <div className={`text-2xl font-extrabold leading-none ${accent}`}>{value}</div>
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-stone-500 mt-1.5">{label}</div>
+    </Tag>
+  );
+}
+
+function EmptyRows({ filtered }: { filtered: boolean }) {
+  return (
+    <div className="col-span-full text-center py-10">
+      <div className="text-3xl mb-2" aria-hidden="true">{filtered ? '🔎' : '🗒️'}</div>
+      <p className="font-semibold text-stone-700">{filtered ? 'No registrations match these filters' : 'No registrations yet'}</p>
+      <p className="text-sm text-stone-400 mt-1">{filtered ? 'Try clearing the search or switching the filters.' : 'New bookings will show up here as they come in.'}</p>
     </div>
   );
 }
 
-/* One registration as a card — the phone view of a table row. */
+/* One registration as a card — phones and tablets. */
 function RegCard({
-  r, busy, deleting, sending, savingGender, onSetGender, onApprove, onReject, onDelete, onResendWhatsApp,
+  r, trip, busy, deleting, sending, savingGender, onSetGender, onApprove, onReject, onDelete, onResendWhatsApp, showAudience, canMoney, canVerify, canWrite,
 }: {
   r: Registration;
+  trip?: string;
   busy: boolean;
   deleting: boolean;
   sending: boolean;
@@ -601,84 +652,80 @@ function RegCard({
   onReject: () => void;
   onDelete: () => void;
   onResendWhatsApp: () => void;
+  showAudience: boolean;
+  canMoney: boolean;
+  canVerify: boolean;
+  canWrite: boolean;
 }) {
   const sts = getStudentStatus(r);
-  const qty = [
-    r.qty_general > 0 ? `General × ${r.qty_general}` : '',
-    r.qty_student > 0 ? `Student × ${r.qty_student}` : '',
-  ].filter(Boolean).join(' · ');
+  const student = r.qty_student > 0;
+  const lines = student
+    ? [r.college, [r.course, r.year_of_study].filter(Boolean).join(' · ')].filter(Boolean)
+    : [r.organisation].filter(Boolean);
 
   return (
-    <div className="row-card">
-      <div className="row-card-head">
-        <div className="min-w-0">
-          <div className="font-bold text-stone-900 truncate">{r.name}</div>
+    <div className="rounded-2xl border border-stone-200 bg-white p-4 space-y-3">
+      <div className="flex items-start gap-3">
+        <Avatar name={r.name} student={student} />
+        <div className="min-w-0 flex-1">
+          <div className="font-bold text-stone-900 break-words">{r.name}</div>
           <div className="text-xs font-mono text-stone-400 mt-0.5">{r.ref} · {fmtDate(r.created_at)}</div>
         </div>
         <div className="text-right shrink-0">
-          <div className="font-extrabold text-stone-900">{inr(r.total)}</div>
-          <div className="mt-1"><PayBadge status={r.payment_status} /></div>
+          {canMoney && r.total !== undefined && <div className="font-extrabold text-stone-900">{inr(r.total)}</div>}
+          <div className={canMoney && r.total !== undefined ? 'mt-1' : ''}><PayBadge status={r.payment_status} /></div>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {showAudience && (student ? <span className="pill-violet">🎓 Student</span> : <span className="pill-amber">💼 Working</span>)}
+        {r.returning_attendee && <span className="pill-green" title="Their number is in the Excel sheet: special price, no student ID needed">📋 In Excel list</span>}
         <GenderCell r={r} saving={savingGender} onSet={onSetGender} />
-        <span className={r.pass_type === 'student' ? 'pill-amber' : 'pill-violet'}>{r.pass_type}</span>
-        {sts === 'verified' && <span className="pill-green">✓ Verified</span>}
-        {sts === 'rejected' && <span className="pill-red" title={getRejectionReason(r)}>✗ Rejected</span>}
-        {sts === 'pending' && <span className="pill-gray">⏳ ID to verify</span>}
+        {trip && <span className="rounded-md bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-600 max-w-[10rem] truncate">{trip}</span>}
+      </div>
+
+      <div className="text-sm space-y-0.5">
+        <a href={`tel:${r.phone}`} className="text-amber-700 font-medium tabular-nums">{r.phone}</a>
+        {r.email && <a href={`mailto:${r.email}`} className="block text-xs text-stone-500 truncate">{r.email}</a>}
+        {lines.map((l, i) => <div key={i} className={i === 0 ? 'text-stone-700' : 'text-xs text-stone-400'}>{l}</div>)}
+        {r.age ? <div className="text-xs text-stone-400">Age {r.age}</div> : null}
+      </div>
+
+      {student && r.id_waived && (
+        <div className="rounded-xl bg-emerald-50 px-3 py-2.5 text-xs font-semibold text-emerald-800">
+          📋 In the Excel list · student ID not needed
+        </div>
+      )}
+      {student && !r.id_waived && (
+        <div className="rounded-xl bg-stone-50 px-3 py-2.5 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-stone-500">Student ID</span>
+          {sts === 'verified' && <span className="pill-green">✓ Verified</span>}
+          {sts === 'rejected' && <span className="pill-red" title={getRejectionReason(r)}>✗ Rejected</span>}
+          {sts === 'pending' && <span className="pill-amber">⏳ To verify</span>}
+          {r.id_card_url
+            ? <a href={r.id_card_url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-amber-700 hover:underline">View ID ↗</a>
+            : <span className="text-xs text-stone-400">No ID</span>}
+          {sts === 'pending' && canVerify && (
+            <span className="ml-auto flex gap-1.5">
+              <button onClick={onApprove} disabled={busy} className="btn-sm font-bold bg-emerald-50 text-emerald-700 rounded-lg disabled:opacity-40">{busy ? '…' : '✓ Approve'}</button>
+              <button onClick={onReject} disabled={busy} className="btn-sm font-bold bg-red-50 text-red-700 rounded-lg disabled:opacity-40">✗ Reject</button>
+            </span>
+          )}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-stone-100">
         <WaBadge r={r} />
-      </div>
-
-      <div className="row-kv">
-        <span className="row-k">Phone</span>
-        <span className="row-v"><a href={`tel:${r.phone}`} className="text-amber-700">{r.phone}</a></span>
-
-        {r.email && (<>
-          <span className="row-k">Email</span>
-          <span className="row-v"><a href={`mailto:${r.email}`} className="text-amber-700 break-all">{r.email}</a></span>
-        </>)}
-
-        <span className="row-k">College</span>
-        <span className="row-v">{r.college || '—'}</span>
-
-        {(r.course || r.year_of_study) && (<>
-          <span className="row-k">Course</span>
-          <span className="row-v">{[r.course, r.year_of_study].filter(Boolean).join(' · ')}</span>
-        </>)}
-
-        <span className="row-k">Age</span>
-        <span className="row-v">{r.age ?? '—'}</span>
-
-        {qty && (<>
-          <span className="row-k">Qty</span>
-          <span className="row-v">{qty}</span>
-        </>)}
-
-        {r.payment_id && (<>
-          <span className="row-k">Pay ID</span>
-          <span className="row-v font-mono text-xs break-all">{r.payment_id}</span>
-        </>)}
-      </div>
-
-      <div className="row-actions">
-        {r.id_card_url && (
-          <a href={r.id_card_url} target="_blank" rel="noopener noreferrer" className="btn-ghost btn-sm">View ID ↗</a>
+        {canWrite && (
+          <button onClick={onResendWhatsApp} disabled={sending} className="text-xs font-semibold text-amber-700 hover:underline disabled:opacity-40">
+            {sending ? 'Sending…' : '📲 Resend'}
+          </button>
         )}
-        {sts === 'pending' && (
-          <>
-            <button onClick={onApprove} disabled={busy} className="btn-ghost btn-sm text-emerald-700">
-              {busy ? '…' : '✓ Approve'}
-            </button>
-            <button onClick={onReject} disabled={busy} className="btn-ghost btn-sm text-red-600">✗ Reject</button>
-          </>
+        {canWrite && (
+          <button onClick={onDelete} disabled={deleting} className="ml-auto text-xs font-semibold text-red-500 hover:underline disabled:opacity-40">
+            {deleting ? '…' : 'Delete'}
+          </button>
         )}
-        <button onClick={onDelete} disabled={deleting} className="btn-ghost btn-sm text-red-500 ml-auto">
-          {deleting ? '…' : '🗑 Delete'}
-        </button>
-        <button onClick={onResendWhatsApp} disabled={sending} className="btn-ghost btn-sm text-amber-700">
-          {sending ? 'Sending…' : '📲 Resend confirmation'}
-        </button>
       </div>
     </div>
   );

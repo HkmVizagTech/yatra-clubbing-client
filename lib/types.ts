@@ -13,6 +13,11 @@ export interface Registration {
   year_of_study?: string | null;
   gender?: string | null;
   pass_type: 'student' | 'general';
+  /** Their mobile number was on the trip's uploaded returning-attendee list. */
+  returning_attendee?: boolean;
+  /** Student ID was not asked for because they are on the Excel list. */
+  id_waived?: boolean;
+  organisation?: string | null;
   qty_general: number;
   qty_student: number;
   total: number;

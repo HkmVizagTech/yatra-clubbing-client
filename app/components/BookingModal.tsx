@@ -31,6 +31,9 @@ interface BookingPayload {
   tickets: QtyMap;
   total: number;
   studentStatus?: string | null;
+  pass_key?: string;
+  organisation?: string | null;
+  id_card?: string;
   payment: PaymentInfo;
 }
 
@@ -82,11 +85,15 @@ function portalTarget(): HTMLElement {
   return document.getElementById('yc-modal-root') || document.body;
 }
 
-export default function BookingModal({ event }: { event: PublicEvent }) {
+/**
+ * The registration form. `inline` renders it as a card in the page (always
+ * open, no overlay); otherwise it is the pop-up sheet with its own trigger.
+ */
+export default function BookingModal({ event, inline = false }: { event: PublicEvent; inline?: boolean }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(inline);
   const [tierKey, setTierKey] = useState<string | undefined>(
-    () => event.tickets.find(t => t.requiresStudentId)?.key || event.tickets[0]?.key
+    () => event.tickets[0]?.key
   );
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
@@ -97,12 +104,33 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
   const [colleges, setColleges] = useState<string[]>([]);
   const [course, setCourse] = useState('');
   const [yearOfStudy, setYearOfStudy] = useState('');
+  const [org, setOrg] = useState('');
+  const [idCard, setIdCard] = useState('');
+  const [idName, setIdName] = useState('');
+  const [idBusy, setIdBusy] = useState(false);
+  const [picked, setPicked] = useState(false);
+  // Special price: 'yes' once the typed mobile number is found on the admin's uploaded list.
+  const [returning, setReturning] = useState<'idle' | 'checking' | 'yes' | 'no'>('idle'); // student/working switch must be chosen explicitly
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
 
   const tier: PublicTicketTier | undefined = event.tickets.find(t => t.key === tierKey) || event.tickets[0];
-  const total = tier?.price || 0;
+  const returningOn = !!event.returning?.enabled && event.tickets.some(t => t.returningPrice != null && Number(t.returningPrice) > 0);
+  const priceOf = (t: PublicTicketTier) =>
+    returning === 'yes' && t.returningPrice != null && Number(t.returningPrice) > 0 ? Number(t.returningPrice) : (t.price || 0);
+  const total = tier ? priceOf(tier) : 0;
+  const listTag = event.returning?.label ? ` (${event.returning.label})` : '';
+  // A returning attendee on a trip set to skip the ID doesn't upload one (the server re-checks this).
+  const idWaived = returning === 'yes' && !!event.returning?.skipId && !!tier?.requiresStudentId;
+  const isStudent = !!tier?.requiresStudentId;
+  const studentTiers = event.tickets.filter(t => t.requiresStudentId);
+  const workingTiers = event.tickets.filter(t => !t.requiresStudentId);
+  // One student pass + one working pass → a simple "I am a…" switch.
+  const simpleBoth = studentTiers.length === 1 && workingTiers.length === 1;
+  const samePrice = simpleBoth && priceOf(studentTiers[0]) === priceOf(workingTiers[0]);
+  const hasStudentPass = event.tickets.some(t => t.requiresStudentId);
+  const hasWorkingPass = event.tickets.some(t => !t.requiresStudentId);
 
   const ageNum = Number(age);
   const ageOk = Number.isInteger(ageNum) && ageNum >= 10 && ageNum <= 100;
@@ -110,10 +138,10 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
   const canConfirm = useCallback(() => {
     const nameOk = name.trim().length > 0;
     const phoneOk = /^[0-9]{10}$/.test(phone.trim());
-    const collegeOk = college.trim().length > 0;
+    const studentOk = !isStudent || (college.trim().length > 0 && (idCard.length > 0 || idWaived));
     const genderOk = GENDER_OPTIONS.some(g => g.value === gender);
-    return Boolean(tier) && nameOk && ageOk && genderOk && phoneOk && collegeOk;
-  }, [name, ageOk, gender, phone, college, tier]);
+    return Boolean(tier) && (!simpleBoth || picked) && nameOk && ageOk && genderOk && phoneOk && studentOk;
+  }, [name, ageOk, gender, phone, college, idCard, isStudent, idWaived, tier, simpleBoth, picked]);
 
   function openNow() {
     // Yatra Clubbing is a single-pass, student-only booking — reselect nothing,
@@ -126,6 +154,10 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
     setCollege('');
     setCourse('');
     setYearOfStudy('');
+    setOrg('');
+    setIdCard('');
+    setIdName('');
+    setPicked(false);
     setError('');
     setStep(1);
     setOpen(true);
@@ -148,8 +180,32 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, colleges.length]);
 
+  // When the admin has uploaded a list, look the mobile number up as soon as it
+  // is complete. No list uploaded → nothing is checked.
+  useEffect(() => {
+    if (!returningOn) return;
+    const p = phone.trim();
+    if (!/^[0-9]{10}$/.test(p)) { setReturning('idle'); return; }
+    let cancelled = false;
+    setReturning('checking');
+    const t = setTimeout(async () => {
+      try {
+        const d = await api('/api/public/check-attendee', { event_code: event.code, phone: p }) as { listed?: boolean };
+        if (!cancelled) setReturning(d.listed ? 'yes' : 'no');
+      } catch {
+        if (!cancelled) setReturning('no');
+      }
+    }, 350);
+    return () => { cancelled = true; clearTimeout(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phone, returningOn, event.code]);
+
   useEffect(() => {
     function handler() {
+      if (inline) {
+        document.getElementById('register')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
       openNow();
     }
     window.addEventListener('yatra:open-booking', handler);
@@ -159,7 +215,7 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
 
   // While the sheet is open: lock the page behind it and let Escape close it.
   useEffect(() => {
-    if (!open) return;
+    if (!open || inline) return;
     document.body.classList.add('yc-modal-open');
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') setOpen(false);
@@ -180,6 +236,46 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
     return r.json();
   }
 
+  // Phone photos are 3–8 MB. Shrink to ~1400px JPEG so the upload is quick and
+  // still readable when the team checks the ID.
+  function compressImage(file: File, maxSide = 1400, quality = 0.82): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new window.Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * scale);
+        c.height = Math.round(img.height * scale);
+        const ctx = c.getContext('2d');
+        if (!ctx) { URL.revokeObjectURL(url); return reject(new Error('canvas')); }
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('image')); };
+      img.src = url;
+    });
+  }
+
+  async function onPickId(file?: File | null) {
+    if (!file) return;
+    setError('');
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload a photo of your ID as a JPG or PNG image.');
+      return;
+    }
+    setIdBusy(true);
+    try {
+      setIdCard(await compressImage(file));
+      setIdName(file.name);
+    } catch {
+      setError('We could not read that image. Please try another photo.');
+    } finally {
+      setIdBusy(false);
+    }
+  }
+
   function makeBooking(): BookingPayload {
     // Refs carry the event's own prefix (YJ-…) from its advanced settings, so a
     // booking is identifiable by its ref alone when two yatras are running.
@@ -192,12 +288,15 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
       gender,
       phone: phone.trim(),
       email: email.trim() || null,
-      college: college.trim(),
-      course: course.trim() || null,
-      year_of_study: yearOfStudy || null,
+      college: isStudent ? college.trim() : '',
+      course: isStudent ? (course.trim() || null) : null,
+      year_of_study: isStudent ? (yearOfStudy || null) : null,
+      organisation: !isStudent ? (org.trim() || null) : null,
+      pass_key: tier?.key,
+      id_card: isStudent && !idWaived ? idCard : undefined,
       tickets: tier ? { [tier.key]: 1 } : {},
       total,
-      studentStatus: 'Pending ID verification',
+      studentStatus: isStudent ? (idWaived ? 'verified' : 'Pending ID verification') : null,
       payment: { status: 'pending' },
     };
   }
@@ -252,6 +351,8 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
     try {
       const order = await api('/api/create-order', {
         amount: booking.total,
+        tier_key: booking.pass_key,
+        phone: booking.phone,
         receipt: booking.ref,
         event_code: booking.event_code,
       }) as { orderId: string; amount: number; currency: string; keyId: string };
@@ -295,11 +396,15 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
 
   async function finishBooking(booking: BookingPayload, payment: PaymentInfo) {
     try {
-      await api('/api/register', { ...booking, payment });
+      const { id_card: _omit, ...lean } = booking;
+      void _omit;
+      await api('/api/register', { ...lean, payment });
     } catch { /* best-effort */ }
 
     try {
-      await api('/api/whatsapp', { ...booking, event_code: booking.event_code });
+      const { id_card: _omit2, ...lean2 } = booking;
+      void _omit2;
+      await api('/api/whatsapp', { ...lean2, event_code: booking.event_code });
     } catch { /* best-effort */ }
 
     // The success screen lives on its own page, so leave the sheet.
@@ -326,7 +431,10 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
     try {
       const booking = makeBooking();
       // Pre-save booking as pending so abandoned payments are still captured
-      try { await api('/api/register', booking); } catch { /* best-effort */ }
+      let saved: Record<string, unknown> | null = null;
+      try { saved = await api('/api/register', booking); } catch { /* network blip: payment can still proceed for non-student passes */ }
+      if (saved && saved.saved === false && saved.error) throw new Error(String(saved.error));
+      if (!saved && isStudent && !idWaived) throw new Error('We could not save your details and ID. Check your connection and try again.');
       const payment = await pay(booking);
       await finishBooking(booking, payment);
     } catch (e) {
@@ -358,33 +466,43 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
   };
 
   const passPicker = () => {
+    if (simpleBoth) {
+      const opts = [workingTiers[0], studentTiers[0]];
+      return (
+        <div>
+          <div className="yc-aud" role="radiogroup" aria-label="I am a">
+            {opts.map(t => {
+              const sel = picked && t.key === tier?.key;
+              const stu = !!t.requiresStudentId;
+              return (
+                <button type="button" key={t.key} role="radio" aria-checked={sel} className={`yc-aud-opt${sel ? ' sel' : ''}`}
+                  onClick={() => { setTierKey(t.key); setPicked(true); setError(''); }}>
+                  <span className="ic" aria-hidden="true">{stu ? '🎓' : '💼'}</span>
+                  <b>{stu ? 'Student' : 'Working professional'}</b>
+                  {!samePrice && <em>{inr(priceOf(t))}</em>}
+                  {stu && <small>Student ID required</small>}
+                </button>
+              );
+            })}
+          </div>
+          <div className="yc-aud-total">
+            {!picked ? 'Select one to continue' : <>{samePrice ? 'One amount for everyone' : 'You pay'} · <b>{inr(total)}</b></>}
+          </div>
+        </div>
+      );
+    }
     if (event.tickets.length <= 1 && tier) {
       const off = offerLabel(tier);
       return (
-        <div className={`yc-pass${off ? ' is-offer' : ''}`}>
-          <div className="yc-pass-row">
-            <span className="yc-pass-ic" aria-hidden="true">🎫</span>
-            <div className="yc-pass-id">
-              <div className="nm">{tier.name || 'Student pass'}</div>
-              {tier.requiresStudentId && <div className="req">🎓 College / school ID required</div>}
-            </div>
-            <div className="yc-pass-price">
-              {off && <s>{inr(tier.was as number)}</s>}
-              <b>{inr(tier.price || 0)}</b>
-            </div>
+        <div className="yc-fee">
+          <div className="yc-fee-row">
+            <span className="lb">{returning === 'yes' ? 'Special price' : tier.requiresStudentId ? 'Student registration fee' : 'Registration fee'}</span>
+            <span className="amt">
+              {returning === 'yes' ? <s>{inr(tier.price || 0)}</s> : off && <s>{inr(tier.was as number)}</s>}
+              <b>{inr(priceOf(tier))}</b>
+            </span>
           </div>
-          {off && (
-            <div className="yc-offer">
-              <span className="tag">{off}</span>
-              <span className="save">Save {inr(savings(tier))} on regular price</span>
-            </div>
-          )}
-          {(tier.features?.length || 0) > 0 && (
-            <div className="yc-pass-feat">{tier.features.join(' · ')}</div>
-          )}
-          {tier.description && !descRepeatsOffer(off, tier.description) && (
-            <div className="yc-pass-desc">{tier.description}</div>
-          )}
+          {returning !== 'yes' && off && <div className="yc-fee-save">{off} · save {inr(savings(tier))}</div>}
         </div>
       );
     }
@@ -404,8 +522,8 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
               </span>
               <span className="bc-po-pr">
                 <span className="pr-line">
-                  {off && <s>{inr(t.was as number)}</s>}
-                  <b>{inr(t.price || 0)}</b>
+                  {returning === 'yes' ? <s>{inr(t.price || 0)}</s> : off && <s>{inr(t.was as number)}</s>}
+                  <b>{inr(priceOf(t))}</b>
                 </span>
                 {off && <em className="off">{off}</em>}
               </span>
@@ -420,20 +538,25 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
   };
 
   const overlay = !open ? null : (
-    <div className="bc-overlay" onClick={close} role="dialog" aria-modal="true" aria-label="Register for the yatra">
+    <div className={inline ? 'bc-inline' : 'bc-overlay'} {...(inline ? {} : { 'data-lenis-prevent': true, role: 'dialog', 'aria-modal': true, 'aria-label': 'Register for the yatra', onClick: close })}>
       <div className="bc-modal" onClick={e => e.stopPropagation()}>
             <div className="bc-mhead">
               <div className="tt"><span className="pill">{event.name}</span><h3>Register your seat</h3></div>
-              <button className="bc-close" onClick={close}>✕</button>
+              {!inline && <button className="bc-close" onClick={close}>✕</button>}
             </div>
             <JourneyScene variant="compact" />
             <div className="bc-steps"><div className={`s ${step === 1 ? 'on' : ''}`}></div><div className={`s ${step === 2 ? 'on' : ''}`}></div></div>
-            <div className="bc-mbody">
+            <div className="bc-mbody" {...(inline ? {} : { 'data-lenis-prevent': true })}>
 
               {step === 1 && (
                 <>
                   <div className="bc-field">
-                    <label>Your pass</label>
+                    <label>{event.tickets.length > 1 ? 'Your pass' : 'Registration'}</label>
+                    <div className="yc-audience">
+                      {hasStudentPass && !hasWorkingPass && '🎓 Open to students only. Upload your valid student ID below to register.'}
+                      {hasWorkingPass && !hasStudentPass && '💼 Open to working professionals. Pay the full amount below to register.'}
+                      {hasStudentPass && hasWorkingPass && (simpleBoth ? 'Tell us who is registering. Students must upload a valid ID.' : 'Choose the pass that matches you. Students must upload a valid ID.')}
+                    </div>
                     {passPicker()}
                   </div>
 
@@ -482,43 +605,81 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
                     </div>
                   </div>
 
-                  <div className="bc-field"><label>College / school name</label>
-                    <div className="bc-input-wrap">
-                      <span className="ic-field" aria-hidden="true"><GradIcon /></span>
-                      <input className="bc-input has-icon" list="yc-colleges" value={college} onChange={e => setCollege(e.target.value)}
-                        placeholder={colleges.length ? 'Start typing to pick your college' : 'Your college / school'} />
+                  {returningOn && (
+                    <div className={`yc-returning${returning === 'yes' ? ' ok' : ''}`} aria-live="polite">
+                      {returning === 'yes' && (() => {
+                        const special = tier && tier.returningPrice != null && Number(tier.returningPrice) > 0 ? ` Your price: ${inr(Number(tier.returningPrice))}` : ' Your special price is applied';
+                        return idWaived ? `🎉 You are on our list${listTag}!${special}. No student ID needed.` : `🎉 You are on our list${listTag}!${special}.`;
+                      })()}
+                      {returning === 'checking' && 'Checking your number…'}
+                      {returning === 'no' && (tier?.requiresStudentId && event.returning?.skipId ? 'Regular price applies, and your student ID is required below.' : 'Regular price applies.')}
+                      {returning === 'idle' && `Are you on our special list${listTag}? Enter your mobile number to see your price.`}
                     </div>
-                    <datalist id="yc-colleges">
-                      {colleges.map(c => <option key={c} value={c} />)}
-                    </datalist>
-                  </div>
+                  )}
 
-                  <div className="bc-grid2">
-                    <div className="bc-field"><label>Course / study</label>
+                  {isStudent ? (
+                    <>
+                      <div className="bc-field"><label>College / school name</label>
+                        <div className="bc-input-wrap">
+                          <span className="ic-field" aria-hidden="true"><GradIcon /></span>
+                          <input className="bc-input has-icon" list="yc-colleges" value={college} onChange={e => setCollege(e.target.value)}
+                            placeholder={colleges.length ? 'Start typing to pick your college' : 'Your college / school'} />
+                        </div>
+                        <datalist id="yc-colleges">
+                          {colleges.map(c => <option key={c} value={c} />)}
+                        </datalist>
+                      </div>
+
+                      <div className="bc-grid2">
+                        <div className="bc-field"><label>Course / study</label>
+                          <div className="bc-input-wrap">
+                            <span className="ic-field" aria-hidden="true"><BookIcon /></span>
+                            <input className="bc-input has-icon" value={course} onChange={e => setCourse(e.target.value)} placeholder="e.g. B.Tech CSE" />
+                          </div>
+                        </div>
+                        <div className="bc-field"><label>Year of study</label>
+                          <Select
+                            icon={<CalIcon />}
+                            value={yearOfStudy}
+                            onChange={setYearOfStudy}
+                            options={YEAR_OPTIONS.map(y => ({ value: y, label: y }))}
+                            placeholder="Choose…"
+                            ariaLabel="Year of study"
+                          />
+                        </div>
+                      </div>
+
+                      {!idWaived && (<div className="bc-field">
+                        <label>Student ID card <span style={{ color: '#C0392B' }}>*</span></label>
+                        <label className="bc-upload" style={{ cursor: 'pointer' }}>
+                          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => onPickId(e.target.files?.[0])} />
+                          {idCard ? (
+                            <>
+                              <img src={idCard} alt="Your student ID" style={{ maxHeight: 130, maxWidth: '100%', borderRadius: 10, margin: '0 auto 8px', display: 'block' }} />
+                              <b>{idName || 'ID uploaded'}</b>
+                              <span>Tap to replace</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="uic" aria-hidden="true">🪪</span>
+                              <b>{idBusy ? 'Preparing photo…' : 'Upload your college / school ID'}</b>
+                              <span>Required for the student pass · a clear photo, JPG or PNG</span>
+                            </>
+                          )}
+                        </label>
+                        <p className="yc-verify-note" style={{ marginTop: 8 }}>
+                          Our team checks your ID before your pass is confirmed.
+                        </p>
+                      </div>)}
+                    </>
+                  ) : (
+                    <div className="bc-field"><label>Company / organisation <span className="optional">(optional)</span></label>
                       <div className="bc-input-wrap">
-                        <span className="ic-field" aria-hidden="true"><BookIcon /></span>
-                        <input className="bc-input has-icon" value={course} onChange={e => setCourse(e.target.value)} placeholder="e.g. B.Tech CSE" />
+                        <span className="ic-field" aria-hidden="true"><GradIcon /></span>
+                        <input className="bc-input has-icon" value={org} onChange={e => setOrg(e.target.value)} placeholder="Where do you work?" />
                       </div>
                     </div>
-                    <div className="bc-field"><label>Year of study</label>
-                      <Select
-                        icon={<CalIcon />}
-                        value={yearOfStudy}
-                        onChange={setYearOfStudy}
-                        options={YEAR_OPTIONS.map(y => ({ value: y, label: y }))}
-                        placeholder="Choose…"
-                        ariaLabel="Year of study"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="yc-verify">
-                    <div className="vh">🎓 Student pass check</div>
-                    <p className="yc-verify-note">
-                      Just carry your college / school ID along with you.
-                      Our team verifies it on the day of the yatra.
-                    </p>
-                  </div>
+                  )}
 
                   <button className="bc-btn" onClick={submit} disabled={busy || !canConfirm()}>
                     {busy ? 'Processing…' : `Proceed to pay · ${inr(total)}`}
@@ -531,6 +692,8 @@ export default function BookingModal({ event }: { event: PublicEvent }) {
       </div>
     </div>
   );
+
+  if (inline) return overlay;
 
   return (
     <>

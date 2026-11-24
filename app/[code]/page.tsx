@@ -1,8 +1,9 @@
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import EventLanding from '../components/EventLanding';
 import { fetchEventByCode } from '@/lib/publicEvents';
 import { cdnImage } from '@/lib/img';
+import { readableSlug, eventPath } from '@/lib/links';
 
 // The admin can publish or unpublish at any moment, so never cache.
 export const dynamic = 'force-dynamic';
@@ -40,7 +41,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   ].filter(Boolean).join(' · ');
 
   const description = event.tagline ? `${event.tagline} — ${summary}` : summary;
-  const url = `/${event.code}`;
+  const url = eventPath(event);
 
   return {
     title: event.name,
@@ -72,6 +73,13 @@ export default async function EventPage({ params }: Params) {
 
   const event = await fetchEventByCode(code);
   if (!event) notFound();
+
+  // The readable slug is the canonical address; /RT26 and any other alias
+  // forward to it so there is one link per trip.
+  const canonical = readableSlug(event.slug);
+  if (canonical && code.toLowerCase() !== canonical.toLowerCase()) {
+    permanentRedirect('/' + canonical);
+  }
 
   return <EventLanding event={event} />;
 }

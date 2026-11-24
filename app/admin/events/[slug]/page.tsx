@@ -26,12 +26,12 @@ export default function EditEventPage() {
   }, [slug]);
 
   if (status === 'loading') {
-    return <div className="flex items-center justify-center h-96 text-stone-500 text-sm">Loading event…</div>;
+    return <div className="flex items-center justify-center h-96 text-stone-500 text-sm">Loading trip…</div>;
   }
   if (status === 'error' || !event) {
     return (
       <div className="p-8 text-center">
-        <p className="text-red-600 mb-3">Could not load this event.</p>
+        <p className="text-red-600 mb-3">Could not load this trip.</p>
         <a href="/admin/events" className="btn-ghost text-sm">← Back to events</a>
       </div>
     );

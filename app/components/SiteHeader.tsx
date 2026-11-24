@@ -41,7 +41,7 @@ export default function SiteHeader({ cta, activeHref }: { cta?: React.ReactNode;
       <header className="hk-header">
         <div className="hk-header-in">
           <a href="/" className="hk-logo" aria-label="Yatra Clubbing — home">
-            <span className="hk-logo-mark" aria-hidden="true">॥</span>
+            <span className="hk-logo-mark" aria-hidden="true">Y</span>
             <span className="hk-logo-text">
               <b>Yatra Clubbing</b>
               <span>{ORG.name} · {ORG.city}</span>

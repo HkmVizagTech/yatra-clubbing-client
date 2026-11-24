@@ -1,5 +1,9 @@
 import { API_BASE } from '@/lib/api';
 import type { PublicEvent, PublicEventCard } from '@/lib/publicTypes';
+import { SAMPLE_EVENTS, sampleCards } from '@/lib/sampleEvents';
+
+// Dev-only: render sample data when the backend can't be reached.
+const DEV_FALLBACK = process.env.NODE_ENV === 'development';
 
 // Normalise whatever the API returns into a shape the pages can rely on, so
 // every field access downstream is safe without optional chaining everywhere.
@@ -36,6 +40,7 @@ export function toPublic(e: PublicEvent): PublicEvent {
       name: t.name,
       price: t.price,
       was: t.was,
+      returningPrice: t.returningPrice == null ? null : t.returningPrice,
       maxQty: t.maxQty,
       description: t.description,
       tag: t.tag,
@@ -49,6 +54,8 @@ export function toPublic(e: PublicEvent): PublicEvent {
       showCountdown: branding.showCountdown,
       mantra: branding.mantra,
     },
+    returning: { enabled: !!e.returning?.enabled, skipId: !!e.returning?.skipId, label: e.returning?.label || '' },
+    ended: !!e.ended,
     receiptPrefix: e.receiptPrefix || 'YC-',
     status: e.status,
   };
@@ -67,13 +74,13 @@ export async function fetchActiveEvents(): Promise<PublicEventCard[]> {
     const r = await fetch(url, { cache: 'no-store' });
     if (!r.ok) {
       console.error(`[public] ${url} responded ${r.status}`);
-      return [];
+      return DEV_FALLBACK && r.status >= 500 ? sampleCards() : [];
     }
     const data = await r.json();
     return Array.isArray(data?.events) ? (data.events as PublicEventCard[]) : [];
   } catch (err) {
     logFetchFailure(url, err);
-    return [];
+    return DEV_FALLBACK ? sampleCards() : [];
   }
 }
 
@@ -82,12 +89,12 @@ export async function fetchEventByCode(code: string): Promise<PublicEvent | null
   const url = `${API_BASE}/api/public/event/${encodeURIComponent(code)}`;
   try {
     const r = await fetch(url, { cache: 'no-store' });
-    if (!r.ok) return null;
+    if (!r.ok) return DEV_FALLBACK && r.status >= 500 ? (SAMPLE_EVENTS.find(e => e.code.toLowerCase() === code.toLowerCase() || (e.slug || "").toLowerCase() === code.toLowerCase()) ?? null) : null;
     const data = await r.json();
     const event = data?.event as PublicEvent | null;
     return event ? toPublic(event) : null;
   } catch (err) {
     logFetchFailure(url, err);
-    return null;
+    return DEV_FALLBACK ? (SAMPLE_EVENTS.find(e => e.code.toLowerCase() === code.toLowerCase() || (e.slug || "").toLowerCase() === code.toLowerCase()) ?? null) : null;
   }
 }

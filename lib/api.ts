@@ -24,6 +24,35 @@ function resolveApiBase(): string {
 export const API_BASE = resolveApiBase();
 
 export const ADMIN_TOKEN_KEY = 'yc_admin_token';
+export const ADMIN_USER_KEY = 'yc_admin_user';
+
+/** The signed-in admin, as returned by /api/admin/auth/login and /me. */
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  roleLabel: string;
+  permissions: string[];
+}
+
+export function getAdminUser(): AdminUser | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(ADMIN_USER_KEY);
+    return raw ? (JSON.parse(raw) as AdminUser) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setAdminUser(user: AdminUser) {
+  try {
+    sessionStorage.setItem(ADMIN_USER_KEY, JSON.stringify(user));
+  } catch {
+    /* noop */
+  }
+}
 
 export function getAdminToken(): string {
   if (typeof window === 'undefined') return '';
@@ -44,6 +73,7 @@ export function setAdminToken(token: string) {
 
 export function clearAdminToken() {
   try {
+    sessionStorage.removeItem(ADMIN_USER_KEY);
     sessionStorage.removeItem(ADMIN_TOKEN_KEY);
   } catch {
     /* noop */

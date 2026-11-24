@@ -18,9 +18,9 @@ export default function EventFilter({
       value={value}
       onChange={onChange}
       className="w-auto"
-      ariaLabel="Filter by event"
+      ariaLabel="Filter by trip"
       options={[
-        { value: 'all', label: 'All events' },
+        { value: 'all', label: 'All trips' },
         ...events.map(e => ({ value: e.code, label: e.name })),
       ]}
     />

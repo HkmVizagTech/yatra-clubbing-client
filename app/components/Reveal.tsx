@@ -4,8 +4,8 @@ import type { ReactNode } from 'react';
 import { useReveal } from './useReveal';
 
 /**
- * Fades/slides its children in as they scroll into view. Wraps a single group
- * in a div. Use the `delay` prop to stagger cards that sit next to each other.
+ * Fades/slides its children in as they scroll into view (styles in yatra.css).
+ * Use `delay` (ms) to stagger siblings.
  */
 export default function Reveal({
   children,
@@ -16,13 +16,13 @@ export default function Reveal({
   children: ReactNode;
   className?: string;
   delay?: number;
-  as?: 'div' | 'section' | 'li';
+  as?: 'div' | 'section' | 'li' | 'article';
 }) {
   const { ref, visible } = useReveal<HTMLDivElement>();
   return (
     <Tag
       ref={ref as never}
-      className={`reveal${visible ? ' is-in' : ''}${className ? ` ${className}` : ''}`}
+      className={`yt-rv${visible ? ' is-in' : ''}${className ? ` ${className}` : ''}`}
       style={delay ? { transitionDelay: `${delay}ms` } : undefined}
     >
       {children}

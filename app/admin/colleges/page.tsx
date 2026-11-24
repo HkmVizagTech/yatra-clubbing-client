@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { adminFetch } from '@/lib/api';
+import { useAdmin } from '../AdminContext';
 
 interface College {
   _id: string;
@@ -11,6 +12,8 @@ interface College {
 }
 
 export default function CollegesPage() {
+  const { can } = useAdmin();
+  const canWrite = can('colleges:write');
   const [colleges, setColleges] = useState<College[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -100,7 +103,7 @@ export default function CollegesPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 items-start">
         {/* Add form */}
-        <form onSubmit={add} className="panel space-y-3">
+        {canWrite && (<form onSubmit={add} className="panel space-y-3">
           <h2 className="panel-title">Add a college</h2>
           <div>
             <label className="label">College name *</label>
@@ -119,7 +122,7 @@ export default function CollegesPage() {
               {message.text}
             </p>
           )}
-        </form>
+        </form>)}
 
         {/* List */}
         <div className="panel">
@@ -147,7 +150,7 @@ export default function CollegesPage() {
                     <div className="font-medium text-stone-900 text-sm truncate">{c.name}</div>
                     {c.short && <div className="text-[11px] text-stone-400">{c.short}</div>}
                   </div>
-                  <button
+                  {canWrite && (<button
                     onClick={() => remove(c._id, c.name)}
                     disabled={removing === c._id}
                     className="icon-btn text-red-500 hover:bg-red-50"
@@ -155,7 +158,7 @@ export default function CollegesPage() {
                     aria-label={`Remove ${c.name}`}
                   >
                     {removing === c._id ? '…' : '🗑'}
-                  </button>
+                  </button>)}
                 </li>
               ))}
             </ul>

@@ -1,3 +1,4 @@
+import { eventPath } from '@/lib/links';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import './success.css';
@@ -84,7 +85,7 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
               <div className="succ-note">If you don’t receive our WhatsApp confirmation, keep this booking ref handy and call {ORG.phone}.</div>
 
               <div className="succ-actions">
-                {event && <Link className="hk-btn" href={`/${event.code}`}>View event</Link>}
+                {event && <Link className="hk-btn" href={eventPath(event)}>View event</Link>}
                 <Link className="hk-btn succ-btn-ghost" href="/">Go to home</Link>
               </div>
             </div>

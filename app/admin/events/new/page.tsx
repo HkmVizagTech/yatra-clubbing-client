@@ -44,7 +44,7 @@ function NewEventInner() {
   }, [from]);
 
   if (state === 'loading') {
-    return <div className="flex items-center justify-center h-96 text-stone-500 text-sm">Copying event…</div>;
+    return <div className="flex items-center justify-center h-96 text-stone-500 text-sm">Copying trip…</div>;
   }
 
   return (
