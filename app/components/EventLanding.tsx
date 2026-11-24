@@ -8,6 +8,10 @@ import '../yatra.css';
 import BookingModal from './BookingModal';
 import BookButton from './BookButton';
 import YtCountdown from './YtCountdown';
+import RegisterWatch from './RegisterWatch';
+import TripFooter from './TripFooter';
+import AboutMovement from './AboutMovement';
+import RamaSection from './RamaSection';
 import HeroSceneLoader from './HeroSceneLoader';
 import HeroIllustration from './HeroIllustration';
 import SmoothScroll from './SmoothScroll';
@@ -148,8 +152,8 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
       : wrkTiers.length ? 'Working professionals'
       : '';
   const facts: { icon: React.ReactNode; k: string; v: string }[] = [];
-  if (event.dates.display) facts.push({ icon: <CalendarDays />, k: 'Date', v: event.dates.display });
-  if (event.timing) facts.push({ icon: <Clock />, k: 'Timing', v: event.timing });
+  if (event.dates.display) facts.push({ icon: <CalendarDays />, k: 'Date', v: event.dates.display.split('·')[0].trim() });
+  if (event.timing) facts.push({ icon: <Clock />, k: 'Timing', v: event.timing.replace(/\s*[-–]\s*/, ' – ') });
   if (audienceText) facts.push({ icon: <Users />, k: 'Open to', v: audienceText });
   if (event.ageLimit) facts.push({ icon: <Sparkles />, k: 'Age', v: event.ageLimit });
   if (event.transport) facts.push({ icon: <Bus />, k: 'Travel', v: event.transport });
@@ -275,6 +279,9 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
           </section>
         )}
 
+        {/* ── Lord Rama, in depth (shows only when /public/rama has a picture) ── */}
+        <RamaSection eyebrow="The legend" title="Walk where Lord Rama walked" text="A quiet hill, an old temple and a story older than the road that leads to it. Come and walk it with us." />
+
         {/* ── Highlights ────────────────────────────────────────────────── */}
         {highlights.length > 0 && (
           <section className="yt-sec yt-sec-tint" id="highlights">
@@ -326,6 +333,8 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
           </section>
         )}
 
+        <AboutMovement />
+
         {/* ── Registration: the form itself, on the page ─────────────────── */}
         {event.tickets.length > 0 && (
           <section className="yt-sec yt-dark" id="register">
@@ -339,20 +348,9 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
           </section>
         )}
 
-        {/* ── Closing sunrise ───────────────────────────────────────────── */}
-        <section className="yt-close">
-          <HeroIllustration compact />
-          <div className="yt-close-in">
-            <Reveal>
-              <div className="yt-close-name">{event.name}</div>
-              <h2>More than a trip. A higher purpose.</h2>
-              <p>{event.dates.display ? `${event.dates.display} · ` : ''}{event.venue || 'Hare Krishna Vaikuntham, Visakhapatnam'}</p>
-              <BookButton className="yt-btn yt-btn-gold">Register now <ArrowRight size={18} /></BookButton>
-            </Reveal>
-          </div>
-        </section>
-        <div className="yt-end">© {new Date().getFullYear()} {event.org || 'Yatra Clubbing'}</div>
+        <TripFooter org={event.org} />
 
+        <RegisterWatch />
         <div className="yt-bar">
           <div className="lbl"><b>{event.name}</b><span>{event.dates.display || ''}</span></div>
           <BookButton className="yt-btn yt-btn-gold">Register</BookButton>

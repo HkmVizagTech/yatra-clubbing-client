@@ -546,13 +546,13 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
               {!inline && <button className="bc-close" onClick={close}>✕</button>}
             </div>
             <JourneyScene variant="compact" />
-            <div className="bc-steps"><div className={`s ${step === 1 ? 'on' : ''}`}></div><div className={`s ${step === 2 ? 'on' : ''}`}></div></div>
+            {!inline && <div className="bc-steps"><div className={`s ${step === 1 ? 'on' : ''}`}></div><div className={`s ${step === 2 ? 'on' : ''}`}></div></div>}
             <div className="bc-mbody" {...(inline ? {} : { 'data-lenis-prevent': true })}>
 
               {step === 1 && (
                 <>
                   <div className="bc-field">
-                    <label>{event.tickets.length > 1 ? 'Your pass' : 'Registration'}</label>
+                    {event.tickets.length > 1 && <label>Your pass</label>}
                     <div className="yc-audience">
                       {hasStudentPass && !hasWorkingPass && '🎓 Open to students only. Upload your valid student ID below to register.'}
                       {hasWorkingPass && !hasStudentPass && '💼 Open to working professionals. Pay the full amount below to register.'}
@@ -564,7 +564,7 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
                   <div className="bc-field"><label>Full name</label>
                     <div className="bc-input-wrap">
                       <span className="ic-field" aria-hidden="true"><UserIcon /></span>
-                      <input className="bc-input has-icon" value={name} onChange={e => setName(e.target.value)} placeholder="Your name" />
+                      <input className="bc-input has-icon" value={name} onChange={e => setName(e.target.value)} placeholder="Your name" autoComplete="name" enterKeyHint="next" />
                     </div>
                   </div>
 
@@ -572,7 +572,7 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
                     <div className="bc-field"><label>Age</label>
                       <div className="bc-input-wrap">
                         <span className="ic-field" aria-hidden="true"><CakeIcon /></span>
-                        <input className="bc-input has-icon" inputMode="numeric" value={age}
+                        <input className="bc-input has-icon" inputMode="numeric" autoComplete="off" value={age}
                           onChange={e => setAge(e.target.value.replace(/\D/g, '').slice(0, 2))}
                           maxLength={2} placeholder="e.g. 21" />
                       </div>
@@ -583,7 +583,7 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
                         value={gender}
                         onChange={setGender}
                         options={GENDER_OPTIONS}
-                        placeholder="Choose…"
+                        placeholder="Select"
                         ariaLabel="Gender"
                       />
                     </div>
@@ -593,15 +593,15 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
                     <div className="bc-field"><label>Mobile number</label>
                       <div className="bc-input-wrap">
                         <span className="ic-field" aria-hidden="true"><PhoneIcon /></span>
-                        <input className="bc-input has-icon" inputMode="numeric" value={phone}
+                        <input className="bc-input has-icon" type="tel" autoComplete="tel-national" enterKeyHint="next" inputMode="numeric" value={phone}
                           onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                          maxLength={10} placeholder="10-digit mobile" />
+                          maxLength={10} placeholder="10 digits" />
                       </div>
                     </div>
-                    <div className="bc-field"><label>Email <span className="optional">(optional)</span></label>
+                    <div className="bc-field"><label>Email</label>
                       <div className="bc-input-wrap">
                         <span className="ic-field" aria-hidden="true"><MailIcon /></span>
-                        <input className="bc-input has-icon" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" />
+                        <input className="bc-input has-icon" type="email" inputMode="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Optional" />
                       </div>
                     </div>
                   </div>
@@ -635,7 +635,7 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
                         <div className="bc-field"><label>Course / study</label>
                           <div className="bc-input-wrap">
                             <span className="ic-field" aria-hidden="true"><BookIcon /></span>
-                            <input className="bc-input has-icon" value={course} onChange={e => setCourse(e.target.value)} placeholder="e.g. B.Tech CSE" />
+                            <input className="bc-input has-icon" value={course} onChange={e => setCourse(e.target.value)} placeholder="B.Tech CSE" />
                           </div>
                         </div>
                         <div className="bc-field"><label>Year of study</label>
@@ -644,7 +644,7 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
                             value={yearOfStudy}
                             onChange={setYearOfStudy}
                             options={YEAR_OPTIONS.map(y => ({ value: y, label: y }))}
-                            placeholder="Choose…"
+                            placeholder="Select"
                             ariaLabel="Year of study"
                           />
                         </div>
@@ -664,7 +664,7 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
                             <>
                               <span className="uic" aria-hidden="true">🪪</span>
                               <b>{idBusy ? 'Preparing photo…' : 'Upload your college / school ID'}</b>
-                              <span>Required for the student pass · a clear photo, JPG or PNG</span>
+                              <span>Clear photo · JPG or PNG</span>
                             </>
                           )}
                         </label>

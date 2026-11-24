@@ -124,8 +124,8 @@ export default function HighlightObject({ kind, label }: { kind: ObjectKind; lab
           add(new THREE.CylinderGeometry(0.28, 0.22, 0.14, 20), mat(col, 0.6), Math.cos(a) * 0.72, -0.24, Math.sin(a) * 0.72);
         });
         add(new THREE.SphereGeometry(0.34, 20, 14), mat(C.white, 0.7), 0, -0.14, 0);
-        group.rotation.x = 0.28;
-        group.scale.setScalar(0.95);
+        group.rotation.x = 0.3;
+        group.scale.setScalar(1.3);
       } else {
         add(new THREE.IcosahedronGeometry(1.1, 0), mat(C.saffron, 0.35, true));
         const ring = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.05, 10, 60), mat(C.gold, 0.4));
