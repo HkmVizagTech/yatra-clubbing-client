@@ -6,7 +6,7 @@ import RamaDepth from './RamaDepth';
 // The pictures live in /public/rama (bg, rama, fg). If none are there, the whole section stays hidden.
 const LAYERS = [
   { name: 'bg', z: -1.1 },
-  { name: 'rama', z: 0 },
+  { name: 'rama', z: 0, fit: 'contain' as const, scale: 0.9, y: -0.04 },
   { name: 'fg', z: 0.9 },
 ];
 

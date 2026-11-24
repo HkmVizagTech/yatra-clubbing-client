@@ -10,7 +10,6 @@ import BookButton from './BookButton';
 import YtCountdown from './YtCountdown';
 import RegisterWatch from './RegisterWatch';
 import TripFooter from './TripFooter';
-import AboutMovement from './AboutMovement';
 import RamaSection from './RamaSection';
 import HeroSceneLoader from './HeroSceneLoader';
 import HeroIllustration from './HeroIllustration';
@@ -332,8 +331,6 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
             </div>
           </section>
         )}
-
-        <AboutMovement />
 
         {/* ── Registration: the form itself, on the page ─────────────────── */}
         {event.tickets.length > 0 && (

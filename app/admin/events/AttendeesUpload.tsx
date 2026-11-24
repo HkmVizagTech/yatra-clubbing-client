@@ -14,7 +14,6 @@ type MergeResult = { added: number; updated: number; duplicates: number; invalid
 
 const isPhoneHeader = (s: string) => /(mobile|phone|whatsapp|contact|cell|number)/i.test(s);
 const isNameHeader = (s: string) => /(^|\b)(name|student|candidate|person|devotee)(\b|$)/i.test(s) && !isPhoneHeader(s);
-const isAttendedHeader = (s: string) => /(attend|present|absent|came|turned)/i.test(s);
 const looksLikeName = (s: string) => {
   const t = s.trim();
   if (t.length < 2 || t.includes('@')) return false;
@@ -22,27 +21,17 @@ const looksLikeName = (s: string) => {
   return letters >= 2 && letters >= t.replace(/\s/g, '').length / 2;
 };
 
-/** Yes / Y / True / 1 / Present / Attended / ✓ … = attended. Anything else, including blank, is NOT. */
-function markedAttended(v: string): boolean {
-  const t = v.trim().toLowerCase();
-  if (!t) return false;
-  if (/^(no|n\b|not|absent|didn|did not|false|0|x|✗|✘|-)/.test(t)) return false;
-  return /^(y|yes|true|1|present|attended|✓|✔|done|came)/.test(t);
-}
-
-type Parsed = { entries: Entry[]; skippedNotAttended: number; usedColumn: boolean };
+type Parsed = { entries: Entry[] };
 
 /**
  * Every number in the file with the name on the same row (when there is one).
- * If the sheet has an "Attended" column (Yes / No), only the rows marked as
- * attended are kept. With no such column, everyone in the sheet is kept.
+ * Every row that has a mobile number is kept (the sheet should list only the
+ * people you want on the list).
  */
 async function readEntries(file: File): Promise<Parsed> {
   const XLSX = await import('xlsx');
   const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
   const out: Entry[] = [];
-  let skippedNotAttended = 0;
-  let usedColumn = false;
 
   for (const sheet of wb.SheetNames) {
     const rows = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[sheet], { header: 1, raw: false, defval: '' }) as unknown[][];
@@ -50,7 +39,6 @@ async function readEntries(file: File): Promise<Parsed> {
     // A header row, if there is one, tells us which columns hold the name, number and attendance.
     let phoneCol = -1;
     let nameCol = -1;
-    let attCol = -1;
     let first = 0;
     for (let i = 0; i < Math.min(rows.length, 5); i++) {
       const cells = rows[i].map(c => String(c ?? ''));
@@ -58,12 +46,10 @@ async function readEntries(file: File): Promise<Parsed> {
       const n = cells.findIndex(isNameHeader);
       if (p >= 0 || n >= 0) {
         phoneCol = p; nameCol = n;
-        attCol = cells.findIndex(c => isAttendedHeader(c) && !isPhoneHeader(c));
         first = i + 1;
         break;
       }
     }
-    if (attCol >= 0) usedColumn = true;
 
     for (let r = first; r < rows.length; r++) {
       const row = rows[r].map(c => String(c ?? ''));
@@ -81,11 +67,10 @@ async function readEntries(file: File): Promise<Parsed> {
       }
       if (numbers.length === 0) continue;
 
-      if (attCol >= 0 && !markedAttended(row[attCol] ?? '')) { skippedNotAttended += numbers.length; continue; }
       for (const phone of numbers) out.push({ phone, name });
     }
   }
-  return { entries: out, skippedNotAttended, usedColumn };
+  return { entries: out };
 }
 
 /* Same person = same number AND same name (case / spacing / punctuation ignored). */
@@ -119,7 +104,7 @@ function mergeLocal(existing: Entry[], incoming: Entry[]): { merged: Entry[]; ad
 }
 
 function downloadSample() {
-  const csv = 'Name,Mobile,Attended\nAsha Reddy,9876543210,Yes\nRavi Kumar,9123456780,No\nMeena,9000000012,Yes\n';
+  const csv = 'Name,Mobile\nAsha Reddy,9876543210\nRavi Kumar,9123456780\nMeena,9000000012\n';
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
   const a = document.createElement('a');
   a.href = url;
@@ -363,21 +348,18 @@ export default function AttendeesUpload({
     setBusy('file');
     setMsg(null);
     try {
-      const { entries: incoming, skippedNotAttended, usedColumn } = await readEntries(file);
+      const { entries: incoming } = await readEntries(file);
       if (incoming.length === 0) {
         setMsg({
           ok: false,
-          text: usedColumn && skippedNotAttended > 0
-            ? 'Nobody in this sheet is marked as attended (Yes), so nothing was added.'
-            : 'No mobile numbers found in that file. It needs a column of 10-digit numbers (and, ideally, a Name column).',
+          text: 'No mobile numbers found in that file. It needs a column of 10-digit numbers (and, ideally, a Name column).',
         });
         return;
       }
-      const left = skippedNotAttended > 0 ? ` · ${skippedNotAttended.toLocaleString('en-IN')} marked not attended (left out)` : '';
       if (!eventKey) {
         const m = mergeLocal(pending?.entries || [], incoming);
         onPending({ entries: m.merged, files: [...(pending?.files || []), file.name] });
-        setMsg({ ok: true, text: `${resultLine({ ...m, updated: 0 })}${left} · ${m.merged.length.toLocaleString('en-IN')} in total. Saved when you create the trip.` });
+        setMsg({ ok: true, text: `${resultLine({ ...m, updated: 0 })} · ${m.merged.length.toLocaleString('en-IN')} in total. Saved when you create the trip.` });
         return;
       }
       const r = await adminFetch(`/api/events/${encodeURIComponent(eventKey)}/attendees`, {
@@ -386,7 +368,7 @@ export default function AttendeesUpload({
       });
       const d = await r.json() as MergeResult & { error?: string };
       if (!r.ok) setMsg({ ok: false, text: d.error || 'Upload failed.' });
-      else { setMsg({ ok: true, text: `${resultLine(d)}${left} · ${(d.total ?? 0).toLocaleString('en-IN')} in total.` }); await load(); }
+      else { setMsg({ ok: true, text: `${resultLine(d)} · ${(d.total ?? 0).toLocaleString('en-IN')} in total.` }); await load(); }
     } catch {
       setMsg({ ok: false, text: 'Could not read that file. Use .xlsx, .xls or .csv.' });
     } finally {
@@ -478,17 +460,17 @@ export default function AttendeesUpload({
       >
         <span className="text-amber-600"><SheetIcon /></span>
         <span className="text-sm font-semibold text-stone-800">{busy === 'file' ? 'Reading your file…' : has ? 'Add more from Excel' : 'Add from Excel'}</span>
-        <span className="text-xs text-stone-500">Drop a file or click · .xlsx .xls .csv<br />Name + Mobile (+ Attended Yes/No)</span>
+        <span className="text-xs text-stone-500">Drop a file or click · .xlsx .xls .csv<br />Name + Mobile</span>
         <input ref={input} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={e => onFile(e.target.files?.[0])} />
       </label>
 
 
       {/* Optional extra: pull from Vanabhojanam */}
-      <details className="group rounded-2xl border border-stone-200 bg-white">
+      <details className="group rounded-2xl border border-stone-200 bg-white" open={!!eventKey}>
         <summary className="cursor-pointer select-none list-none flex items-center justify-between gap-3 px-4 py-3">
           <span>
-            <span className="block text-sm font-semibold text-stone-800">Other option: pull from Vanabhojanam</span>
-            <span className="block text-[12px] text-stone-500">Not needed if you upload the attended sheet above.</span>
+            <span className="block text-sm font-semibold text-stone-800">Sync from Vanabhojanam</span>
+            <span className="block text-[12px] text-stone-500">Adds everyone Vanabhojanam has marked as attended. Optional if you upload a sheet.</span>
           </span>
           <span className="text-stone-400 transition group-open:rotate-180" aria-hidden="true">▾</span>
         </summary>
@@ -529,7 +511,7 @@ export default function AttendeesUpload({
       {msg && <p role="status" className={`text-xs font-medium ${msg.ok ? 'text-emerald-700' : 'text-red-600'}`}>{msg.text}</p>}
 
       <ul className="text-[11px] leading-relaxed text-stone-500 list-disc pl-4 space-y-0.5">
-        <li>If your sheet has an <strong>Attended</strong> column (Yes / No), only the <strong>Yes</strong> rows are added; people marked No or left blank are skipped. With no such column, everyone in the sheet is added.</li>
+        <li>Everyone in the sheet is added, so list only the people you want on it. A <strong>Name</strong> and a <strong>Mobile</strong> column is all it needs.</li>
         <li>Every upload or sync <strong>adds</strong> to the list. Nobody is removed by an upload. Remove people one by one in the list above, or use “Remove all”.</li>
         <li>The same person is only counted once: a row is a duplicate when the <strong>number and the name</strong> both match. Same number with a different name is kept.</li>
         <li>On the booking form, anyone whose mobile number is on this list automatically gets the special price, and skips the student ID if you switched that on. Only names and numbers are stored.</li>

@@ -2,7 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 
-export type DepthLayer = { name: string; z: number };
+/** fit "cover" fills the frame (backgrounds); "contain" keeps the whole picture inside it (a figure on a transparent background). */
+export type DepthLayer = { name: string; z: number; fit?: "cover" | "contain"; scale?: number; y?: number };
 
 const EXT = ['webp', 'png', 'jpg', 'jpeg', 'avif'];
 
@@ -43,7 +44,7 @@ export default function RamaDepth({ layers, label, onResult }: { layers: DepthLa
       camera.position.set(0, 0, CAM_Z);
 
       const loader = new THREE.TextureLoader();
-      const planes: { mesh: import('three').Mesh; aspect: number; z: number }[] = [];
+      const planes: { mesh: import('three').Mesh; aspect: number; z: number; fit: "cover" | "contain"; scale: number; y: number }[] = [];
 
       const fit = () => {
         const w = el.clientWidth || 300;
@@ -55,7 +56,15 @@ export default function RamaDepth({ layers, label, onResult }: { layers: DepthLa
           const viewH = 2 * Math.tan((camera.fov * Math.PI) / 360) * (CAM_Z - p.z);
           const viewW = viewH * camera.aspect;
           // cover the frame (with a little extra so the sway never shows an edge)
-          const over = 1.18 + Math.abs(p.z) * 0.1;
+          if (p.fit === 'contain') {
+            let ph = viewH * p.scale;
+            let pw = ph * p.aspect;
+            if (pw > viewW * p.scale) { pw = viewW * p.scale; ph = pw / p.aspect; }
+            p.mesh.scale.set(pw, ph, 1);
+            p.mesh.position.y = viewH * p.y;
+            continue;
+          }
+          const over = 1.1 + Math.abs(p.z) * 0.06;
           let ph = viewH * over;
           let pw = ph * p.aspect;
           if (pw < viewW * over) { pw = viewW * over; ph = pw / p.aspect; }
@@ -82,7 +91,7 @@ export default function RamaDepth({ layers, label, onResult }: { layers: DepthLa
           );
           mesh.position.z = l.z;
           scene.add(mesh);
-          planes.push({ mesh, aspect: img.width / img.height, z: l.z });
+          planes.push({ mesh, aspect: img.width / img.height, z: l.z, fit: l.fit || 'cover', scale: l.scale ?? 1, y: l.y ?? 0 });
           resolve();
         });
       })));
@@ -151,8 +160,8 @@ export default function RamaDepth({ layers, label, onResult }: { layers: DepthLa
         }
         tx += (mx - tx) * 0.06;
         ty += (my - ty) * 0.06;
-        camera.position.x = tx * 0.55;
-        camera.position.y = -ty * 0.4;
+        camera.position.x = tx * 0.4;
+        camera.position.y = -ty * 0.28;
         camera.lookAt(0, 0, 0);
         const a = geo.getAttribute('position') as import('three').BufferAttribute;
         for (let i = 0; i < N; i++) {
