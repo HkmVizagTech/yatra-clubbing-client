@@ -1,74 +1,124 @@
-@import '../public.css';
-
 /* ============================================================================
-   Booking success page — the confirmation screen after a yatra payment.
-   Cream ground, navy + gold, Playfair heading.
+   Booking confirmed — a standalone, per-trip "thank you" page.
+   Dusk sky, falling petals, a ticket-style pass. No site header or footer.
+   Colours come from the trip theme variables (--sky*, --hill*, --yt-*).
    ========================================================================== */
 
-.succ-main{
-  position:relative;
-  background:
-    radial-gradient(ellipse 70% 40% at 50% -4%, rgba(224,160,32,.16), transparent 60%),
-    linear-gradient(180deg, #FFFDF6 0%, var(--paper) 40%);
+.sx{
+  position:relative; min-height:100svh; overflow:hidden; isolation:isolate;
+  background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 52%,var(--sky3) 100%);
+  color:#FFF3DC; font-family:'Poppins',system-ui,sans-serif;
+}
+.sx::before{ /* the low sun */
+  content:""; position:absolute; z-index:-1; left:50%; bottom:-30%; width:min(110vw,1100px); aspect-ratio:1;
+  transform:translateX(-50%); border-radius:50%;
+  background:radial-gradient(circle,var(--glow1) 0%,var(--glow2) 24%,transparent 62%); opacity:.38; filter:blur(8px);
+}
+.sx-hills{position:absolute; z-index:-1; left:0; right:0; bottom:0; width:100%; height:clamp(120px,22vw,260px);}
+
+.sx-sparks i{position:absolute; width:4px; height:4px; border-radius:50%; background:var(--yt-gold); opacity:.0; animation:sx-twinkle 4s ease-in-out infinite;}
+@keyframes sx-twinkle{0%,100%{opacity:0; transform:scale(.6);}50%{opacity:.85; transform:scale(1.3);}}
+
+.sx-confetti{position:fixed; inset:0; z-index:5; pointer-events:none; overflow:hidden;}
+.sx-confetti i{position:absolute; top:-5%; border-radius:2px; opacity:0; animation-name:sx-fall; animation-timing-function:cubic-bezier(.3,.6,.4,1); animation-fill-mode:forwards;}
+.sx-confetti i.c0{background:var(--yt-gold);}
+.sx-confetti i.c1{background:var(--yt-accent);}
+.sx-confetti i.c2{background:#F6C9A3;}
+.sx-confetti i.c3{background:#E58AA0;}
+@keyframes sx-fall{
+  0%{opacity:0; translate:0 0;}
+  8%{opacity:1;}
+  100%{opacity:0; translate:var(--drift,0) 108vh; rotate:540deg;}
 }
 
-.succ-top{text-align:center; padding:64px 24px 0;}
-.succ-eyebrow{
-  display:inline-block;
-  font-size:12px; font-weight:600; letter-spacing:.24em; text-transform:uppercase;
-  color:var(--gold-deep);
+.sx-main{
+  position:relative; max-width:880px; margin:0 auto;
+  padding:clamp(20px,4vw,40px) 20px clamp(120px,20vw,220px);
+  display:flex; flex-direction:column; align-items:center; text-align:center;
 }
-.succ-title{
-  font-family:'Playfair Display',Georgia,serif;
-  font-size:clamp(34px,5.4vw,54px); font-weight:700; line-height:1.12;
-  letter-spacing:-.01em; margin-top:14px; color:var(--navy);
-}
-.succ-sub{
-  margin:14px auto 0; max-width:52ch;
-  color:var(--muted); font-size:17px; line-height:1.7;
-}
+.sx-logo{margin-bottom:clamp(22px,4vw,38px);}
 
-.succ-wrap{max-width:780px; margin:40px auto 90px; padding:0 24px;}
+/* the tick draws itself */
+.sx-badge{width:84px; height:84px; margin-bottom:18px; filter:drop-shadow(0 10px 26px color-mix(in srgb,var(--yt-gold) 60%,transparent));}
+.sx-badge svg{width:100%; height:100%; display:block; overflow:visible;}
+.sx-badge circle{fill:color-mix(in srgb,var(--yt-gold) 16%,transparent); stroke:var(--yt-gold); stroke-width:2.5; stroke-dasharray:151; stroke-dashoffset:151; animation:sx-draw .9s .1s ease forwards;}
+.sx-badge path{fill:none; stroke:#FFF3DC; stroke-width:4; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:40; stroke-dashoffset:40; animation:sx-draw .5s .8s ease forwards;}
+@keyframes sx-draw{to{stroke-dashoffset:0;}}
 
-.succ-card{
-  background:var(--surface); border:1px solid var(--border);
-  border-radius:var(--r-lg); box-shadow:var(--sh-card);
-  padding:34px;
-}
-@media (max-width:560px){ .succ-card{padding:24px 20px;} }
+.sx-eyebrow{font-size:12px; font-weight:600; letter-spacing:.32em; text-transform:uppercase; color:var(--yt-gold);}
+.sx-title{margin-top:12px; font-size:clamp(30px,5.4vw,56px); line-height:1.1; font-weight:700; letter-spacing:-.02em; text-wrap:balance;}
+.sx-title em{font-style:normal; background:linear-gradient(110deg,#FFF1C9,var(--yt-gold) 50%,var(--glow2)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+.sx-sub{margin-top:12px; max-width:52ch; color:rgba(255,243,220,.78); font-size:clamp(15px,1.5vw,18px); line-height:1.7;}
 
-.succ-ref{
-  display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap;
-  margin:-12px 0 20px;
-  text-align:center;
+/* ── the pass ── */
+.sx-ticket{
+  position:relative; width:100%; margin-top:clamp(26px,4vw,40px); text-align:left;
+  display:grid; grid-template-columns:1fr 250px; border-radius:26px; overflow:hidden;
+  background:var(--yt-card,#FBF4E6); color:var(--yt-ink,#2A1A10);
+  box-shadow:0 40px 80px -34px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.08);
+  animation:sx-rise .8s .35s cubic-bezier(.2,.8,.2,1) both;
 }
-.succ-ref span{
-  font-size:11.5px; font-weight:700; letter-spacing:.18em; text-transform:uppercase;
-  color:var(--muted);
-}
-.succ-ref b{
-  font-family:'Playfair Display',Georgia,serif; font-size:20px; font-weight:700;
-  color:var(--gold-deep); letter-spacing:.12em;
-}
-.succ-ref b::selection{background:var(--gold-tint);}
+@keyframes sx-rise{from{opacity:0; transform:translateY(26px);}to{opacity:1; transform:none;}}
+.sx-t-main{padding:clamp(22px,3vw,34px);}
+.sx-t-kicker{font-size:11px; font-weight:600; letter-spacing:.22em; text-transform:uppercase; color:var(--yt-accent);}
+.sx-t-name{margin-top:6px; font-size:clamp(22px,2.6vw,30px); font-weight:700; line-height:1.15;}
+.sx-t-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px 22px; margin:22px 0 0;}
+.sx-t-grid .wide{grid-column:1/-1;}
+.sx-t-grid dt{font-size:10.5px; font-weight:600; letter-spacing:.17em; text-transform:uppercase; color:var(--yt-muted);}
+.sx-t-grid dd{margin:3px 0 0; font-size:15.5px; font-weight:600; line-height:1.4;}
 
-.succ-note{
-  margin-top:20px; text-align:center;
-  font-size:13px; color:var(--muted);
+.sx-t-stub{
+  position:relative; padding:clamp(22px,3vw,34px) 22px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:10px;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--yt-accent) 12%,var(--yt-card,#FBF4E6)),var(--yt-card,#FBF4E6));
+  border-left:2px dashed color-mix(in srgb,var(--yt-ink,#2A1A10) 22%,transparent);
 }
-.succ-note b{color:var(--gold-deep);}
+/* the two notches where the stub tears off */
+.sx-t-stub::before,.sx-t-stub::after{content:""; position:absolute; left:-13px; width:24px; height:24px; border-radius:50%; background:var(--sky2);}
+.sx-t-stub::before{top:-12px;}
+.sx-t-stub::after{bottom:-12px;}
+.sx-t-ref{font-size:clamp(20px,2.1vw,25px); font-weight:700; letter-spacing:.05em; white-space:nowrap; color:var(--yt-ink,#2A1A10);}
+.sx-copy{border:1px solid color-mix(in srgb,var(--yt-accent) 50%,transparent); color:var(--yt-accent); background:transparent; border-radius:999px; padding:6px 16px; font:600 12px 'Poppins',sans-serif; cursor:pointer; transition:background .2s;}
+.sx-copy:hover{background:color-mix(in srgb,var(--yt-accent) 12%,transparent);}
+.sx-t-paid{margin-top:6px; display:flex; flex-direction:column; gap:2px;}
+.sx-t-paid span{font-size:10.5px; font-weight:600; letter-spacing:.17em; text-transform:uppercase; color:var(--yt-muted);}
+.sx-t-paid b{font-size:22px; color:var(--yt-accent);}
 
-.succ-actions{display:grid; gap:12px; margin-top:26px;}
-.succ-actions .hk-btn{width:100%; text-align:center;}
+/* ── what happens next ── */
+.sx-steps{width:100%; margin-top:clamp(30px,5vw,48px);}
+.sx-steps h2{font-size:12px; font-weight:600; letter-spacing:.3em; text-transform:uppercase; color:var(--yt-gold); margin-bottom:18px;}
+.sx-steps ol{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:clamp(14px,2vw,26px);}
+.sx-steps li{display:flex; flex-direction:column; align-items:center; gap:6px; padding:0 6px;}
+.sx-s-ic{width:52px; height:52px; border-radius:50%; display:grid; place-items:center; font-size:22px; background:rgba(255,243,220,.09); border:1px solid rgba(255,243,220,.18); margin-bottom:6px;}
+.sx-steps li.done .sx-s-ic{background:var(--yt-gold); color:#2A1A10; border-color:var(--yt-gold); font-weight:700;}
+.sx-steps li b{font-size:15.5px; font-weight:600;}
+.sx-steps li span:last-child{font-size:13.5px; line-height:1.6; color:rgba(255,243,220,.7); max-width:26ch;}
 
-.succ-btn-ghost{
-  background:var(--surface) !important; color:var(--navy) !important;
-  border:1px solid var(--border) !important; box-shadow:none !important;
+/* ── actions ── */
+.sx-actions{display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-top:clamp(28px,4vw,40px);}
+.sx-btn{display:inline-flex; align-items:center; justify-content:center; padding:13px 26px; border-radius:999px; font:600 15px 'Poppins',sans-serif; text-decoration:none; cursor:pointer; transition:transform .2s, box-shadow .2s, background .2s;}
+.sx-btn:hover{transform:translateY(-2px);}
+.sx a.sx-btn-main,.sx-btn-main{border:0; color:#2A1A10 !important; background:linear-gradient(135deg,#FFE3A3,var(--yt-gold) 50%,var(--glow2)); box-shadow:0 16px 34px -14px var(--glow2);}
+.sx-btn-ghost{color:#FFF3DC; background:rgba(255,243,220,.08); border:1px solid rgba(255,243,220,.28);}
+.sx-btn-ghost:hover{background:rgba(255,243,220,.16);}
+.sx-foot{margin-top:clamp(30px,5vw,48px); padding-top:18px; width:100%; max-width:560px; border-top:1px solid rgba(255,243,220,.16); display:flex; flex-wrap:wrap; justify-content:center; gap:6px 12px; font-size:13.5px; color:rgba(255,243,220,.7);}
+.sx-foot a{color:#FFF3DC; text-decoration:none; font-weight:600;}
+.sx-foot a:hover{color:var(--yt-gold); text-decoration:underline;}
+.sx-foot i{font-style:normal; opacity:.5;}
+.sx-note{margin-top:22px; font-size:13px; line-height:1.7; color:rgba(255,243,220,.62); max-width:46ch;}
+.sx-empty{display:flex; flex-direction:column; align-items:center; padding-top:8vh;}
+
+/* ── phones: the stub drops below, torn off sideways ── */
+@media (max-width:640px){
+  .sx-ticket{grid-template-columns:1fr;}
+  .sx-t-stub{border-left:0; border-top:2px dashed color-mix(in srgb,var(--yt-ink,#2A1A10) 22%,transparent);}
+  .sx-t-stub::before,.sx-t-stub::after{top:-12px; bottom:auto;}
+  .sx-t-stub::before{left:-12px;}
+  .sx-t-stub::after{left:auto; right:-12px;}
+  .sx-t-grid{grid-template-columns:1fr 1fr; gap:14px 16px;}
+  .sx-steps ol{grid-template-columns:1fr 1fr;}
 }
-.succ-btn-ghost:hover{background:var(--paper-2) !important; transform:none !important;}
-.hk .succ-btn-ghost{color:var(--navy) !important;}
-
-.succ-empty p{
-  text-align:center; color:var(--muted); margin:0 0 24px;
+@media (prefers-reduced-motion:reduce){
+  .sx-badge circle,.sx-badge path{animation:none; stroke-dashoffset:0;}
+  .sx-ticket{animation:none;}
+  .sx-sparks i{animation:none; opacity:.5;}
 }
-.succ-empty .hk-btn{display:block; max-width:260px; margin:0 auto; text-align:center;}

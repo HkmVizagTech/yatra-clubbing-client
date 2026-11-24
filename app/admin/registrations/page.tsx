@@ -372,9 +372,9 @@ export default function RegistrationsPage() {
                   ? [r.course, r.year_of_study].filter(Boolean).join(' · ')
                   : '';
                 return (
-                  <tr key={r.ref} className="align-top hover:bg-amber-50/30 transition-colors">
+                  <tr key={r.ref} className="align-top hover:bg-amber-50/40 transition-colors">
                     {/* Person */}
-                    <td className="px-5 py-4">
+                    <td className={`px-5 py-4 shadow-[inset_4px_0_0_0_var(--edge)] ${edgeClass(r)}`}>
                       <div className="flex items-start gap-3 min-w-[230px]">
                         <Avatar name={r.name} student={student} />
                         <div className="min-w-0">
@@ -397,7 +397,7 @@ export default function RegistrationsPage() {
 
                     {/* For */}
                     <td className="px-3 py-4">
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex flex-col items-start gap-1.5">
                         {showAudience && (student ? <span className="pill-violet">🎓 Student</span> : <span className="pill-amber">💼 Working</span>)}
                         <GenderCell r={r} saving={a.savingGender} onSet={setGenderFor} />
                       </div>
@@ -529,6 +529,14 @@ export default function RegistrationsPage() {
   );
 }
 
+/** Left-edge colour: green paid, amber waiting, red failed. */
+function edgeClass(r: Registration): string {
+  const st = String(r.payment_status || '').toLowerCase();
+  if (st === 'paid') return '[--edge:#34d399]';
+  if (st === 'failed') return '[--edge:#f87171]';
+  return '[--edge:#fbbf24]';
+}
+
 function PayBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     paid: 'pill-green',
@@ -554,12 +562,10 @@ function WaBadge({ r }: { r: Registration }) {
 }
 
 /**
- * Gender shown as a tag, and editable in place.
- *
- * The 15 bookings taken before the form had the field show "Set…" — one tap
- * records it. The placeholder is never a real option (so picking it can't ever
- * clear an existing gender), and the only values on the wire are the three the
- * API accepts.
+ * Gender as a tag. Known → just the tag, plus a small pencil to correct it.
+ * Not recorded (bookings taken before the form asked for it) → a "Set gender"
+ * dropdown. The placeholder is never a real option, so picking it can't clear an
+ * existing value, and only the three values the API accepts are sent.
  */
 function GenderCell({
   r, saving, onSet,
@@ -570,22 +576,37 @@ function GenderCell({
 }) {
   const current = String(r.gender || '').toLowerCase();
   const known = current === 'male' || current === 'female' || current === 'other';
+  const [editing, setEditing] = useState(false);
+
+  if (known && !editing) {
+    return (
+      <span className="inline-flex items-center gap-1">
+        <GenderTag gender={r.gender} />
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          title="Change gender"
+          aria-label={`Change gender for ${r.name}`}
+          className="w-6 h-6 rounded-full text-stone-300 hover:text-amber-700 hover:bg-amber-50 transition grid place-items-center text-xs"
+        >
+          ✎
+        </button>
+      </span>
+    );
+  }
   return (
-    <div className="inline-flex items-center gap-1.5">
-      {known && <GenderTag gender={r.gender} />}
-      <Select
-        size="sm"
-        className="w-auto"
-        value={known ? current : ''}
-        disabled={saving}
-        onChange={v => onSet(r.ref, v)}
-        options={GENDER_SET_OPTIONS}
-        placeholder={saving ? 'Saving…' : known ? 'edit' : 'Set…'}
-        ariaLabel={`Gender for ${r.name}`}
-        title={known ? 'Change gender' : 'Not recorded — set it'}
-        tone={known ? 'muted' : 'gold'}
-      />
-    </div>
+    <Select
+      size="sm"
+      className="w-auto min-w-[8.5rem]"
+      value={known ? current : ''}
+      disabled={saving}
+      onChange={v => { onSet(r.ref, v); setEditing(false); }}
+      options={GENDER_SET_OPTIONS}
+      placeholder={saving ? 'Saving…' : 'Set gender'}
+      ariaLabel={`Gender for ${r.name}`}
+      title={known ? 'Change gender' : 'Not recorded, set it'}
+      tone={known ? 'muted' : 'gold'}
+    />
   );
 }
 
@@ -664,12 +685,13 @@ function RegCard({
     : [r.organisation].filter(Boolean);
 
   return (
-    <div className="rounded-2xl border border-stone-200 bg-white p-4 space-y-3">
+    <div className={`rounded-2xl border border-stone-200 bg-white p-4 space-y-3 overflow-hidden shadow-[inset_4px_0_0_0_var(--edge)] ${edgeClass(r)}`}>
       <div className="flex items-start gap-3">
         <Avatar name={r.name} student={student} />
         <div className="min-w-0 flex-1">
           <div className="font-bold text-stone-900 break-words">{r.name}</div>
-          <div className="text-xs font-mono text-stone-400 mt-0.5">{r.ref} · {fmtDate(r.created_at)}</div>
+          <div className="text-xs font-mono text-stone-500 mt-0.5 break-all">{r.ref}</div>
+          <div className="text-xs text-stone-400">{fmtDate(r.created_at)}</div>
         </div>
         <div className="text-right shrink-0">
           {canMoney && r.total !== undefined && <div className="font-extrabold text-stone-900">{inr(r.total)}</div>}

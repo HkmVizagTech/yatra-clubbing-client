@@ -417,6 +417,7 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
         phone: booking.phone,
         total: String(booking.total),
         tier: tier?.key || '',
+        idw: idWaived ? '1' : '',
       }).toString()
     );
   }
