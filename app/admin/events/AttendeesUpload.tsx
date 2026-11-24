@@ -206,8 +206,7 @@ function ListViewer({
     if (res.ok) { await fetchPage(); onChanged(); } else setMsg({ ok: false, text: 'Could not remove that person.' });
   }
 
-  async function addOne(e: React.FormEvent) {
-    e.preventDefault();
+  async function addOne() {
     const digits = phone.replace(/\D/g, '').slice(-10);
     if (!/^[6-9][0-9]{9}$/.test(digits)) { setMsg({ ok: false, text: 'Enter a valid 10-digit mobile number.' }); return; }
     const entry = { phone: digits, name: name.trim() };
@@ -269,11 +268,11 @@ function ListViewer({
         <span className="text-stone-400 transition group-open:rotate-180" aria-hidden="true">▾</span>
       </summary>
       <div className="px-4 pb-4 pt-3 border-t border-stone-100 space-y-3">
-        <form onSubmit={addOne} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addOne(); } }}>
           <input className="input" placeholder="Name" value={name} onChange={e => setName(e.target.value)} maxLength={80} />
           <input className="input" placeholder="Mobile number" inputMode="numeric" value={phone} onChange={e => setPhone(e.target.value)} maxLength={15} />
-          <button type="submit" className="btn-primary btn-sm" disabled={adding || busy}>{adding ? 'Adding…' : '+ Add person'}</button>
-        </form>
+          <button type="button" onClick={addOne} className="btn-primary btn-sm" disabled={adding || busy}>{adding ? 'Adding…' : '+ Add person'}</button>
+        </div>
 
         <details className="rounded-xl border border-stone-200 bg-stone-50/60">
           <summary className="cursor-pointer select-none px-3 py-2 text-xs font-semibold text-amber-700">Paste many people at once</summary>
@@ -284,7 +283,7 @@ function ListViewer({
           </div>
         </details>
 
-        <input className="input" type="search" placeholder="Search by name or number" value={q} onChange={e => setQ(e.target.value)} />
+        <input className="input" type="search" placeholder="Search by name or number" value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }} />
 
         <div className="rounded-xl border border-stone-200 divide-y divide-stone-100 max-h-80 overflow-y-auto" aria-busy={loading}>
           {rows.length === 0 && (
