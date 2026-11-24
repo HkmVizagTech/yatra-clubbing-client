@@ -10,7 +10,6 @@ import BookButton from './BookButton';
 import YtCountdown from './YtCountdown';
 import RegisterWatch from './RegisterWatch';
 import TripFooter from './TripFooter';
-import RamaSection from './RamaSection';
 import HeroSceneLoader from './HeroSceneLoader';
 import HeroIllustration from './HeroIllustration';
 import SmoothScroll from './SmoothScroll';
@@ -277,9 +276,6 @@ export default function EventLanding({ event }: { event: PublicEvent }) {
             </div>
           </section>
         )}
-
-        {/* ── Lord Rama, in depth (shows only when /public/rama has a picture) ── */}
-        <RamaSection eyebrow="The legend" title="Walk where Lord Rama walked" text="A quiet hill, an old temple and a story older than the road that leads to it. Come and walk it with us." />
 
         {/* ── Highlights ────────────────────────────────────────────────── */}
         {highlights.length > 0 && (
