@@ -110,6 +110,8 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
   const [idBusy, setIdBusy] = useState(false);
   const [picked, setPicked] = useState(false);
   // Special price: 'yes' once the typed mobile number is found on the admin's uploaded list.
+  const [known, setKnown] = useState(false);   // Vanabhojanam knows this number
+  const [filledFor, setFilledFor] = useState(''); // first name, once the form was pre-filled
   const [returning, setReturning] = useState<'idle' | 'checking' | 'yes' | 'no'>('idle'); // student/working switch must be chosen explicitly
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -117,6 +119,7 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
 
   const tier: PublicTicketTier | undefined = event.tickets.find(t => t.key === tierKey) || event.tickets[0];
   const returningOn = !!event.returning?.enabled && event.tickets.some(t => t.returningPrice != null && Number(t.returningPrice) > 0);
+  const checkOn = !!event.returning?.enabled; // look the number up (price and/or pre-fill)
   const priceOf = (t: PublicTicketTier) =>
     returning === 'yes' && t.returningPrice != null && Number(t.returningPrice) > 0 ? Number(t.returningPrice) : (t.price || 0);
   const total = tier ? priceOf(tier) : 0;
@@ -183,22 +186,41 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
   // When the admin has uploaded a list, look the mobile number up as soon as it
   // is complete. No list uploaded → nothing is checked.
   useEffect(() => {
-    if (!returningOn) return;
+    if (!checkOn) return;
     const p = phone.trim();
-    if (!/^[0-9]{10}$/.test(p)) { setReturning('idle'); return; }
+    if (!/^[0-9]{10}$/.test(p)) { setReturning('idle'); setKnown(false); setFilledFor(''); return; }
     let cancelled = false;
     setReturning('checking');
     const t = setTimeout(async () => {
       try {
-        const d = await api('/api/public/check-attendee', { event_code: event.code, phone: p }) as { listed?: boolean };
-        if (!cancelled) setReturning(d.listed ? 'yes' : 'no');
+        const d = await api('/api/public/check-attendee', { event_code: event.code, phone: p }) as {
+          listed?: boolean;
+          known?: boolean;
+          prefill?: { name?: string; gender?: string; age?: string; college?: string; course?: string; year?: string } | null;
+        };
+        if (cancelled) return;
+        setReturning(d.listed ? 'yes' : 'no');
+        setKnown(!!d.known);
+        // Fill ONLY what the person has not typed themselves, so nothing they wrote is overwritten.
+        const f = d.prefill;
+        if (f) {
+          if (f.name) setName(v => (v.trim() ? v : f.name as string));
+          if (f.age) setAge(v => (v ? v : f.age as string));
+          if (f.gender) setGender(v => (v ? v : f.gender as string));
+          if (f.college) setCollege(v => (v.trim() ? v : f.college as string));
+          if (f.course) setCourse(v => (v.trim() ? v : f.course as string));
+          if (f.year) setYearOfStudy(v => (v ? v : f.year as string));
+          setFilledFor((f.name || '').trim().split(/\s+/)[0] || 'there');
+        } else {
+          setFilledFor('');
+        }
       } catch {
         if (!cancelled) setReturning('no');
       }
     }, 350);
     return () => { cancelled = true; clearTimeout(t); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phone, returningOn, event.code]);
+  }, [phone, checkOn, event.code]);
 
   useEffect(() => {
     function handler() {
@@ -606,15 +628,18 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
                     </div>
                   </div>
 
-                  {returningOn && (
+                  {checkOn && (
                     <div className={`yc-returning${returning === 'yes' ? ' ok' : ''}`} aria-live="polite">
                       {returning === 'yes' && (() => {
-                        const special = tier && tier.returningPrice != null && Number(tier.returningPrice) > 0 ? ` Your price: ${inr(Number(tier.returningPrice))}` : ' Your special price is applied';
-                        return idWaived ? `🎉 You are on our list${listTag}!${special}. No student ID needed.` : `🎉 You are on our list${listTag}!${special}.`;
+                        const hi = filledFor ? `Welcome back, ${filledFor}!` : `You are on our list${listTag}!`;
+                        const filled = filledFor ? ' We filled in your details.' : '';
+                        const price = tier && tier.returningPrice != null && Number(tier.returningPrice) > 0 ? ` Your price: ${inr(Number(tier.returningPrice))}.` : ' Your special price is applied.';
+                        return `🎉 ${hi}${filled}${price}${idWaived ? ' No student ID needed.' : ''}`;
                       })()}
                       {returning === 'checking' && 'Checking your number…'}
-                      {returning === 'no' && (tier?.requiresStudentId && event.returning?.skipId ? 'Regular price applies, and your student ID is required below.' : 'Regular price applies.')}
-                      {returning === 'idle' && `Are you on our special list${listTag}? Enter your mobile number to see your price.`}
+                      {returning === 'no' && known && filledFor && (tier?.requiresStudentId ? `We found you, ${filledFor}, and filled in your details. Regular price applies, and your student ID is required below.` : `We found you, ${filledFor}, and filled in your details. Regular price applies.`)}
+                      {returning === 'no' && !(known && filledFor) && (tier?.requiresStudentId && event.returning?.skipId ? 'Regular price applies, and your student ID is required below.' : 'Regular price applies.')}
+                      {returning === 'idle' && (returningOn ? `Are you on our special list${listTag}? Enter your mobile number to see your price.` : 'Enter your mobile number. If you have joined us before, we will fill in your details.')}
                     </div>
                   )}
 

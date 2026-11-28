@@ -25,7 +25,7 @@ type FormState = {
   timeline: EventTimelineItem[];
   tickets: EventTicketTier[];
   branding: { heroDesktop: string; heroMobile: string; themeColor: string; showCountdown: boolean; mantra: string };
-  returning: { skipId: boolean; label: string; autoSync: boolean };
+  returning: { skipId: boolean; label: string; autoSync: boolean; liveLookup: boolean };
   payments: { receiptPrefix: string; whatsapp: { booking: string; studentApproved: string; studentRejected: string } };
   status: EventStatus;
 };
@@ -168,7 +168,7 @@ function fromEvent(e?: Event): FormState {
       timeline: [],
       tickets: [],
       branding: { heroDesktop: '', heroMobile: '', themeColor: DEFAULTS.themeColor, showCountdown: false, mantra: '' },
-      returning: { skipId: true, label: '', autoSync: false },
+      returning: { skipId: true, label: '', autoSync: false, liveLookup: false },
       payments: {
         receiptPrefix: DEFAULTS.receiptPrefix,
         whatsapp: {
@@ -197,7 +197,7 @@ function fromEvent(e?: Event): FormState {
     dates: { display: e.dates.display, start: e.dates.start, end: e.dates.end },
     timeline: e.timeline.map(t => ({ ...t })),
     tickets: e.tickets.map(t => ({ ...t, features: [...(t.features || [])] })),
-    returning: { skipId: !!e.returning?.skipId, label: e.returning?.label || '', autoSync: !!e.returning?.autoSync },
+    returning: { skipId: !!e.returning?.skipId, label: e.returning?.label || '', autoSync: !!e.returning?.autoSync, liveLookup: !!e.returning?.liveLookup },
     branding: {
       heroDesktop: e.branding.heroDesktop || '',
       heroMobile: e.branding.heroMobile || '',
@@ -1110,6 +1110,12 @@ export default function EventForm({ mode, slug, initial }: { mode: 'new' | 'edit
                         hint="They pay the Excel-sheet price and skip the ID. Everyone else must upload their student ID."
                       />
                     )}
+                    <Switch
+                      checked={form.returning.liveLookup}
+                      onChange={v => update({ returning: { ...form.returning, liveLookup: v } })}
+                      label="Look people up in Vanabhojanam when they register"
+                      hint="Someone Vanabhojanam already knows gets their details filled in. If they attended, they also get the special price and skip the ID. If they did not attend, they pay the regular price and still upload an ID."
+                    />
                     <div>
                       <label className="label" htmlFor="ret-label">Name of this group (shown on the form, optional)</label>
                       <input

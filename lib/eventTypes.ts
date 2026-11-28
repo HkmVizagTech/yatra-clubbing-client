@@ -82,8 +82,10 @@ export interface Event {
   returning?: {
     skipId: boolean;
     label: string;
-    /** pull new attendees from Vanabhojanam every hour (off unless switched on) */
+    /** pull new attendees from Vanabhojanam every 10 minutes (off unless switched on) */
     autoSync?: boolean;
+    /** look each person up in Vanabhojanam while they register: pre-fill, and special price for those who attended */
+    liveLookup?: boolean;
     lastSyncAt?: string;
     lastSyncAdded?: number;
     lastSyncTotal?: number;

@@ -496,7 +496,7 @@ export default function AttendeesUpload({
           <label className="flex items-start gap-2 text-xs text-stone-700 cursor-pointer">
             <input type="checkbox" className="mt-0.5" checked={autoSync} onChange={e => onAutoSync(e.target.checked)} />
             <span>
-              <strong>Check Vanabhojanam every hour</strong> and add new attendees automatically. Off by default.
+              <strong>Check Vanabhojanam every 10 minutes</strong> and add new attendees automatically. Off by default.
             {lastSync?.lastSyncAt && (
               <div className={`text-[11px] mt-1 ${lastSync.lastSyncError ? 'text-red-600' : 'text-stone-500'}`}>
                 Last checked {new Date(lastSync.lastSyncAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
