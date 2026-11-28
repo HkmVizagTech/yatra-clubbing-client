@@ -17,6 +17,8 @@ export interface Registration {
   returning_attendee?: boolean;
   /** Student ID was not asked for because they are on the Excel list. */
   id_waived?: boolean;
+  /** set when this number had already paid for the trip (two payments raced): refund one */
+  duplicate_of?: string | null;
   organisation?: string | null;
   qty_general: number;
   qty_student: number;

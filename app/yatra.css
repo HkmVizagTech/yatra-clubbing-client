@@ -815,3 +815,7 @@ a.yt-foot-row:hover{background:rgba(255,243,220,.11); border-color:color-mix(in 
   .yt-mv-row{grid-template-columns:1fr; row-gap:24px;}
   .yt-mv-item{border-left:0 !important; padding:0 8px;}
 }
+
+
+/* --- already registered --------------------------------------------------- */
+.yt .yc-registered{margin:0 0 11px; padding:10px 12px; border-radius:10px; font-size:13px; font-weight:600; line-height:1.5; color:#7A2E12; background:#FDEBD8; border:1.5px solid #F2B544;}

@@ -110,6 +110,7 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
   const [idBusy, setIdBusy] = useState(false);
   const [picked, setPicked] = useState(false);
   // Special price: 'yes' once the typed mobile number is found on the admin's uploaded list.
+  const [registered, setRegistered] = useState(false); // this number already has a paid booking on this trip
   const [known, setKnown] = useState(false);   // Vanabhojanam knows this number
   const [filledFor, setFilledFor] = useState(''); // first name, once the form was pre-filled
   const [returning, setReturning] = useState<'idle' | 'checking' | 'yes' | 'no'>('idle'); // student/working switch must be chosen explicitly
@@ -143,8 +144,8 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
     const phoneOk = /^[0-9]{10}$/.test(phone.trim());
     const studentOk = !isStudent || (college.trim().length > 0 && (idCard.length > 0 || idWaived));
     const genderOk = GENDER_OPTIONS.some(g => g.value === gender);
-    return Boolean(tier) && (!simpleBoth || picked) && nameOk && ageOk && genderOk && phoneOk && studentOk;
-  }, [name, ageOk, gender, phone, college, idCard, isStudent, idWaived, tier, simpleBoth, picked]);
+    return Boolean(tier) && !registered && (!simpleBoth || picked) && nameOk && ageOk && genderOk && phoneOk && studentOk;
+  }, [name, ageOk, gender, phone, college, idCard, isStudent, idWaived, tier, simpleBoth, picked, registered]);
 
   function openNow() {
     // Yatra Clubbing is a single-pass, student-only booking — reselect nothing,
@@ -186,21 +187,22 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
   // When the admin has uploaded a list, look the mobile number up as soon as it
   // is complete. No list uploaded → nothing is checked.
   useEffect(() => {
-    if (!checkOn) return;
     const p = phone.trim();
-    if (!/^[0-9]{10}$/.test(p)) { setReturning('idle'); setKnown(false); setFilledFor(''); return; }
+    if (!/^[0-9]{10}$/.test(p)) { setReturning('idle'); setKnown(false); setFilledFor(''); setRegistered(false); return; }
     let cancelled = false;
     setReturning('checking');
     const t = setTimeout(async () => {
       try {
         const d = await api('/api/public/check-attendee', { event_code: event.code, phone: p }) as {
           listed?: boolean;
+          registered?: boolean;
           known?: boolean;
           prefill?: { name?: string; gender?: string; age?: string; college?: string; course?: string; year?: string } | null;
         };
         if (cancelled) return;
         setReturning(d.listed ? 'yes' : 'no');
         setKnown(!!d.known);
+        setRegistered(!!d.registered);
         // Fill ONLY what the person has not typed themselves, so nothing they wrote is overwritten.
         const f = d.prefill;
         if (f) {
@@ -220,7 +222,7 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
     }, 350);
     return () => { cancelled = true; clearTimeout(t); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phone, checkOn, event.code]);
+  }, [phone, event.code]);
 
   useEffect(() => {
     function handler() {
@@ -378,7 +380,7 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
         receipt: booking.ref,
         event_code: booking.event_code,
       }) as { orderId: string; amount: number; currency: string; keyId: string };
-      if (!order.orderId) throw new Error('Could not create order');
+      if (!order.orderId) throw new Error(String((order as unknown as { error?: string }).error || 'Could not create order'));
 
       return await new Promise<PaymentInfo>((resolve, reject) => {
         const rzp = new window.Razorpay!({
@@ -628,7 +630,13 @@ export default function BookingModal({ event, inline = false }: { event: PublicE
                     </div>
                   </div>
 
-                  {checkOn && (
+                  {registered && (
+                    <div className="yc-registered" role="alert">
+                      ✅ This mobile number is already registered for this trip. You do not need to register again. Check your WhatsApp for your confirmation.
+                    </div>
+                  )}
+
+                  {checkOn && !registered && (
                     <div className={`yc-returning${returning === 'yes' ? ' ok' : ''}`} aria-live="polite">
                       {returning === 'yes' && (() => {
                         const hi = filledFor ? `Welcome back, ${filledFor}!` : `You are on our list${listTag}!`;

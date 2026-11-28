@@ -381,6 +381,7 @@ export default function RegistrationsPage() {
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-semibold text-stone-900">{r.name}</span>
                             {r.returning_attendee && <span className="pill-green" title="Their number is in the Excel sheet: special price, no student ID needed">📋 In Excel list</span>}
+                            {r.duplicate_of && <span className="pill-red" title={`This number had already paid for this trip (${r.duplicate_of}). Refund one of the two.`}>⚠ Duplicate of {r.duplicate_of}</span>}
                           </div>
                           <a href={`tel:${r.phone}`} className="block text-stone-600 hover:text-amber-700 tabular-nums">{r.phone}</a>
                           {r.email && <a href={`mailto:${r.email}`} className="block text-xs text-stone-400 hover:text-amber-700 truncate max-w-[220px]">{r.email}</a>}
@@ -702,6 +703,7 @@ function RegCard({
       <div className="flex flex-wrap items-center gap-1.5">
         {showAudience && (student ? <span className="pill-violet">🎓 Student</span> : <span className="pill-amber">💼 Working</span>)}
         {r.returning_attendee && <span className="pill-green" title="Their number is in the Excel sheet: special price, no student ID needed">📋 In Excel list</span>}
+                            {r.duplicate_of && <span className="pill-red" title={`This number had already paid for this trip (${r.duplicate_of}). Refund one of the two.`}>⚠ Duplicate of {r.duplicate_of}</span>}
         <GenderCell r={r} saving={savingGender} onSet={onSetGender} />
         {trip && <span className="rounded-md bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-600 max-w-[10rem] truncate">{trip}</span>}
       </div>
